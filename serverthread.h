@@ -1,0 +1,4 @@
+#ifndef HAS_SERVERTHREAD_H
+#define HAS_SERVERTHREAD_H
+
+#endif

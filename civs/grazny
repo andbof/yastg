@@ -1,0 +1,36 @@
+NAME Kingdom of Grazny
+HOME Gargmeltoff
+POWER 2
+SECTOR {
+  GNAME Gargmeltoff
+  POS 10000 -10000
+  STAR {
+    NAME Gargmeltoff A
+    CLASS O
+    LUM VII
+  }
+  PLANET {
+    NAME Gargmel
+    CLASS M
+    BASE {
+      NAME Castle
+      TYPE B
+      DOCKS 1
+    }
+  }
+}
+SNAME granzy1
+SNAME granzy2
+SNAME granzy3
+SNAME granzy4
+SNAME granzy5
+SNAME granzy6
+SNAME granzy7
+SNAME granzy8
+SNAME granzy9
+SNAME granzy10
+SNAME granzy11
+SNAME granzy12
+SNAME granzy13
+SNAME granzy14
+SNAME granzy15

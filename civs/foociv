@@ -1,0 +1,41 @@
+NAME Foociv
+HOME Foosystem
+POWER 5
+SECTOR {
+  GNAME Foosystem
+  POS -10000 -10000
+  STAR {
+    NAME Foo A
+    CLASS O
+    LUM Ia
+    TEMP 33000
+  }
+  PLANET {
+    NAME Fooplanet
+    BASE {
+      NAME Foobase
+      TYPE C
+      Docks 1
+    }
+  }
+}
+SNAME foo1
+SNAME foo2
+SNAME foo3
+SNAME foo4
+SNAME foo5
+SNAME foo6
+SNAME foo7
+SNAME foo8
+SNAME foo9
+SNAME foo10
+SNAME foo11
+SNAME foo12
+SNAME foo13
+SNAME foo14
+SNAME foo15
+SNAME foo16
+SNAME foo17
+SNAME foo18
+SNAME foo19
+SNAME foo20

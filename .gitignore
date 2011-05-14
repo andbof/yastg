@@ -1,0 +1,7 @@
+yastg
+LICENSE
+*.o
+*~
+*.bak
+*-
+*.pyc

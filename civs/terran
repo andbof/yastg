@@ -1,0 +1,44 @@
+# Comment at beginning of file
+NAME Terran Federation
+HOME Sol # End of line comment
+POWER 10
+SECTOR {
+  GNAME Sol
+# Comment at start of line
+  POS 10000 10000
+  STAR {
+    NAME Sol
+    CLASS G
+    LUM V
+    LUMVAL 100
+    TEMP 5778
+  }
+  PLANET {
+    NAME Earth
+    CLASS M
+    BASE {
+      NAME Freedom Station
+      TYPE A
+      DOCKS 1
+    }
+  }
+}
+SNAME Alpha Centauri
+SNAME Ross 128
+SNAME Barnards Star
+SNAME Arcturus
+SNAME Sirius
+SNAME Beta Centauri
+SNAME Gamma Centauri
+SNAME Woppi-doo
+SNAME Wippi-ippi
+SNAME Groppi-groppi
+SNAME terran1
+SNAME terran2
+SNAME terran3
+SNAME terran4
+SNAME terran5
+SNAME terran6
+SNAME terran7
+# Comment at end of file
+# Comment at end of file2
