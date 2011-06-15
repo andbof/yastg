@@ -1,4 +1,7 @@
 #include <stdlib.h>
+#include <stdint.h>
+#include "defines.h"
+#include "mtrandom.h"
 
 /* Shamelessly taken from
  * http://benpfaff.org/writings/clc/shuffle.html
@@ -12,7 +15,7 @@ void shuffleptr(void* *array, size_t n) {
   void* k;
   if (n > 1) {
     for (i = 0; i < n - 1; i++) {
-      j = i + rand() / (RAND_MAX / (n - i) + 1);
+      j = i + mtrandom_sizet(SIZE_MAX) / (SIZE_MAX / (n - i) + 1);
       k = array[j];
       array[j] = array[i];
       array[i] = k;

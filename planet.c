@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <stdint.h>
 #include "defines.h"
 #include "sector.h"
 #include "planet.h"
@@ -63,7 +64,7 @@ struct sarray* createplanets(struct sector* s) {
   int i;
   struct planet *p;
   struct sarray* planets = sarray_init(sizeof(struct planet), 0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id); 
-  while (random() - INT_MAX/PLANET_ODDS < 0)
+  while (mtrandom_sizet(SIZE_MAX) - SIZE_MAX/PLANET_ODDS < 0)
     num++;
   if (num > PLANET_NUM_MAX)
     num = PLANET_NUM_MAX;

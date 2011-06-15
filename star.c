@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <string.h>
 #include <math.h>
+#include <stdint.h>
 #include "defines.h"
 #include "star.h"
 #include "id.h"
@@ -113,10 +114,10 @@ struct star* loadstar(struct configtree *ctree) {
     die("required attribute missing for predefined star %s: stellar luminosity", sol->name);
   // FIXME:
   if (!lumvalset)
-    sol->lumval = stellar_clslum[sol->cls+1]+random()%(stellar_clslum[sol->cls]-stellar_clslum[sol->cls+1]);
+    sol->lumval = stellar_clslum[sol->cls + 1] + mtrandom_sizet(stellar_clslum[sol->cls]) - stellar_clslum[sol->cls + 1];
   sol->hab = stellar_clshab[sol->cls] + stellar_lumhab[sol->lum];
   if (!tempset)
-    sol->temp = stellar_clstmp[sol->cls+1]+random()%(stellar_clstmp[sol->cls]-stellar_clstmp[sol->cls+1]);
+    sol->temp = stellar_clstmp[sol->cls + 1] + mtrandom_sizet(stellar_clstmp[sol->cls])-stellar_clstmp[sol->cls + 1];
   // Rough guess looking at
   // https://secure.wikimedia.org/wikipedia/en/wiki/Habitable_zone
   sol->hablow = star_gethablow(sol);
@@ -129,7 +130,7 @@ struct star* loadstar(struct configtree *ctree) {
  * Returns a random star luminosity
  */
 int star_genlum(void) {
-  unsigned int chance = random()%stellar_lumodds[STELLAR_LUM_N-1];
+  unsigned int chance = mtrandom_uint(stellar_lumodds[STELLAR_LUM_N - 1]);
   int i;
   for (i = 0; i < STELLAR_LUM_N; i++) {
     if (chance < stellar_lumodds[i])
@@ -143,7 +144,7 @@ int star_genlum(void) {
  * Returns a random star classification.
  */
 int star_gencls(void) {
-  unsigned int chance = random()%stellar_clsodds[STELLAR_CLS_N-1];
+  unsigned int chance = mtrandom_uint(stellar_clsodds[STELLAR_CLS_N - 1]);
   int i;
   for (i = 0; i < STELLAR_CLS_N; i++) {
     if (chance < stellar_clsodds[i])
@@ -157,7 +158,7 @@ int star_gencls(void) {
  */
 int star_gennum() {
   int num = 1;
-  while (random() - INT_MAX/STELLAR_MUL_ODDS < 0) num++;
+  while (mtrandom_sizet(SIZE_MAX) - SIZE_MAX/STELLAR_MUL_ODDS < 0) num++;
   if (num > STELLAR_MUL_MAX)
     num = STELLAR_MUL_MAX;
   return num;
@@ -184,9 +185,9 @@ struct star* createstar() {
   s->name = NULL;
   s->cls = star_gencls();
   s->lum = star_genlum();
-  s->lumval = stellar_clslum[s->cls+1]+random()%(stellar_clslum[s->cls]-stellar_clslum[s->cls+1]);
+  s->lumval = stellar_clslum[s->cls+1] + mtrandom_sizet(stellar_clslum[s->cls]) - stellar_clslum[s->cls + 1];
   s->hab = stellar_clshab[s->cls] + stellar_lumhab[s->lum];
-  s->temp = stellar_clstmp[s->cls+1]+random()%(stellar_clstmp[s->cls]-stellar_clstmp[s->cls+1]);
+  s->temp = stellar_clstmp[s->cls+1] + mtrandom_sizet(stellar_clstmp[s->cls]) - stellar_clstmp[s->cls + 1];
   s->hablow = star_gethablow(s);
   s->habhigh = star_gethabhigh(s);
   s->snowline = star_getsnowline(s);

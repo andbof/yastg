@@ -3,14 +3,16 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
 #include "defines.h"
-#include "id.h"
+#include "mtrandom.h"
+#include "universe.h"
 #include "constellation.h"
+#include "id.h"
 #include "sector.h"
 #include "star.h"
 #include "sarray.h"
 #include "array.h"
-#include "universe.h"
 
 void loadconstellations(struct universe *u) {
   struct configtree *ctree, *e;
@@ -30,6 +32,7 @@ void loadconstellations(struct universe *u) {
 #define CONSTELLATION_NEIGHBOUR_CHANCE 5
 #define CONSTELLATION_MIN_DISTANCE 150
 #define CONSTELLATION_RANDOM_DISTANCE 500
+#define CONSTELLATION_PHI_RANDOM 1.0
 
 void addconstellation(struct universe *u, char* cname) {
   size_t nums, numc, fs, i;
@@ -42,7 +45,7 @@ void addconstellation(struct universe *u, char* cname) {
   MALLOC_DIE(string, strlen(cname)+GREEK_LEN+2);
 
   // Determine number of sectors in constellation
-  nums = random()%GREEK_N;
+  nums = mtrandom_sizet(GREEK_N);
   if (nums == 0) nums = 1;
   
   fs = 0;
@@ -67,17 +70,18 @@ void addconstellation(struct universe *u, char* cname) {
 	sector_move(u, s, x, y);
       } else {
 	// All others are randomly distributed
-	phi = random() / (double)RAND_MAX*2*M_PI;
+	phi = mtrandom_sizet(SIZE_MAX) / (double)SIZE_MAX*2*M_PI;
 	r = 0;
 	do {
-          r += random() % CONSTELLATION_RANDOM_DISTANCE;
+          r += mtrandom_sizet(CONSTELLATION_RANDOM_DISTANCE);
+	  phi += mtrandom_double(CONSTELLATION_PHI_RANDOM);
 	  x = POLTOX(phi, r);
 	  y = POLTOY(phi, r);
 	  sector_move(u, s, x, y);
 	  i = countneighbours(u, s, CONSTELLATION_MIN_DISTANCE);
 	  printf("%zu systems within %d ly (phi, rad) = (%f, %lu)\n", i, CONSTELLATION_MIN_DISTANCE, phi, r);
 	} while (i > 0);
-//        t = (struct sector*)sarray_getbypos(u->sectors, random()%u->sectors->elements);
+//        t = (struct sector*)sarray_getbypos(u->sectors, mtrandom_sizet(u->sectors->elements));
 //        makeneighbours(u, t->id, s->id, 1000, 3000);
         printf("Defined %s at %ld %ld (id %zx)\n", s->name, s->x, s->y, s->id);
       }
@@ -97,7 +101,7 @@ void addconstellation(struct universe *u, char* cname) {
 //      printf("first work sector %s is at %ldx%ld\n", t->name, t->x, t->y);
       makeneighbours(u, GET_ID(array_get(work, 0)), s->id, 0, 0);
       // Determine if work[0] has enough neighbours, if so remove it
-      if ( random() - RAND_MAX/CONSTELLATION_NEIGHBOUR_CHANCE < 0 ) {
+      if ( mtrandom_sizet(SIZE_MAX) - SIZE_MAX/CONSTELLATION_NEIGHBOUR_CHANCE < 0 ) {
 	array_rm(work, 0);
       }
       printf("Defined %s at %ld %ld (id %zx)\n", s->name, s->x, s->y, s->id);

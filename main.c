@@ -13,6 +13,7 @@
 #include <math.h>
 
 #include "defines.h"
+#include "mtrandom.h"
 #include "sarray.h"
 #include "array.h"
 #include "test.h"
@@ -101,6 +102,7 @@ int main(int argc, char **argv) {
 
   // Initialize
   srand(time(NULL));
+  mtrandom_init();
   init_id();
 
 #ifdef TEST

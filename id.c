@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include "defines.h"
 #include "id.h"
 #include "sarray.h"
@@ -14,7 +15,7 @@ size_t gen_id() {
   size_t i;
   void *ptr;
   do {
-    i = random(); // FIXME should be hash
+    i = mtrandom_sizet(SIZE_MAX); // FIXME should be hash
     ptr = sarray_getbyid(id_array, &i);
   } while (ptr || i == 0);
   return i;

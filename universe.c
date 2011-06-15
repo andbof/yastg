@@ -15,6 +15,7 @@
 #include "civ.h"
 #include "star.h"
 #include "constellation.h"
+#include "mtrandom.h"
 
 /*
  * The universe consists of a number of sectors. These sectors are grouped in constellations,
@@ -56,11 +57,11 @@ int makeneighbours(struct universe *u, size_t id1, size_t id2, unsigned long min
   if (!(s2 = sarray_getbyid(u->sectors, &id2)))
     die("Failed finding %zx in to place near %zx\n", id2, id1);
   if (max > min) {
-    x = min + random()%(max - min) + s1->x;
-    y = min + random()%(max - min) + s1->y;
+    x = min + mtrandom_ulong(max - min) + s1->x;
+    y = min + mtrandom_ulong(max - min) + s1->y;
   } else {
-    x = random()%NEIGHBOUR_DISTANCE*2 - NEIGHBOUR_DISTANCE + s1->x;
-    y = random()%NEIGHBOUR_DISTANCE*2 - NEIGHBOUR_DISTANCE + s1->y;
+    x = mtrandom_ulong(NEIGHBOUR_DISTANCE)*2 - NEIGHBOUR_DISTANCE + s1->x;
+    y = mtrandom_ulong(NEIGHBOUR_DISTANCE)*2 - NEIGHBOUR_DISTANCE + s1->y;
   }
   sector_move(u, s2, x, y);
   return 1;

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <dirent.h>
 #include "defines.h"
+#include "mtrandom.h"
 #include "civ.h"
 #include "sector.h"
 #include "sarray.h"
@@ -95,7 +96,7 @@ void spawncivs(struct universe *u, struct sarray *civs) {
   for (i = 0; i < civs->elements; i++) {
     c = sarray_getbypos(civs, i);
     do {
-      s = sarray_getbypos(u->sectors, random() % u->sectors->elements);
+      s = sarray_getbypos(u->sectors, mtrandom_sizet(u->sectors->elements));
       k = 1;
       if (!s->owner) {
 	neigh = getneighbours(u, s, UNIVERSE_MIN_INTERCIV_DISTANCE);
@@ -120,7 +121,7 @@ void spawncivs(struct universe *u, struct sarray *civs) {
     // Grow civilizations
     for (i = 0; i < civs->elements; i++) {
       c = sarray_getbypos(civs, i);
-      if ((random() % tpow) < c->power) {
+      if (mtrandom_sizet(tpow) < c->power) {
 	growciv(u, c);
 	chab++;
       }
@@ -144,7 +145,7 @@ void growciv(struct universe *u, struct civ *c) {
   size_t id, i;
   size_t *ptr;
   unsigned long rad = CIV_GROW_MIN;
-  ptr = sarray_getbypos(c->sectors, random() % c->sectors->elements);
+  ptr = sarray_getbypos(c->sectors, mtrandom_sizet(c->sectors->elements));
   do {
     s = NULL;
     neigh = getneighbours(u, sarray_getbyid(u->sectors, ptr), rad);
@@ -163,7 +164,7 @@ void growciv(struct universe *u, struct civ *c) {
  //     printf("radial search distance is now %lu\n", rad);
     }
   } while ((s == NULL) || (s->owner));
-  printf("Growing civ %s to system %zx (%s)\n", c->name, s->id, s->name);
+  printf("Growing civ %s to system %zx (%s) at %ld %ld\n", c->name, s->id, s->name, s->x, s->y);
   s->owner = c->id;
   // Link sectors *before* adding them to c->sectors (as sarray_add might
   // move ptr if a realloc occurs)
