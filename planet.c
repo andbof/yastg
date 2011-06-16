@@ -9,6 +9,7 @@
 #include "sarray.h"
 #include "parseconfig.h"
 #include "id.h"
+#include "mtrandom.h"
 
 struct planet* initplanet() {
   struct planet *p;
@@ -42,7 +43,8 @@ struct planet* loadplanet(struct configtree *ctree) {
   return p;
 }
 
-void planet_free(struct planet *p) {
+void planet_free(void *ptr) {
+  struct planet *p = ptr;
   sarray_free(p->bases);
   free(p->bases);
   sarray_free(p->moons);
@@ -53,7 +55,7 @@ void planet_free(struct planet *p) {
 #define PLANET_ODDS 7
 #define PLANET_NUM_MAX 11
 
-struct planet* createplanet() {
+struct planet* createplanet(struct sector* s) {
   struct planet *p;
   MALLOC_DIE(p, sizeof(*p));
   return p;
@@ -61,15 +63,10 @@ struct planet* createplanet() {
 
 struct sarray* createplanets(struct sector* s) {
   int num = 0;
-  int i;
   struct planet *p;
   struct sarray* planets = sarray_init(sizeof(struct planet), 0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id); 
-  while (mtrandom_sizet(SIZE_MAX) - SIZE_MAX/PLANET_ODDS < 0)
-    num++;
-  if (num > PLANET_NUM_MAX)
-    num = PLANET_NUM_MAX;
-  for (i = 0; i < num; i++) {
-    p = createplanet();
+  while ((mtrandom_sizet(SIZE_MAX) - SIZE_MAX/PLANET_ODDS < 0) && (num < PLANET_NUM_MAX)) {
+    p = createplanet(s);
     sarray_add(planets, p);
     free(p);
   }

@@ -16,6 +16,6 @@ struct base {
 
 struct base* loadbase(struct configtree *ctree);
 
-void base_free(struct base *b);
+void base_free(void *ptr);
 
 #endif

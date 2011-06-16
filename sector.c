@@ -22,7 +22,8 @@ struct sector* initsector() {
   return s;
 }
 
-void sector_free(struct sector *s) {
+void sector_free(void *ptr) {
+  struct sector *s = ptr;
   if (s->name)
     free(s->name);
   if (s->gname)

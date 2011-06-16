@@ -38,6 +38,6 @@ unsigned long star_getsnowline(struct star *s);
 
 struct star* createstar();
 struct sarray* createstars();
-void star_free(struct star *s);
+void star_free(void *ptr);
 
 #endif

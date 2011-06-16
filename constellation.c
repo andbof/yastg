@@ -37,7 +37,7 @@ void loadconstellations(struct universe *u) {
 void addconstellation(struct universe *u, char* cname) {
   size_t nums, numc, fs, i;
   char *string;
-  struct sector *s, *t;
+  struct sector *s;
   struct array *work = array_init(sizeof(size_t), 0, NULL);
   unsigned long x, y;
   double phi;
@@ -90,14 +90,14 @@ void addconstellation(struct universe *u, char* cname) {
       // This isn't the first sector but no sectors are left in work
       // Put this close to the first sector
       array_push(work, &(s->id));
-      t = (struct sector*)sarray_getbyid(u->sectors, &fs);
+//      t = (struct sector*)sarray_getbyid(u->sectors, &fs);
 //      printf("first sector %s is at %ldx%ld\n", t->name, t->x, t->y);
       makeneighbours(u, fs, s->id, 0, 0);
       printf("Defined %s at %ld %ld (id %zx)\n", s->name, s->x, s->y, s->id);
     } else {
       // We have sectors in work, put this close to work[0] and add this one to work
       array_push(work, &(s->id));
-      t = (struct sector*)sarray_getbyid(u->sectors, array_get(work, 0));
+//      t = (struct sector*)sarray_getbyid(u->sectors, array_get(work, 0));
 //      printf("first work sector %s is at %ldx%ld\n", t->name, t->x, t->y);
       makeneighbours(u, GET_ID(array_get(work, 0)), s->id, 0, 0);
       // Determine if work[0] has enough neighbours, if so remove it

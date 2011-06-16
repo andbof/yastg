@@ -70,7 +70,8 @@ struct sarray* loadcivs() {
   return a;
 }
 
-void civ_free(struct civ* c) {
+void civ_free(void *ptr) {
+  struct civ* c = ptr;
   sarray_free(c->sectors);
   array_free(c->presectors);
   free(c->sectors);
@@ -142,7 +143,7 @@ void spawncivs(struct universe *u, struct sarray *civs) {
 void growciv(struct universe *u, struct civ *c) {
   struct sector *s;
   struct sarray *neigh;
-  size_t id, i;
+  size_t i;
   size_t *ptr;
   unsigned long rad = CIV_GROW_MIN;
   ptr = sarray_getbypos(c->sectors, mtrandom_sizet(c->sectors->elements));

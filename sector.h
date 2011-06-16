@@ -27,7 +27,7 @@ struct sector* initsector();
 struct sector* loadsector(struct configtree *ctree);
 struct sector* createsector(char *name);
 
-void sector_free(struct sector *s);
+void sector_free(void *ptr);
 
 void sector_move(struct universe *u, struct sector *s, long x, long y);
 

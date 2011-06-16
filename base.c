@@ -32,7 +32,8 @@ struct base* loadbase(struct configtree *ctree) {
   return b;
 }
 
-void base_free(struct base *b) {
+void base_free(void *ptr) {
+  struct base *b = ptr;
   free(b->name);
   if (b->inventory) free(b->inventory);
   if (b->players) free(b->players);

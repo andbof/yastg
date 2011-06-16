@@ -9,6 +9,7 @@
 #include "id.h"
 #include "sarray.h"
 #include "parseconfig.h"
+#include "mtrandom.h"
 
 // Stellar luminosity classes
 const char *stellar_lum[STELLAR_LUM_N] = {
@@ -207,6 +208,7 @@ struct sarray* createstars() {
   return sa;
 }
 
-void star_free(struct star *s) {
+void star_free(void *ptr) {
+  struct star *s = ptr;
   free(s->name);
 }
