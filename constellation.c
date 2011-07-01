@@ -110,6 +110,7 @@ void addconstellation(struct universe *u, char* cname) {
 
   free(string);
   array_free(work);
+  free(work);
   
 }
 

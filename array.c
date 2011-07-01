@@ -46,7 +46,7 @@ void array_free(struct array *a) {
   size_t l;
   if (a->freefnc) {
     for (l = 0; l < a->elements; l++) {
-      printf("Calling freefnc for element %zu of %zu; a @ %p; a->array @ %p\n", l, a->elements, a, a->array);
+//      printf("Calling freefnc for element %zu of %zu @ %p; a @ %p; a->array @ %p\n", l, a->elements, a->array+l*a->element_size, a, a->array);
       (*(a->freefnc))(a->array+l*a->element_size);
     }
   }

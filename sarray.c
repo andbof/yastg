@@ -283,7 +283,7 @@ void sarray_free(struct sarray *a) {
   size_t l;
   if (a->freefnc) {
     for (l = 0; l < a->elements; l++) {
-      printf("Accessing element %zu of %zu\n", l, a->elements);
+//      printf("Accessing element %zu of %zu\n", l, a->elements);
       (*(a->freefnc))(a->array+l*a->element_size);
     }
   }

@@ -2,6 +2,7 @@
 #define HAS_SERVERTHREAD_H
 
 #include <pthread.h>
+#include <sys/socket.h>
 #include <arpa/inet.h>
 #include "player.h"
 
@@ -11,9 +12,12 @@
 struct conndata {
   unsigned long id;
   pthread_t thread;
-  int fd;
+  fd_set rfds;
+  int peerfd, threadfds[2];
   pthread_mutex_t fd_mutex;
-  char peer[INET6_ADDRSTRLEN];
+//  char peer[INET6_ADDRSTRLEN];
+  struct sockaddr_storage sock;
+  char *peer;
   struct player *pl;
   size_t rbufs, sbufs;
   char *rbuf;
@@ -21,6 +25,7 @@ struct conndata {
 };
 
 int conn_init(struct conndata *data);
+void conn_clean(struct conndata *data);
 void conn_cleanexit(struct conndata *data);
 void conn_send(struct conndata *data, char *format, ...);
 void* conn_main(void *dataptr);

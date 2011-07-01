@@ -26,7 +26,11 @@ struct ptr_num {
 
 /* Global variables */
 
-static pthread_mutex_t stdout_mutex;
+pthread_mutex_t stdout_mutex;
+
+/* Global messages */
+
+#define MSG_TERM (int)6
 
 /* Global short helper functions */
 
@@ -103,5 +107,9 @@ extern const char* greek[GREEK_N];
   pthread_mutex_lock(&stdout_mutex);    \
   printf(__VA_ARGS__);                  \
   pthread_mutex_unlock(&stdout_mutex);
+
+/* Misc functions */
+
+void ptr_free(void *ptr);
 
 #endif

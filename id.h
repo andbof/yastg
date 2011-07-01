@@ -2,6 +2,7 @@
 #define HAS_ID_H
 
 void init_id();
+void id_destroy();
 size_t gen_id();
 void insert_id(size_t id);
 void rm_id(size_t id);

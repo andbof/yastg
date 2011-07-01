@@ -35,6 +35,19 @@
  */
 
 #define NEIGHBOUR_CHANCE 5		// The higher the value, the more neighbours a system will have
+#define NEIGHBOUR_DISTANCE 50
+
+void universe_free(struct universe *u) {
+  sarray_free(u->sectors);
+  free(u->sectors);
+  sarray_free(u->srad);
+  free(u->srad);
+  sarray_free(u->sphi);
+  free(u->sphi);
+  if (u->name)
+    free(u->name);
+  free(u);
+}
 
 void linksectors(struct universe *u, size_t id1, size_t id2) {
   struct sector *s1, *s2;
@@ -45,8 +58,6 @@ void linksectors(struct universe *u, size_t id1, size_t id2) {
   sarray_add(s1->linkids, &id2);
   sarray_add(s2->linkids, &id1);
 }
-
-#define NEIGHBOUR_DISTANCE 50
 
 int makeneighbours(struct universe *u, size_t id1, size_t id2, unsigned long min, unsigned long max) {
   struct sector *s1, *s2;
@@ -103,10 +114,11 @@ struct universe* createuniverse(struct sarray *civs) {
 
   MALLOC_DIE(u, sizeof(*u));
   u->id = 0;
+  u->name = NULL;
   u->numsector = 0;
   u->sectors = sarray_init(sizeof(struct sector), 0, SARRAY_ENFORCE_UNIQUE, &sector_free, &sort_id);
-  u->srad = sarray_init(sizeof(struct ulong_id), 0, SARRAY_ALLOW_MULTIPLE, &free, &sort_ulong);
-  u->sphi = sarray_init(sizeof(struct double_id), 0, SARRAY_ALLOW_MULTIPLE, &free, &sort_double);
+  u->srad = sarray_init(sizeof(struct ulong_id), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
+  u->sphi = sarray_init(sizeof(struct double_id), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
   for (i = 0; i < civs->elements; i++) {
     power += ((struct civ*)sarray_getbypos(civs, i))->power;
   }

@@ -7,6 +7,8 @@
 #include <time.h>
 #include <math.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #include "defines.h"
 #include "log.h"
@@ -32,6 +34,11 @@
 const char* options = "d";
 int detached = 0;
 
+extern int sockfd;
+
+static pthread_t srvthread;
+static int srvfd[2];
+
 void parseopts(int argc, char **argv) {
   char c;
   while ((c = getopt(argc, argv, options)) > 0) {
@@ -53,7 +60,7 @@ void chomp(char* s) {
 
 int main(int argc, char **argv) {
   int i;
-  int yes = 1;
+  int running = 1;
   char *line = malloc(256); // FIXME
   struct configtree *ctree;
   struct civ *cv;
@@ -64,7 +71,6 @@ int main(int argc, char **argv) {
   struct sarray *gurka;
   unsigned int tomat;
   struct sarray *civs;
-  pthread_t srvthread;
 
   // Open log file
   log_init();
@@ -97,14 +103,16 @@ int main(int argc, char **argv) {
   // Initialize screen (this fixes the screen/console mutex)
   pthread_mutex_init(&stdout_mutex, NULL);
 
-  // Now GO!
-  if ((i = pthread_create(&srvthread, NULL, server_main, NULL)))
-    die("Could not launch server thread, error %d\n", i);
+  // Start server thread
+  if (pipe(srvfd) != 0)
+    die("%s", "Could not create server pipe");
+  if (pthread_create(&srvthread, NULL, server_main, &srvfd[0]))
+    die("%s", "Could not launch server thread");
 
   mprintf("Welcome to YASTG v%s (commit %s), built %s %s.\n\n", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
 
   mprintf("Universe has %zu sectors in total\n", univ->sectors->elements);
-  while (1) {
+  while (running) {
     mprintf("console> ");
     fgets(line, 256, stdin); // FIXME
     chomp(line);
@@ -112,10 +120,11 @@ int main(int argc, char **argv) {
       mprintf("No help available.\n");
     } else if (!strcmp(line, "quit")) {
       mprintf("Bye!\n");
-      exit(0);
+      running = 0;
     }
   }
 
+  /*
   while (1) {
     s = sarray_getbyid(univ->sectors, &alfred->position);
     printf("You are in sector %s (id %zx, coordinates %ldx%ld), habitability %d\n", s->name, s->id, s->x, s->y, s->hab);
@@ -155,13 +164,23 @@ int main(int argc, char **argv) {
       exit(0);
     }
   }
+  */
+
+  /* Kill server thread, this will also kill all player threads */
+  i = MSG_TERM;
+  if (write(srvfd[1], &i, sizeof(i)) < 1)
+    bug("%s", "server signalling fd seems closed");
+  log_printfn("main", "waiting for server to terminate");
+  pthread_join(srvthread, NULL);
 
   /* Destroy all structures and free all memory */
 
+  log_printfn("main", "freeing all structs");
   sarray_free(civs);
   free(civs);
-  printf("Done!\n");
   free(line);
+  universe_free(univ);
+  id_destroy();
 
   log_close();
 

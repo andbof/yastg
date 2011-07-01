@@ -8,10 +8,15 @@
 #include "limits.h"
 #include "mtrandom.h"
 
-struct sarray *id_array;
+static struct sarray *id_array;
 
 void init_id() {
-  id_array = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, &free, &sort_id);
+  id_array = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
+}
+
+void id_destroy() {
+  sarray_free(id_array);
+  free(id_array);
 }
 
 size_t gen_id() {

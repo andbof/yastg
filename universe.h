@@ -15,6 +15,7 @@ struct universe {
 
 struct universe *univ;
 
+void universe_free(struct universe *u);
 struct universe* createuniverse(struct sarray *civs);
 size_t countneighbours(struct universe *u, struct sector *s, unsigned long dist);
 struct sarray* getneighbours(struct universe *u, struct sector *s, unsigned long dist);

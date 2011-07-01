@@ -102,6 +102,7 @@ struct sector* createsector(char *name) {
   s->habhigh = ((struct star*)s->stars->array)->habhigh;
   s->snowline = ((struct star*)s->stars->array)->snowline;
   s->planets = createplanets(s);
+  s->bases = sarray_init(sizeof(struct base), 0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
   // FIXME: bases
   return s;
 }

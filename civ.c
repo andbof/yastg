@@ -21,7 +21,7 @@ struct civ* loadciv(struct configtree *ctree) {
   struct sector *s;
   char *st;
   c->presectors = array_init(sizeof(struct sector), 0, &sector_free);
-  c->availnames = array_init(sizeof(char*), 0, &free);
+  c->availnames = array_init(sizeof(char*), 0, &ptr_free);
   c->sectors = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
   ctree=ctree->sub;
   while (ctree) {
@@ -75,8 +75,11 @@ struct sarray* loadcivs() {
 void civ_free(void *ptr) {
   struct civ* c = ptr;
   sarray_free(c->sectors);
-  array_free(c->presectors);
   free(c->sectors);
+  array_free(c->presectors);
+  free(c->presectors);
+  array_free(c->availnames);
+  free(c->availnames);
   free(c->name);
 }
 
@@ -110,6 +113,7 @@ void spawncivs(struct universe *u, struct sarray *civs) {
 	    break;
 	}
 	sarray_free(neigh);
+	free(neigh);
       } else {
 	k = 0;
       }
@@ -168,6 +172,8 @@ void growciv(struct universe *u, struct civ *c) {
       rad += CIV_GROW_STEP;
  //     printf("radial search distance is now %lu\n", rad);
     }
+    sarray_free(neigh);
+    free(neigh);
   } while ((s == NULL) || (s->owner));
 //  printf("Growing civ %s to system %zx (%s) at %ld %ld\n", c->name, s->id, s->name, s->x, s->y);
   s->owner = c->id;

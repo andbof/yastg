@@ -37,20 +37,31 @@ int conn_init(struct conndata *data) {
   }
   if (pthread_mutex_init(&data->fd_mutex, NULL) != 0)
     r = 0;
+  if (pipe(data->threadfds) != 0)
+    r = 0;
   return r;
 }
 
-void conn_cleanexit(struct conndata *data) {
-  log_printfn("connection", "clean up connection %lx", data->id);
-  if (data->fd)
-    close(data->fd);
-  pthread_mutex_destroy(&data->fd_mutex);
+void conn_clean(struct conndata *data) {
+  log_printfn("connection", "cleaning connection %lx", data->id);
+  if (data->peerfd)
+    close(data->peerfd);
+  if (data->threadfds[0])
+    close(data->threadfds[0]);
+  if (data->threadfds[1])
+    close(data->threadfds[1]);
+  if (&data->fd_mutex != NULL)
+    pthread_mutex_destroy(&data->fd_mutex);
   if (data->rbuf)
     free(data->rbuf);
   if (data->sbuf)
     free(data->sbuf);
   if (data->pl)
     player_free(data->pl);
+}
+
+void conn_cleanexit(struct conndata *data) {
+  conn_clean(data);
   log_printfn("connection", "cleanup complete, terminating thread");
   pthread_exit(0);
 }
@@ -67,7 +78,7 @@ void conn_send(struct conndata *data, char *format, ...) {
   if (len == data->sbufs)
     log_printfn("connection", "warning: sending maximum amount allowable (%d bytes) on connection %lx, this probably indicates overflow", data->sbufs, data->id);
   do {
-    sb += send(data->fd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
+    sb += send(data->peerfd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
     if (sb < 1) {
       log_printfn("connection", "send error (connection id %lx), terminating connection", data->id);
       pthread_mutex_unlock(&data->fd_mutex);
@@ -90,37 +101,60 @@ void conn_act(struct conndata *data) {
   }
 }
 
+void conn_handlesignal(struct conndata *data, int signal) {
+  switch (signal) {
+    case MSG_TERM:
+      conn_cleanexit(data);
+      break;
+    default:
+      log_printfn("connection", "received unknown signal: %d", signal);
+  }
+}
+
 void conn_loop(struct conndata *data) {
-  int rb;
+  int rb, i;
   char* ptr;
   while (1) {
     rb = 0;
 
     do {
       // FIXME: Doesn't handle CTRL-D for some reason.
-      rb += recv(data->fd, data->rbuf + rb, data->rbufs - rb, 0);
-      if (rb < 1) {
-	log_printfn("connection", "error when receiving data from socket, terminating connection %lx", data->id);
-        conn_cleanexit(data);
+      FD_ZERO(&data->rfds);
+      FD_SET(data->peerfd, &data->rfds);
+      FD_SET(data->threadfds[0], &data->rfds);
+      i = select(MAX(data->peerfd, data->threadfds[0]) + 1, &data->rfds, NULL, NULL, NULL);
+      if (i == -1) {
+	log_printfn("connection", "select() reported error, terminating connection %lx", data->id);
+	conn_cleanexit(data);
       }
-      if ((rb == data->rbufs) && (data->rbuf[rb - 1] != '\n')) {
-	if (data->rbufs == CONN_MAXBUFSIZE) {
-	  log_printfn("connection", "peer sent more data than allowed (%u), connection %lx terminated", CONN_MAXBUFSIZE, data->id);
+      if (FD_ISSET(data->threadfds[0], &data->rfds)) {
+	// We have received a message on the signalling fd
+	read(data->threadfds[0], &i, sizeof(i));
+	conn_handlesignal(data, i);
+      } else {
+	// We have received something from the peer
+	rb += recv(data->peerfd, data->rbuf + rb, data->rbufs - rb, 0);
+	if (rb < 1) {
+	  log_printfn("connection", "peer %s disconected, terminating connection %lx", data->peer, data->id);
 	  conn_cleanexit(data);
 	}
-	data->rbufs <<= 1;
-	if (data->rbufs > CONN_MAXBUFSIZE)
-	  data->rbufs = CONN_MAXBUFSIZE;
-	if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
-	  data->rbufs >>= 1;
-          log_printfn("connection", "unable to increase receive buffer size, connection %lx terminated", data->id);
-	  conn_cleanexit(data);
-	} else {
-	  data->rbuf = ptr;
+	if ((rb == data->rbufs) && (data->rbuf[rb - 1] != '\n')) {
+	  if (data->rbufs == CONN_MAXBUFSIZE) {
+	    log_printfn("connection", "peer sent more data than allowed (%u), connection %lx terminated", CONN_MAXBUFSIZE, data->id);
+	    conn_cleanexit(data);
+	  }
+	  data->rbufs <<= 1;
+	  if (data->rbufs > CONN_MAXBUFSIZE)
+	    data->rbufs = CONN_MAXBUFSIZE;
+	  if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
+	    data->rbufs >>= 1;
+	    log_printfn("connection", "unable to increase receive buffer size, connection %lx terminated", data->id);
+	    conn_cleanexit(data);
+	  } else {
+	    data->rbuf = ptr;
+	  }
 	}
       }
-      mprintf("FOO: rb is %d\n", rb);
-      mprintf("data->rbuf[rb - 1] is %d\n", data->rbuf[rb - 1]);
     } while (data->rbuf[rb - 1] != '\n');
     
     // Truncate string at EOL (we might have \13\10 or \10)
@@ -145,6 +179,8 @@ void* conn_main(void *dataptr) {
   data->pl->name = strdup("Alfred");
   data->pl->position = GET_ID(univ->sectors->array);
 
+  mprintf("data is at %p\n", data);
+  mprintf("data->peer is at %p\n", data->peer);
   log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
   conn_loop(data);
   log_printfn("connection", "peer %s disconnected, cleaning up", data->peer);

@@ -51,6 +51,7 @@ struct configtree* parseconfig(char *fname) {
   root->next = NULL;
   root->sub = recparseconfig(f, fname);
   printf("Done with %s", fname);
+  fclose(f);
   return root;
 }
 
