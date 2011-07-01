@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "defines.h"
+#include "log.h"
 #include "id.h"
 #include "sarray.h"
 #include "limits.h"

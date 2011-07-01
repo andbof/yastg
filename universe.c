@@ -34,8 +34,6 @@
  *
  */
 
-#define UNIVERSE_SECTORS 32
-#define UNIVERSE_SECTOR_GROUPS 3
 #define NEIGHBOUR_CHANCE 5		// The higher the value, the more neighbours a system will have
 
 void linksectors(struct universe *u, size_t id1, size_t id2) {

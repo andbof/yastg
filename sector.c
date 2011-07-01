@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "defines.h"
+#include "log.h"
 #include "universe.h"
 #include "civ.h"
 #include "sector.h"
 #include "planet.h"
 #include "base.h"
-#include "defines.h"
 #include "array.h"
 #include "sarray.h"
 #include "parseconfig.h"

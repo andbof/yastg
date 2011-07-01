@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include "defines.h"
+#include "log.h"
 #include "sector.h"
 #include "planet.h"
 #include "base.h"

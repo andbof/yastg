@@ -4,6 +4,7 @@
 #include <string.h>
 #include <dirent.h>
 #include "defines.h"
+#include "log.h"
 #include "mtrandom.h"
 #include "civ.h"
 #include "sector.h"
@@ -118,6 +119,7 @@ void spawncivs(struct universe *u, struct sarray *civs) {
     c->home = s->id;
     sarray_add(c->sectors, &s->id);
   }
+  mprintf("Growing civilizations ...\n");
   chab = civs->elements;
   while (chab < nhab) {
     // Grow civilizations
@@ -129,6 +131,7 @@ void spawncivs(struct universe *u, struct sarray *civs) {
       }
     }
   }
+  mprintf("done.\n");
 
   printf("Civilization stats:\n");
   for (i = 0; i < civs->elements; i++) {
@@ -166,7 +169,7 @@ void growciv(struct universe *u, struct civ *c) {
  //     printf("radial search distance is now %lu\n", rad);
     }
   } while ((s == NULL) || (s->owner));
-  printf("Growing civ %s to system %zx (%s) at %ld %ld\n", c->name, s->id, s->name, s->x, s->y);
+//  printf("Growing civ %s to system %zx (%s) at %ld %ld\n", c->name, s->id, s->name, s->x, s->y);
   s->owner = c->id;
   // Link sectors *before* adding them to c->sectors (as sarray_add might
   // move ptr if a realloc occurs)

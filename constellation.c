@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdint.h>
 #include "defines.h"
+#include "log.h"
 #include "mtrandom.h"
 #include "universe.h"
 #include "constellation.h"
@@ -16,23 +17,20 @@
 
 void loadconstellations(struct universe *u) {
   struct configtree *ctree, *e;
+  size_t ncons = 0;
   ctree = parseconfig("data/constellations");
   e = ctree->sub;
   if (!e->next)
     die("%s contained no useful data", e->key);
   e = e->next;
-  while (e) {
+  while ((e) && (ncons < CONSTELLATION_MAXNUM)) {
     printf("Calling addconstellation for %s\n", e->key);
     addconstellation(u, e->key);
     e = e->next;
+    ncons++;
   }
   destroyctree(ctree);
 }
-
-#define CONSTELLATION_NEIGHBOUR_CHANCE 5
-#define CONSTELLATION_MIN_DISTANCE 150
-#define CONSTELLATION_RANDOM_DISTANCE 500
-#define CONSTELLATION_PHI_RANDOM 1.0
 
 void addconstellation(struct universe *u, char* cname) {
   size_t nums, numc, fs, i;
@@ -46,7 +44,8 @@ void addconstellation(struct universe *u, char* cname) {
 
   // Determine number of sectors in constellation
   nums = mtrandom_sizet(GREEK_N);
-  if (nums == 0) nums = 1;
+  if (nums == 0)
+    nums = 1;
   
   fs = 0;
   for (numc = 0; numc < nums; numc++) {
@@ -79,7 +78,7 @@ void addconstellation(struct universe *u, char* cname) {
 	  y = POLTOY(phi, r);
 	  sector_move(u, s, x, y);
 	  i = countneighbours(u, s, CONSTELLATION_MIN_DISTANCE);
-	  printf("%zu systems within %d ly (phi, rad) = (%f, %lu)\n", i, CONSTELLATION_MIN_DISTANCE, phi, r);
+//	  printf("%zu systems within %d ly (phi, rad) = (%f, %lu)\n", i, CONSTELLATION_MIN_DISTANCE, phi, r);
 	} while (i > 0);
 //        t = (struct sector*)sarray_getbypos(u->sectors, mtrandom_sizet(u->sectors->elements));
 //        makeneighbours(u, t->id, s->id, 1000, 3000);

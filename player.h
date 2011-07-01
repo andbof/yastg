@@ -6,4 +6,8 @@ struct player {
   size_t position;
 };
 
+void player_free();
+
+static struct player *alfred;
+
 #endif

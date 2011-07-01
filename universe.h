@@ -13,6 +13,8 @@ struct universe {
   struct sarray *sphi;		// Sector IDs sorted by angle from (0,0)
 };
 
+struct universe *univ;
+
 struct universe* createuniverse(struct sarray *civs);
 size_t countneighbours(struct universe *u, struct sector *s, unsigned long dist);
 struct sarray* getneighbours(struct universe *u, struct sector *s, unsigned long dist);

@@ -26,7 +26,7 @@ struct ptr_num {
 
 /* Global variables */
 
-pthread_mutex_t stdout_mutex;
+static pthread_mutex_t stdout_mutex;
 
 /* Global short helper functions */
 
@@ -57,13 +57,13 @@ extern const char* greek[GREEK_N];
 
 #define die(FMT, ...)				\
   do {						\
-    log_printfn("in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
+    log_printfn("panic", "in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
     exit(1);					\
   } while(0);
 
 #define bug(FMT, ...)				\
   do {						\
-    log_printfn("Oops! YASTG has encountered an internal bug and is crashing. Error in %s %d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
+    log_printfn("panic", "Oops! YASTG has encountered an internal bug and is crashing. Error in %s %d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
     exit(1);					\
   } while(0);
 

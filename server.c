@@ -15,7 +15,8 @@
 #include "defines.h"
 #include "log.h"
 #include "server.h"
-#include "serverthread.h"
+#include "connection.h"
+#include "id.h"
 
 #define PORT "2049"
 #define BACKLOG 16	// Size of pending connections queue
@@ -81,7 +82,7 @@ void* server_main(void* p) {
   char peer[INET6_ADDRSTRLEN];
   int sockfd, newfd;
   int yes = 1;
-  struct serverthreaddata std[10];
+  struct conndata std[10];
   int j;
 
   sockfd = server_setupsocket();
@@ -96,11 +97,15 @@ void* server_main(void* p) {
       log_printfn("server", "could not accept socket connection");
     } else {
       inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[j].peer, sizeof(std[j].peer));
-      log_printfn("server", "new connection from %s", std[j].peer);
-      if ((i = pthread_create(&std[j].thread, NULL, serverthread_main, &std[j]))) {
-	log_printfn("failed creating thread to handle connection from %s: %i", std[j].peer, i);
+      if (!conn_init(&std[j])) {
+	log_printfn("server", "failed initializing thread to handle connection from %s", std[j].peer);
+      } else {
+	log_printfn("server", "new connection from %s, assigning id %lx", std[j].peer, std[j].id);
+	if ((i = pthread_create(&std[j].thread, NULL, conn_main, &std[j]))) {
+	  log_printfn("failed creating thread to handle connection from %s: %i", std[j].peer, i);
+	}
+	j++;
       }
-      j++;
     }
   }
 
