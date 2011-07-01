@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include "defines.h"
+#include "log.h"
 #include "universe.h"
 #include "sarray.h"
 #include "array.h"
@@ -40,9 +41,9 @@
 void linksectors(struct universe *u, size_t id1, size_t id2) {
   struct sector *s1, *s2;
   if (!(s1 = sarray_getbyid(u->sectors, &id1)))
-    die("Sector %zx to link with %zx not found\n", id1, id2);
+    bug("Sector %zx to link with %zx not found\n", id1, id2);
   if (!(s2 = sarray_getbyid(u->sectors, &id2)))
-    die("Failed finding %zx to link with %zx\n", id2, id1);
+    bug("Failed finding %zx to link with %zx\n", id2, id1);
   sarray_add(s1->linkids, &id2);
   sarray_add(s2->linkids, &id1);
 }
@@ -53,9 +54,9 @@ int makeneighbours(struct universe *u, size_t id1, size_t id2, unsigned long min
   struct sector *s1, *s2;
   unsigned long x, y;
   if (!(s1 = sarray_getbyid(u->sectors, &id1)))
-    die("Sector %zx to get %zx as a neighbour not found\n", id1, id2);
+    bug("Sector %zx to get %zx as a neighbour not found\n", id1, id2);
   if (!(s2 = sarray_getbyid(u->sectors, &id2)))
-    die("Failed finding %zx in to place near %zx\n", id2, id1);
+    bug("Failed finding %zx in to place near %zx\n", id2, id1);
   if (max > min) {
     x = min + mtrandom_ulong(max - min) + s1->x;
     y = min + mtrandom_ulong(max - min) + s1->y;

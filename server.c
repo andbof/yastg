@@ -13,6 +13,7 @@
 #include <pthread.h>
 
 #include "defines.h"
+#include "log.h"
 #include "server.h"
 #include "serverthread.h"
 
@@ -85,21 +86,19 @@ void* server_main(void* p) {
 
   sockfd = server_setupsocket();
 
-  mprintf("YASTG server is waiting for connections\n");
+  log_printfn("server", "server is up waiting for connections on port %s", PORT);
 
   j = 0;
   while (1) {
     sin_size = sizeof(peer_addr);
     std[j].fd = accept(sockfd, (struct sockaddr*)&peer_addr, &sin_size);
     if (std[j].fd == -1) {
-      mprintf("Could not accept socket connection\n");
+      log_printfn("server", "could not accept socket connection");
     } else {
       inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[j].peer, sizeof(std[j].peer));
-      mprintf("Client %s connected\n", std[j].peer);
+      log_printfn("server", "new connection from %s", std[j].peer);
       if ((i = pthread_create(&std[j].thread, NULL, serverthread_main, &std[j]))) {
-	mprintf("Could not create new thread for peer %s: %d\n", std[j].peer, i);
-      } else {
-	mprintf("New thread for peer %s successfully created\n", std[j].peer);
+	log_printfn("failed creating thread to handle connection from %s: %i", std[j].peer, i);
       }
       j++;
     }

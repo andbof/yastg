@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "defines.h"
+#include "log.h"
 #include "array.h"
 #include "sector.h"
 #include "shuffle.h"
@@ -77,7 +78,7 @@ int array_test() {
     // For each insertion, make sure all elements in array are still there
     for (j = 0; j < i; j++) {
       if (!(ptr = array_get(a, j))) {
-	die("element %d not found after adding %d elements", j, i);
+	bug("element %d not found after adding %d elements", j, i);
       }
     }
   }
@@ -100,7 +101,7 @@ int array_test() {
 	if (!k) {
 	  // The element was not found in u[0->j], this means the array
 	  // has been corrupted.
-	  die("element %d not found after removing %d elements", i, j);
+	  bug("element %d not found after removing %d elements", i, j);
 	} else {
 	}
       }
@@ -109,13 +110,13 @@ int array_test() {
 //  then remove it.
     ptr = array_get(a, GET_ID(u[j]));
     if (!ptr) {
-      die("was about to delete element %d from array, but it is already gone!", j);
+      bug("was about to delete element %d from array, but it is already gone!", j);
     }
     array_rm(a, GET_ID(u[j]));
   }
   if (a->elements) {
     // This means that a->elements was not successfully updated, it should be zero by now.
-    die("%zu elements left in array after all were removed", a->elements);
+    bug("%zu elements left in array after all were removed", a->elements);
   }
   // Everything seems to check out. Now we need to free all that memory we have malloc'd.
   array_free(a);

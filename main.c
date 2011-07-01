@@ -9,6 +9,7 @@
 #include <pthread.h>
 
 #include "defines.h"
+#include "log.h"
 #include "mtrandom.h"
 #include "sarray.h"
 #include "array.h"
@@ -68,6 +69,10 @@ int main(int argc, char **argv) {
   struct sarray *civs;
   pthread_t srvthread;
 
+  // Open log file
+  log_init();
+  log_printfn("main", "YASTG initializing");
+
   // Initialize
   srand(time(NULL));
   mtrandom_init();
@@ -101,7 +106,6 @@ int main(int argc, char **argv) {
   pthread_mutex_init(&stdout_mutex, NULL);
 
   // Now GO!
-  mprintf("Starting server ...\n");
   if ((i = pthread_create(&srvthread, NULL, server_main, NULL)))
     die("Could not launch server thread, error %d\n", i);
 
@@ -167,7 +171,7 @@ int main(int argc, char **argv) {
   printf("Done!\n");
   free(line);
 
-  exit(0);
+  log_close();
 
   return 0;
 

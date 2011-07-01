@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include "sarray.h"
 #include "defines.h"
+#include "log.h"
+#include "sarray.h"
 #include "shuffle.h"
 #include "id.h"
 
@@ -18,7 +20,7 @@
 struct sarray* sarray_init(size_t esize, size_t asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*)) {
   struct sarray *a;
   if (esize < 0 || asize < 0) {
-    die("illegal usage of function initsarray(), esize = %zu, asize = %zu", esize, asize);
+    bug("illegal usage of function initsarray(), esize = %zu, asize = %zu", esize, asize);
   }
   MALLOC_DIE(a, sizeof(*a));
   a->elements = 0;
@@ -176,7 +178,7 @@ void* sarray_bubblegetprev(struct sarray *a, void *key) {
 }
 
 void* sarray_recgetprev(struct sarray *a, void *key, size_t u, size_t l) {
-  die("%s", "recfindprevelement not implemented"); // FIXME
+  bug("%s", "recfindprevelement not implemented"); // FIXME
   return NULL;
 }
 
@@ -193,7 +195,7 @@ void* sarray_getbyname(struct sarray *a, char *name) {
       return (a->array+i*a->element_size);
     }
   }
-  die("element name %s not found", name);
+  bug("element name %s not found", name);
 }
 
 /*
@@ -221,17 +223,17 @@ int sarray_add(struct sarray *a, void *e) {
     a->array = ptr;
     a->allocated += REALLOC_STEP;
   } else if (a->elements > a->allocated) {
-    die("sarray has more elements than memory allocated: elements = %zu, allocated = %zu", a->elements, a->allocated);
+    bug("sarray has more elements than memory allocated: elements = %zu, allocated = %zu", a->elements, a->allocated);
   }
   // We now know there is room in the array for at least one more element.
   // Find where this element fits in
   if ((a->maxkey == SARRAY_ENFORCE_UNIQUE) && ((ptr = sarray_getbyid(a, e)))) {
     // Element already exists, die
-    die("sarray @ %p with SARRAY_ENFORCE_UNIQUE already has element %zx at %p\n", a, *((size_t*)ptr), ptr);
+    bug("sarray @ %p with SARRAY_ENFORCE_UNIQUE already has element %zx at %p\n", a, *((size_t*)ptr), ptr);
   }
 //  printf("FOO: GETPREVBYID called for a = %p, GET_ID(e) = %zx, e@%p\n", a, GET_ID(e), e);
   if (!(ptr = sarray_getprevbyid(a, e))) {
-    die("%s", "something went wrong when trying to find the previous element");
+    bug("%s", "something went wrong when trying to find the previous element");
   }
   ptr += a->element_size;	// ptr now points to the first element to be moved
   MEMMOVE_DIE(ptr+a->element_size, ptr, a->elements*a->element_size-(ptr-a->array));
@@ -246,7 +248,7 @@ int sarray_add(struct sarray *a, void *e) {
 void sarray_rmbyid(struct sarray *a, void *key) {
   void *ptr;
   if (!(ptr = sarray_getbyid(a, key))) {
-    die("tried to remove element with id %zx but failed", *((size_t*)key));
+    bug("tried to remove element with id %zx but failed", *((size_t*)key));
   }
   MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
   a->elements--;
@@ -255,7 +257,7 @@ void sarray_rmbyid(struct sarray *a, void *key) {
 void sarray_rmbypos(struct sarray *a, size_t pos) {
   void *ptr;
   if (!(ptr = sarray_getbypos(a, pos))) {
-    die("tried to remove element %zu but failed", pos);
+    bug("tried to remove element %zu but failed", pos);
   }
   MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
   a->elements--;
@@ -263,7 +265,7 @@ void sarray_rmbypos(struct sarray *a, size_t pos) {
 
 void sarray_rmbyptr(struct sarray *a, void* ptr) {
   if (ptr > a->array+a->elements*a->element_size)
-    die("tried to remove ptr %p from array %p, but it is outside the array", ptr, a);
+    bug("tried to remove ptr %p from array %p, but it is outside the array", ptr, a);
   MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
   a->elements--;
 }
@@ -333,12 +335,12 @@ int sarray_test() {
 	if ((lptr == NULL) || (ptr == lptr+sizeof(struct foo))) {
 	  lptr = ptr;
 	} else{
-	  die("element %d found out of order at address %p after adding %d elements. lptr is %p\n", j, ptr, i, lptr);
+	  bug("element %d found out of order at address %p after adding %d elements. lptr is %p\n", j, ptr, i, lptr);
 	}
       }
 /*      for (!(ptr = sarray_getbyid(a, *((size_t*)u[j])))) {
 	printf("element %d not found after adding %d elements.\n", j, i);
-	die("sarray test failed");
+	bug("sarray test failed");
       }*/ // FIXME: Add this type of test
     }
 //    printf("insertion test %d passed\n", i);
@@ -356,7 +358,7 @@ int sarray_test() {
 	  // Element was found in the correct position. Remember this element.
 	  lptr = ptr;
 	} else {
-	  die("element %d found out of order at address %p after removing %d elements. lptr is %p\n", i, ptr, j, lptr);
+	  bug("element %d found out of order at address %p after removing %d elements. lptr is %p\n", i, ptr, j, lptr);
 	}
       } else {
 	// Element was not found. We need to check if this element was removed prior to this, otherwise this is an error.
@@ -371,7 +373,7 @@ int sarray_test() {
 	if (!k) {
 	  // The element was not found in u[0->j], this means the array
 	  // has been corrupted.
-	  die("element %d not found after removing %d elements\n", i, j);
+	  bug("element %d not found after removing %d elements\n", i, j);
 	} else {
 //	  printf("element %d not found, but it has been removed\n", i);
 	}
@@ -381,13 +383,13 @@ int sarray_test() {
 //  then remove it.
     ptr = sarray_getbyid(a, ((size_t*)u[j]));
     if (!ptr) {
-      die("element %d was about to be removed but it is already gone!\n", j);
+      bug("element %d was about to be removed but it is already gone!\n", j);
     }
     sarray_rmbyid(a, ((size_t*)u[j]));
   }
   if (a->elements) {
     // This means that a->elements was not successfully updated, it should be zero by now.
-    die("%zu elements left in array after all were removed", a->elements);
+    bug("%zu elements left in array after all were removed", a->elements);
   }
   // Everything seems to check out. Now we need to free all that memory we have malloc'd.
   for (i = 0; i < SORTEDARRAY_N; i++) {

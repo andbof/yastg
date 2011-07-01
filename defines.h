@@ -57,7 +57,13 @@ extern const char* greek[GREEK_N];
 
 #define die(FMT, ...)				\
   do {						\
-    printf("in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
+    log_printfn("in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
+    exit(1);					\
+  } while(0);
+
+#define bug(FMT, ...)				\
+  do {						\
+    log_printfn("Oops! YASTG has encountered an internal bug and is crashing. Error in %s %d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
     exit(1);					\
   } while(0);
 

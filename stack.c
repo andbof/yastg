@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
-#include "stack.h"
 #include "defines.h"
+#include "log.h"
+#include "stack.h"
 
 /*
  * Initializes the stack. Not thread safe.
@@ -14,7 +15,7 @@ struct stack* stack_init(size_t len, size_t esize) {
   MALLOC_DIE(s, sizeof(*s));
   pthread_mutex_init(&s->mutex, NULL);
   if (esize == 0)
-    die("%s", "illegal element size: 0");
+    bug("%s", "illegal element size: 0");
   if (len > 0) {
     MALLOC_DIE(s->datastart, lensize);
     s->allocend = s->datastart + lensize;
@@ -117,7 +118,7 @@ void stack_test() {
   }
   for (i = 0; i < STACK_N; i++) {
     if (u[i] != v[i])
-      die("push'd array doesn't match pop'd array at position %d\n", i);
+      bug("push'd array doesn't match pop'd array at position %d\n", i);
   }
 }
 

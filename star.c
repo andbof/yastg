@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdint.h>
 #include "defines.h"
+#include "log.h"
 #include "star.h"
 #include "id.h"
 #include "sarray.h"
@@ -137,7 +138,7 @@ int star_genlum(void) {
     if (chance < stellar_lumodds[i])
       return i;
   }
-  die("%s", "illegal execution point");
+  bug("%s", "illegal execution point");
 }
 
 
@@ -151,7 +152,7 @@ int star_gencls(void) {
     if (chance < stellar_clsodds[i])
       return i;
   }
-  die("%s", "illegal execution point");
+  bug("%s", "illegal execution point");
 }
 
 /*

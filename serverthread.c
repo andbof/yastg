@@ -12,6 +12,7 @@
 #include <pthread.h>
 
 #include "defines.h"
+#include "log.h"
 #include "serverthread.h"
 
 void serverthread_cleanup(struct serverthreaddata *data) {
@@ -28,10 +29,10 @@ void serverthread_loop(struct serverthreaddata *data) {
 
 void* serverthread_main(void *dataptr) {
   struct serverthreaddata *data = dataptr;
-  mprintf("Thread for peer %s started\n", data->peer);
+  log_printfn("serverthread", "successfully created thread for peer %s", data->peer);
   serverthread_loop(data);
-  mprintf("Thread for peer %s closing down\n", data->peer);
+  log_printfn("serverthread", "peer %s disconnected, cleaning up", data->peer);
   serverthread_cleanup(data);
-  mprintf("Thread for peer %s finished\n", data->peer);
+  log_printfn("serverthread", "cleanup complete for peer %s", data->peer);
   return 0;
 }
