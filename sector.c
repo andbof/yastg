@@ -14,7 +14,7 @@
 #include "id.h"
 #include "star.h"
 
-struct sector* initsector() {
+struct sector* sector_init() {
   struct sector *s;
   MALLOC_DIE(s, sizeof(*s));
   memset(s, 0, sizeof(*s));
@@ -40,8 +40,8 @@ void sector_free(void *ptr) {
   free(s->linkids);
 }
 
-struct sector* loadsector(struct configtree *ctree) {
-  struct sector *s = initsector();
+struct sector* sector_load(struct configtree *ctree) {
+  struct sector *s = sector_init();
   struct planet *p;
   struct base *b;
   struct star *sol;
@@ -84,10 +84,10 @@ struct sector* loadsector(struct configtree *ctree) {
   return s;
 }
 
-struct sector* createsector(char *name) {
+struct sector* sector_create(char *name) {
   int i;
   struct star *sol;
-  struct sector *s = initsector();
+  struct sector *s = sector_init();
   s->name = strdup(name);
   s->stars = createstars();
   s->hab = 0;
@@ -147,7 +147,7 @@ void sector_move(struct universe *u, struct sector *s, long x, long y) {
 //  printf("Moved sector %zx (%s) to %ldx%ld (%lux%1.6f)\n", s->id, s->name, s->x, s->y, s->r, s->phi);
 }
 
-unsigned long getdistance(struct sector *a, struct sector *b) {
+unsigned long sector_distance(struct sector *a, struct sector *b) {
   long result = sqrt( (double)(b->x-a->x)*(b->x-a->x) + (double)(b->y-a->y)*(b->y-a->y) );
   if (result < 0)
     return -result;

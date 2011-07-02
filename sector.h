@@ -23,14 +23,14 @@ struct sector {
   struct sarray *linkids;
 };
 
-struct sector* initsector();
-struct sector* loadsector(struct configtree *ctree);
-struct sector* createsector(char *name);
+struct sector* sector_init();
+struct sector* sector_load(struct configtree *ctree);
+struct sector* sector_create(char *name);
 
 void sector_free(void *ptr);
 
 void sector_move(struct universe *u, struct sector *s, long x, long y);
 
-unsigned long getdistance(struct sector *a, struct sector *b);
+unsigned long sector_distance(struct sector *a, struct sector *b);
 
 #endif

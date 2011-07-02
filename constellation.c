@@ -52,7 +52,7 @@ void addconstellation(struct universe *u, char* cname) {
 
     // Create a new sector and put it in s
     sprintf(string, "%s %s", greek[numc], cname);
-    s = createsector(string);
+    s = sector_create(string);
     i = s->id;
     sarray_add(u->sectors, s);
     free(s);

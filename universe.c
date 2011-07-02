@@ -90,7 +90,7 @@ struct sarray* getneighbours(struct universe *u, struct sector *s, unsigned long
   struct sarray *result = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
   for (i = 0; i < u->sectors->elements; i++) {
     t = (struct sector*)sarray_getbypos(u->sectors, i);
-    if ((t->id != s->id) && (getdistance(t, s) < dist))
+    if ((t->id != s->id) && (sector_distance(t, s) < dist))
       sarray_add(result, &t->id);
   }
   return result;
@@ -101,7 +101,7 @@ size_t countneighbours(struct universe *u, struct sector *s, unsigned long dist)
   struct sector *t;
   for (i = 0; i < u->sectors->elements; i++) {
     t = (struct sector*)sarray_getbypos(u->sectors, i);
-    if ((t->id != s->id) && (getdistance(t, s) < dist))
+    if ((t->id != s->id) && (sector_distance(t, s) < dist))
       n++;
   }
   return n;

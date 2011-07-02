@@ -31,7 +31,7 @@ struct civ* loadciv(struct configtree *ctree) {
     } else if (strcmp(ctree->key, "POWER") == 0) {
       sscanf(ctree->data, "%d", &c->power);
     } else if (strcmp(ctree->key, "SECTOR") == 0) {
-      s = loadsector(ctree->sub);
+      s = sector_load(ctree->sub);
       array_push(c->presectors, s);
       free(s);	// We don't call free_sector here since free_sector will delete all contents associated with s (and we need to reference them in c->sectors)
     } else if (strcmp(ctree->key, "SNAME") == 0) {
