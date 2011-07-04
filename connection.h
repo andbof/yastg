@@ -1,5 +1,5 @@
-#ifndef HAS_SERVERTHREAD_H
-#define HAS_SERVERTHREAD_H
+#ifndef HAS_CONNETION_H
+#define HAS_CONNETION_H
 
 #include <pthread.h>
 #include <sys/socket.h>
@@ -15,7 +15,6 @@ struct conndata {
   fd_set rfds;
   int peerfd, threadfds[2];
   pthread_mutex_t fd_mutex;
-//  char peer[INET6_ADDRSTRLEN];
   struct sockaddr_storage sock;
   char *peer;
   struct player *pl;
