@@ -188,6 +188,7 @@ void* sarray_recgetprev(struct sarray *a, void *key, size_t u, size_t l) {
  *
  * NOTE: THIS IS A REALLY UGLY HACK. FIXME APPLIES.
  */
+/*
 void* sarray_getbyname(struct sarray *a, char *name) {
   int i;
   for (i = 0; i < a->elements; i++) {
@@ -197,6 +198,7 @@ void* sarray_getbyname(struct sarray *a, char *name) {
   }
   bug("element name %s not found", name);
 }
+*/
 
 /*
  * Get element from sarray by number
@@ -248,8 +250,18 @@ int sarray_add(struct sarray *a, void *e) {
 void sarray_rmbyid(struct sarray *a, void *key) {
   void *ptr;
   if (!(ptr = sarray_getbyid(a, key))) {
-    bug("tried to remove element with id %zx but failed", *((size_t*)key));
+    bug("tried to remove element with id %zx but element was not found", *((size_t*)key));
   }
+  MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
+  a->elements--;
+}
+
+void sarray_freebyid(struct sarray *a, void *key) {
+  void *ptr;
+  if (!(ptr = sarray_getbyid(a, key))) {
+    bug("tried to remove element with id %zx but element was not found", *((size_t*)key));
+  }
+  a->freefnc(ptr);
   MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
   a->elements--;
 }

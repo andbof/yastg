@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -11,6 +12,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <pthread.h>
+#include <errno.h>
 
 #include "defines.h"
 #include "log.h"
@@ -31,21 +33,23 @@ struct conndata* conn_create() {
     data->id = gen_id();
     data->rbufs = CONN_BUFSIZE;
     if ((data->rbuf = malloc(data->rbufs)) == NULL) {
-      log_printfn("connection", "failed allocating receive buffer for connection %lx", data->id);
+      log_printfn("connection", "failed allocating receive buffer for connection %zx", data->id);
       conndata_free(data);
       return NULL;
     }
     data->sbufs = CONN_MAXBUFSIZE;
     if ((data->sbuf = malloc(data->sbufs)) == NULL) {
-      log_printfn("connection", "failed allocating send buffer for connection %lx", data->id);
+      log_printfn("connection", "failed allocating send buffer for connection %zx", data->id);
       conndata_free(data);
       return NULL;
     }
     if (pipe(data->threadfds) != 0) {
+      log_printfn("connection", "failed opening pipe to thread for connection %zx", data->id);
       conndata_free(data);
       return NULL;
     }
     if (pthread_mutex_init(&data->fd_mutex, NULL) != 0) {
+      log_printfn("connection", "failed initializing mutex for connection %zx", data->id);
       conndata_free(data);
       return NULL;
     }
@@ -53,29 +57,47 @@ struct conndata* conn_create() {
   return data;
 }
 
+void conn_signalserver(struct conndata *data, int signal, size_t param) {
+  mprintf("Signalling server thread that I'm exiting\n");
+  if ((write(data->serverfd, &signal, sizeof(signal))) < 1)
+    bug("server signalling fd seems closed when sending signal to remove me %d, %s", errno, strerror(errno));
+  if (write(data->serverfd, &param, sizeof(param)) < 1)
+    bug("%s", "server signalling fd seems closed when sending my id");
+}
+
+/*
+ * This function needs to be very safe as it can be called after a
+ * half-initialized conndata structure if something went wrong.
+ */
 void conndata_free(void *ptr) {
   struct conndata *data = ptr;
-  if (data->peerfd)
-    close(data->peerfd);
-  if (data->threadfds[0])
-    close(data->threadfds[0]);
-  if (data->threadfds[1])
-    close(data->threadfds[1]);
-  if (&data->fd_mutex != NULL)
-    pthread_mutex_destroy(&data->fd_mutex);
-  if (data->rbuf)
-    free(data->rbuf);
-  if (data->sbuf)
-    free(data->sbuf);
-  if (data->pl)
-    player_free(data->pl);
-  free(data);
+  if (data != NULL) {
+    if (data->peerfd)
+      close(data->peerfd);
+    if (data->threadfds[0])
+      close(data->threadfds[0]);
+    if (data->threadfds[1])
+      close(data->threadfds[1]);
+    if (&data->fd_mutex != NULL)
+      pthread_mutex_destroy(&data->fd_mutex);
+    if (data->peer)
+      free(data->peer);
+    if (data->rbuf)
+      free(data->rbuf);
+    if (data->sbuf)
+      free(data->sbuf);
+    if (data->pl)
+      player_free(data->pl);
+//    free(data);
+  }
 }
 
 void conn_cleanexit(struct conndata *data) {
-  log_printfn("connection", "cleaning connection %lx", data->id);
-  conndata_free(data);
-  log_printfn("connection", "cleanup complete, terminating thread");
+//  log_printfn("connection", "cleaning connection %lx", data->id);
+//  conndata_free(data);
+//  log_printfn("connection", "cleanup complete, terminating thread");
+  log_printfn("connection", "terminating myself");  
+  conn_signalserver(data, MSG_RM, data->id);
   pthread_exit(0);
 }
 
@@ -103,14 +125,24 @@ void conn_send(struct conndata *data, char *format, ...) {
 }
 
 void conn_act(struct conndata *data) {
+  struct sector *s;
   if (!strcmp(data->rbuf, "help")) {
     conn_send(data, "No help available\n");
   } else if (!strcmp(data->rbuf, "quit")) {
     conn_send(data, "Bye!\n");
     conn_cleanexit(data);
   } else if (!strncmp(data->rbuf, "go ", 3)) {
-    data->pl->position = GET_ID((struct sector*)sarray_getbyname(univ->sectors, data->rbuf+3));
-    conn_send(data, "Entering %s\n", ((struct sector*)sarray_getbyid(univ->sectors, &data->pl->position))->name);
+    if (strlen(data->rbuf) > 3) {
+      s = getsectorbyname(univ, data->rbuf+3);
+      if (s != NULL) {
+	conn_send(data, "Entering %s\n", s->name);
+	data->pl->position = GET_ID(s);
+      } else {
+	conn_send(data, "Sector not found.\n");
+      }
+    } else {
+      conn_send(data, ERR_SYNTAX);
+    }
   }
 }
 
@@ -144,7 +176,8 @@ void conn_loop(struct conndata *data) {
 	// We have received a message on the signalling fd
 	read(data->threadfds[0], &i, sizeof(i));
 	conn_handlesignal(data, i);
-      } else {
+      }
+      if (FD_ISSET(data->peerfd, &data->rfds)) {
 	// We have received something from the peer
 	rb += recv(data->peerfd, data->rbuf + rb, data->rbufs - rb, 0);
 	if (rb < 1) {

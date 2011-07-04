@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
+#include <pthread.h>
 #include "defines.h"
 #include "log.h"
 #include "mtrandom.h"

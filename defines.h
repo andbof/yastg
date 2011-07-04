@@ -31,6 +31,7 @@ pthread_mutex_t stdout_mutex;
 /* Global messages */
 
 #define MSG_TERM (int)6
+#define MSG_RM   (int)16
 
 #define ERR_SYNTAX "Syntax error, see help"
 

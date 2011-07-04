@@ -26,7 +26,7 @@ void* sarray_getprevbyid(struct sarray *a, void *key);
 void* sarray_recgetprev(struct sarray *a, void *key, size_t l, size_t u);
 void* sarray_bubblegetprev(struct sarray *a, void *key);
 
-void* sarray_getbyname(struct sarray *a, char *name);
+//void* sarray_getbyname(struct sarray *a, char *name);
 
 void* sarray_getbypos(struct sarray *a, size_t pos);
 
@@ -35,6 +35,7 @@ struct ptr_num* sarray_getlnbyid(struct sarray *a, void *key);
 int sarray_add(struct sarray *a, void *e);
 
 void sarray_rmbyid(struct sarray *a, void *key);
+void sarray_freebyid(struct sarray *a, void *key);
 void sarray_rmbypos(struct sarray *a, size_t pos);
 void sarray_rmbyptr(struct sarray *a, void* ptr);
 

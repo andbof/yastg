@@ -168,8 +168,11 @@ int main(int argc, char **argv) {
 
   /* Kill server thread, this will also kill all player threads */
   i = MSG_TERM;
+  st = 0;
   if (write(srvfd[1], &i, sizeof(i)) < 1)
-    bug("%s", "server signalling fd seems closed");
+    bug("%s", "server signalling fd seems closed when sending signal");
+  if (write(srvfd[1], &st, sizeof(st)) < 1)
+    bug("%s", "server signalling fd seems closed when sending parameter");
   log_printfn("main", "waiting for server to terminate");
   pthread_join(srvthread, NULL);
 

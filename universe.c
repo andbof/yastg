@@ -135,3 +135,19 @@ struct universe* createuniverse(struct sarray *civs) {
   return u;
 
 }
+
+struct sector* getsectorbyid(struct universe *u, size_t id) {
+  return sarray_getbyid(u->sectors, &id);
+}
+
+struct sector* getsectorbyname(struct universe *u, char *name) {
+  unsigned long l;
+  struct sector *s;
+  for (l = 0; l < u->sectors->elements; l++) {
+    s = sarray_getbypos(u->sectors, l);
+    if (strcmp(s->name, name) == 0) {
+      return s;
+    }
+  }
+  return NULL;
+}

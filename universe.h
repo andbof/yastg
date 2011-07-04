@@ -22,4 +22,7 @@ struct sarray* getneighbours(struct universe *u, struct sector *s, unsigned long
 int makeneighbours(struct universe *u, size_t id1, size_t id2, unsigned long min, unsigned long max);
 void linksectors(struct universe *u, size_t id1, size_t id2);
 
+struct sector* getsectorbyid(struct universe *u, size_t id);
+struct sector* getsectorbyname(struct universe *u, char *name);
+
 #endif
