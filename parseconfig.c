@@ -116,7 +116,7 @@ struct configtree* recparseconfig(FILE *f, char *fname) {
           ce->key = strdupsp(buf+i);
 	  ce->data = NULL;
 	  ce->sub = NULL;
-	  printf("ce->key is %s, ce->data is NULL\n", ce->key);
+//	  printf("ce->key is %s, ce->data is NULL\n", ce->key);
 	} else {
 	  buf[j] = '\0';
 	  ce->key = strdupsp(buf+i);
@@ -130,11 +130,11 @@ struct configtree* recparseconfig(FILE *f, char *fname) {
 	  }
 
 	  // Remove trailing whitespace
-	  printf("j is %d\n", j);
+//	  printf("j is %d\n", j);
 	  c = strchr(buf+j, '\0')-1;
 	  while ((*c == ' ' || *c == '\t' ) && (*c != '\0'))
 	    c--;
-	  printf("c is \"%c\"\n", *c);
+//	  printf("c is \"%c\"\n", *c);
 	  if (c == '\0') {
 	    ce->data = NULL;
 	  } else {
