@@ -16,14 +16,14 @@
 #include "defines.h"
 #include "log.h"
 #include "server.h"
+#include "sarray.h"
 #include "connection.h"
 #include "id.h"
 
 #define PORT "2049"
 #define BACKLOG 16	// Size of pending connections queue
 
-static int tnum = 0;
-static struct conndata std[10];
+static struct sarray *std;
 static pthread_t srvthread;
 static fd_set fdset;
 static int sockfd, signfd, maxfd;
@@ -31,14 +31,17 @@ static int sockfd, signfd, maxfd;
 void server_cleanexit() {
   int i, *j;
   int msg = MSG_TERM;
+  struct conndata *cd;
   log_printfn("server", "sending terminate to all player threads");
-  for (i = 0; i < tnum; i++) {
-    if (write(std[i].threadfds[1], &msg, sizeof(msg)) < 1)
-      bug("thread %lx's signalling fd seems closed", std[i].id);
+  for (i = 0; i < std->elements; i++) {
+    cd = sarray_getbypos(std, i);
+    if (write(cd->threadfds[1], &msg, sizeof(msg)) < 1)
+      bug("thread %lx's signalling fd seems closed", cd->id);
   }
   log_printfn("server", "waiting for all player threads to terminate");
-  for (i = 0; i < tnum; i++) {
-    pthread_join(std[i].thread, NULL);
+  for (i = 0; i < std->elements; i++) {
+    cd = sarray_getbypos(std, i);
+    pthread_join(cd->thread, NULL);
   }
   log_printfn("server", "server shutting down");
   close(sockfd);
@@ -126,9 +129,11 @@ char* getpeer(struct sockaddr_storage sock) {
 
 void* server_main(void* p) {
   int i, j;
-  socklen_t sin_size;
   size_t st;
   struct sockaddr_storage peer_addr;
+  socklen_t sin_size = sizeof(peer_addr);
+  std = sarray_init(sizeof(struct conndata), 0, SARRAY_ENFORCE_UNIQUE, &conndata_free, &sort_id);
+  struct conndata *cd;
 
   srvthread = pthread_self();
   signfd = *(int*)p;
@@ -151,28 +156,31 @@ void* server_main(void* p) {
       server_handlesignal(i);
     } else {
       // We have received a new connection, accept it
-      sin_size = sizeof(peer_addr);
-      std[tnum].peerfd = accept(sockfd, (struct sockaddr*)&peer_addr, &sin_size);
-      if (std[tnum].peerfd == -1) {
+      cd = conn_create();
+      if (cd == NULL)
+	die("server", "could not allocate memory for connection data structure");
+      mprintf("CD created at %p\n", cd);
+      sarray_add(std, cd);
+      free(cd);
+      cd = sarray_getbyid(std, &cd->id);
+      mprintf("CD is in array %p at %p\n", std, cd);
+      cd->peerfd = accept(sockfd, (struct sockaddr*)&peer_addr, &sin_size);
+      if (cd->peerfd == -1) {
 	if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 	  log_printfn("server", "a peer disconnected before connection could be properly accepted");
+	  conndata_free(cd);
 	} else {
 	  log_printfn("server", "could not accept socket connection, error %s", strerror(errno));
+	  conndata_free(cd);
 	}
       } else {
 //	inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[tnum].peer, sizeof(std[tnum].peer));
-        st = sizeof(std[tnum].sock);
-	getpeername(std[tnum].peerfd, (struct sockaddr*)&std[tnum].sock, &st);
-	std[tnum].peer = getpeer(std[tnum].sock);
-	log_printfn("server", "new connection from %s, assigning id %lx", std[tnum].peer, std[tnum].id);
-	if (!conn_init(&std[tnum])) {
-	  log_printfn("server", "failed initializing thread to handle connection %lx", std[tnum].id);
-	  conn_clean(&std[tnum]);
-	} else {
-	  if ((i = pthread_create(&std[tnum].thread, NULL, conn_main, &std[tnum]))) {
-	    log_printfn("failed creating thread to handle connection from %s: %i", std[tnum].peer, i);
-	  }
-	  tnum++;
+        st = sizeof(cd->sock);
+	getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &st);
+	cd->peer = getpeer(cd->sock);
+	log_printfn("server", "new connection from %s, assigning id %lx", cd->peer, cd->id);
+	if ((i = pthread_create(&cd->thread, NULL, conn_main, cd))) {
+	  log_printfn("failed creating thread to handle connection from %s: %i", cd->peer, i);
 	}
       }
     }

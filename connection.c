@@ -22,28 +22,39 @@
 
 extern struct universe *univ;
 
-int conn_init(struct conndata *data) {
+struct conndata* conn_create() {
+  struct conndata *data;
   int r = 1;
-  data->id = gen_id();
-  data->rbufs = CONN_BUFSIZE;
-  if ((data->rbuf = malloc(data->rbufs)) == NULL) {
-    log_printfn("connection", "failed allocating receive buffer for connection %lx", data->id);
-    r = 0;
+  data = malloc(sizeof(*data));
+  if (data != NULL) {
+    memset(data, 0, sizeof(*data));
+    data->id = gen_id();
+    data->rbufs = CONN_BUFSIZE;
+    if ((data->rbuf = malloc(data->rbufs)) == NULL) {
+      log_printfn("connection", "failed allocating receive buffer for connection %lx", data->id);
+      conndata_free(data);
+      return NULL;
+    }
+    data->sbufs = CONN_MAXBUFSIZE;
+    if ((data->sbuf = malloc(data->sbufs)) == NULL) {
+      log_printfn("connection", "failed allocating send buffer for connection %lx", data->id);
+      conndata_free(data);
+      return NULL;
+    }
+    if (pipe(data->threadfds) != 0) {
+      conndata_free(data);
+      return NULL;
+    }
+    if (pthread_mutex_init(&data->fd_mutex, NULL) != 0) {
+      conndata_free(data);
+      return NULL;
+    }
   }
-  data->sbufs = CONN_MAXBUFSIZE;
-  if ((data->sbuf = malloc(data->sbufs)) == NULL) {
-    log_printfn("connection", "failed allocating send buffer for connection %lx", data->id);
-    r = 0;
-  }
-  if (pthread_mutex_init(&data->fd_mutex, NULL) != 0)
-    r = 0;
-  if (pipe(data->threadfds) != 0)
-    r = 0;
-  return r;
+  return data;
 }
 
-void conn_clean(struct conndata *data) {
-  log_printfn("connection", "cleaning connection %lx", data->id);
+void conndata_free(void *ptr) {
+  struct conndata *data = ptr;
   if (data->peerfd)
     close(data->peerfd);
   if (data->threadfds[0])
@@ -58,10 +69,12 @@ void conn_clean(struct conndata *data) {
     free(data->sbuf);
   if (data->pl)
     player_free(data->pl);
+  free(data);
 }
 
 void conn_cleanexit(struct conndata *data) {
-  conn_clean(data);
+  log_printfn("connection", "cleaning connection %lx", data->id);
+  conndata_free(data);
   log_printfn("connection", "cleanup complete, terminating thread");
   pthread_exit(0);
 }

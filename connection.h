@@ -24,8 +24,8 @@ struct conndata {
   char *sbuf;
 };
 
-int conn_init(struct conndata *data);
-void conn_clean(struct conndata *data);
+struct conndata* conn_create();
+void conndata_free(void *ptr);
 void conn_cleanexit(struct conndata *data);
 void conn_send(struct conndata *data, char *format, ...);
 void* conn_main(void *dataptr);

@@ -63,27 +63,27 @@ extern const char* greek[GREEK_N];
   do {						\
     log_printfn("panic", "in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
     exit(1);					\
-  } while(0);
+  } while(0)
 
 #define bug(FMT, ...)				\
   do {						\
     log_printfn("panic", "Oops! YASTG has encountered an internal bug and is crashing. Error in %s %d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
     exit(1);					\
-  } while(0);
+  } while(0)
 
 #define MALLOC_DIE(VAR, SIZE)	\
-  if (!(VAR = malloc(SIZE))) die("malloc %zu bytes failed", SIZE);
+  if (!(VAR = malloc(SIZE))) die("malloc %zu bytes failed", SIZE)
 
 #define REALLOC_DIE(VAR, SIZE)	\
-  if (!(VAR = realloc(VAR, SIZE))) die("realloc %zu bytes failed", SIZE);
+  if (!(VAR = realloc(VAR, SIZE))) die("realloc %zu bytes failed", SIZE)
 
 #define MEMMOVE_DIE(DEST, ORIG, SIZE)	\
   if (!(memmove(DEST, ORIG, SIZE))) 	\
-    die("memmove %zu bytes from %p to %p failed", SIZE, ORIG, DEST);
+    die("memmove %zu bytes from %p to %p failed", SIZE, ORIG, DEST)
 
 #define MEMCPY_DIE(DEST, ORIG, SIZE)	\
   if (!(memcpy(DEST, ORIG, SIZE)))	\
-    die("memcpy %zu bytes from %p to %p failed", SIZE, ORIG, DEST);
+    die("memcpy %zu bytes from %p to %p failed", SIZE, ORIG, DEST)
 
 #define XYTORAD(x, y)			\
   (unsigned long)sqrt((double)x*x+y*y)
@@ -103,10 +103,12 @@ extern const char* greek[GREEK_N];
 #define MIN(x, y)			\
   ((x < y) ? x : y)
 
-#define mprintf(...)                    \
-  pthread_mutex_lock(&stdout_mutex);    \
-  printf(__VA_ARGS__);                  \
-  pthread_mutex_unlock(&stdout_mutex);
+#define mprintf(...);                   \
+  do {					\
+    pthread_mutex_lock(&stdout_mutex);  \
+    printf(__VA_ARGS__);                \
+    pthread_mutex_unlock(&stdout_mutex);\
+  } while(0)
 
 /* Misc functions */
 
