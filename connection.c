@@ -17,10 +17,14 @@
 #include "defines.h"
 #include "log.h"
 #include "connection.h"
+#include "sarray.h"
 #include "id.h"
 #include "universe.h"
+#include "sector.h"
+#include "star.h"
+#include "base.h"
+#include "planet.h"
 #include "player.h"
-#include "sarray.h"
 
 extern struct universe *univ;
 
@@ -93,7 +97,7 @@ void conndata_free(void *ptr) {
 }
 
 void conn_cleanexit(struct conndata *data) {
-//  log_printfn("connection", "cleaning connection %lx", data->id);
+//  log_printfn("connection", "cleaning connection %zx", data->id);
 //  conndata_free(data);
 //  log_printfn("connection", "cleanup complete, terminating thread");
   log_printfn("connection", "terminating myself");  
@@ -111,17 +115,23 @@ void conn_send(struct conndata *data, char *format, ...) {
   va_end(ap);
   len = strlen(data->sbuf);
   if (len == data->sbufs)
-    log_printfn("connection", "warning: sending maximum amount allowable (%d bytes) on connection %lx, this probably indicates overflow", data->sbufs, data->id);
+    log_printfn("connection", "warning: sending maximum amount allowable (%d bytes) on connection %zx, this probably indicates overflow", data->sbufs, data->id);
   do {
     sb += send(data->peerfd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
     if (sb < 1) {
-      log_printfn("connection", "send error (connection id %lx), terminating connection", data->id);
+      log_printfn("connection", "send error (connection id %zx), terminating connection", data->id);
       pthread_mutex_unlock(&data->fd_mutex);
       conn_cleanexit(data); // FIXME: What happens if another read is waiting to send data? It will try to access a destroyed mutex ...
     }
   } while (sb < len);
 
   pthread_mutex_unlock(&data->fd_mutex);
+}
+
+void conn_error(struct conndata *data, char *format, ...) {
+  va_list ap;
+  conn_send(data, "Oops! An internal error occured.\nYour current state is NOT saved and you are being forcibly disconnected.\nSorry!");
+  conn_cleanexit(data);
 }
 
 void conn_act(struct conndata *data) {
@@ -143,6 +153,45 @@ void conn_act(struct conndata *data) {
     } else {
       conn_send(data, ERR_SYNTAX);
     }
+  }
+}
+
+void conn_sendinfo(struct conndata *data) {
+  size_t st;
+  char *string;
+  struct sector *s = getsectorbyid(univ, data->pl->position), *t;
+  struct star *sol;
+  struct sarray *gurka;
+  if (s == NULL) {
+    conn_error(data, "The sector you are in doesn't exist");
+    conn_cleanexit(data);
+  }
+  conn_send(data, "You are in sector %s (id %zx, coordinates %ldx%ld), habitability %d\n", s->name, s->id, s->x, s->y, s->hab);
+  conn_send(data, "Snow line at %lu Gm\n", s->snowline);
+  conn_send(data, "Habitable zone is from %lu to %lu Gm\n", s->hablow, s->habhigh);
+  for (st = 0; st < s->stars->elements; st++) {
+    sol = (struct star*)sarray_getbypos(s->stars, st);
+    conn_send(data, "%s: Class %c %s (id %zx)\n", sol->name, stellar_cls[sol->cls], stellar_lum[sol->lum], sol->id);
+    string = hundreths(sol->lumval);
+    conn_send(data, "  Surface temperature: %dK, habitability modifier: %d, luminosity: %s \n", sol->temp, sol->hab, string);
+    free(string);
+  }
+  conn_send(data, "This sector has hyperspace links to\n");
+  for (st = 0; st < s->linkids->elements; st++) {
+    conn_send(data, "  %s\n", getsectorbyid(univ, GET_ID(sarray_getbypos(s->linkids, st)))->name);
+  }
+  conn_send(data, "Sectors within 50 lys are:\n");
+  gurka = getneighbours(univ, s, 50);
+  for (st = 0; st < gurka->elements; st++) {
+    t = getsectorbyid(univ, *((size_t*)sarray_getbypos(gurka, st)));
+    conn_send(data, "  %s at %lu ly\n", t->name, sector_distance(s, t));
+  }
+  sarray_free(gurka);
+  free(gurka);
+  if (s->owner != 0) {
+    conn_send(data, "This sector is owned by civ %zx\n", s->id);
+  } else {
+    conn_send(data, "This sector is not part of any civilization\n");
   }
 }
 
@@ -169,7 +218,7 @@ void conn_loop(struct conndata *data) {
       FD_SET(data->threadfds[0], &data->rfds);
       i = select(MAX(data->peerfd, data->threadfds[0]) + 1, &data->rfds, NULL, NULL, NULL);
       if (i == -1) {
-	log_printfn("connection", "select() reported error, terminating connection %lx", data->id);
+	log_printfn("connection", "select() reported error, terminating connection %zx", data->id);
 	conn_cleanexit(data);
       }
       if (FD_ISSET(data->threadfds[0], &data->rfds)) {
@@ -181,12 +230,12 @@ void conn_loop(struct conndata *data) {
 	// We have received something from the peer
 	rb += recv(data->peerfd, data->rbuf + rb, data->rbufs - rb, 0);
 	if (rb < 1) {
-	  log_printfn("connection", "peer %s disconected, terminating connection %lx", data->peer, data->id);
+	  log_printfn("connection", "peer %s disconected, terminating connection %zx", data->peer, data->id);
 	  conn_cleanexit(data);
 	}
 	if ((rb == data->rbufs) && (data->rbuf[rb - 1] != '\n')) {
 	  if (data->rbufs == CONN_MAXBUFSIZE) {
-	    log_printfn("connection", "peer sent more data than allowed (%u), connection %lx terminated", CONN_MAXBUFSIZE, data->id);
+	    log_printfn("connection", "peer sent more data than allowed (%u), connection %zx terminated", CONN_MAXBUFSIZE, data->id);
 	    conn_cleanexit(data);
 	  }
 	  data->rbufs <<= 1;
@@ -194,7 +243,7 @@ void conn_loop(struct conndata *data) {
 	    data->rbufs = CONN_MAXBUFSIZE;
 	  if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
 	    data->rbufs >>= 1;
-	    log_printfn("connection", "unable to increase receive buffer size, connection %lx terminated", data->id);
+	    log_printfn("connection", "unable to increase receive buffer size, connection %zx terminated", data->id);
 	    conn_cleanexit(data);
 	  } else {
 	    data->rbuf = ptr;
@@ -213,6 +262,7 @@ void conn_loop(struct conndata *data) {
     mprintf("received \"%s\" on socket\n", data->rbuf);
 
     conn_act(data);
+    conn_sendinfo(data);
 
   }
 }
