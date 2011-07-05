@@ -9,6 +9,7 @@ struct universe {
   struct tm *created;		// When the universe was created
   size_t numsector;		// Number of sectors in universe
   struct sarray *sectors;	// Sectors in universe
+  struct stable *sectornames;	// Sector names, indexed in a string table
   struct sarray *srad;		// Sector IDs sorted by radial position from (0,0)
   struct sarray *sphi;		// Sector IDs sorted by angle from (0,0)
 };

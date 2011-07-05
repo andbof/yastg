@@ -16,6 +16,7 @@
 #include "civ.h"
 #include "star.h"
 #include "constellation.h"
+#include "stable.h"
 #include "mtrandom.h"
 
 /*
@@ -40,6 +41,7 @@
 void universe_free(struct universe *u) {
   sarray_free(u->sectors);
   free(u->sectors);
+  stable_free(u->sectornames);
   sarray_free(u->srad);
   free(u->srad);
   sarray_free(u->sphi);
@@ -117,6 +119,7 @@ struct universe* createuniverse(struct sarray *civs) {
   u->name = NULL;
   u->numsector = 0;
   u->sectors = sarray_init(sizeof(struct sector), 0, SARRAY_ENFORCE_UNIQUE, &sector_free, &sort_id);
+  u->sectornames = stable_create();
   u->srad = sarray_init(sizeof(struct ulong_id), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
   u->sphi = sarray_init(sizeof(struct double_id), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
   for (i = 0; i < civs->elements; i++) {
@@ -143,11 +146,14 @@ struct sector* getsectorbyid(struct universe *u, size_t id) {
 struct sector* getsectorbyname(struct universe *u, char *name) {
   unsigned long l;
   struct sector *s;
-  for (l = 0; l < u->sectors->elements; l++) {
+  return stable_get(univ->sectornames, name);
+/*
+ * for (l = 0; l < u->sectors->elements; l++) {
     s = sarray_getbypos(u->sectors, l);
     if (strcmp(s->name, name) == 0) {
       return s;
     }
   }
   return NULL;
+*/
 }

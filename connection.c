@@ -62,7 +62,6 @@ struct conndata* conn_create() {
 }
 
 void conn_signalserver(struct conndata *data, int signal, size_t param) {
-  mprintf("Signalling server thread that I'm exiting\n");
   if ((write(data->serverfd, &signal, sizeof(signal))) < 1)
     bug("server signalling fd seems closed when sending signal to remove me %d, %s", errno, strerror(errno));
   if (write(data->serverfd, &param, sizeof(param)) < 1)
@@ -70,7 +69,7 @@ void conn_signalserver(struct conndata *data, int signal, size_t param) {
 }
 
 /*
- * This function needs to be very safe as it can be called after a
+ * This function needs to be very safe as it can be called on a
  * half-initialized conndata structure if something went wrong.
  */
 void conndata_free(void *ptr) {
@@ -92,15 +91,11 @@ void conndata_free(void *ptr) {
       free(data->sbuf);
     if (data->pl)
       player_free(data->pl);
-//    free(data);
   }
 }
 
 void conn_cleanexit(struct conndata *data) {
-//  log_printfn("connection", "cleaning connection %zx", data->id);
-//  conndata_free(data);
-//  log_printfn("connection", "cleanup complete, terminating thread");
-  log_printfn("connection", "terminating myself");  
+  log_printfn("connection", "connection %zx is terminating", data->id);  
   conn_signalserver(data, MSG_RM, data->id);
   pthread_exit(0);
 }
@@ -134,28 +129,6 @@ void conn_error(struct conndata *data, char *format, ...) {
   conn_cleanexit(data);
 }
 
-void conn_act(struct conndata *data) {
-  struct sector *s;
-  if (!strcmp(data->rbuf, "help")) {
-    conn_send(data, "No help available\n");
-  } else if (!strcmp(data->rbuf, "quit")) {
-    conn_send(data, "Bye!\n");
-    conn_cleanexit(data);
-  } else if (!strncmp(data->rbuf, "go ", 3)) {
-    if (strlen(data->rbuf) > 3) {
-      s = getsectorbyname(univ, data->rbuf+3);
-      if (s != NULL) {
-	conn_send(data, "Entering %s\n", s->name);
-	data->pl->position = GET_ID(s);
-      } else {
-	conn_send(data, "Sector not found.\n");
-      }
-    } else {
-      conn_send(data, ERR_SYNTAX);
-    }
-  }
-}
-
 void conn_sendinfo(struct conndata *data) {
   size_t st;
   char *string;
@@ -181,6 +154,7 @@ void conn_sendinfo(struct conndata *data) {
     conn_send(data, "  %s\n", getsectorbyid(univ, GET_ID(sarray_getbypos(s->linkids, st)))->name);
   }
   conn_send(data, "Sectors within 50 lys are:\n");
+  // FIXME: getneighbours() is awful
   gurka = getneighbours(univ, s, 50);
   for (st = 0; st < gurka->elements; st++) {
     t = getsectorbyid(univ, *((size_t*)sarray_getbypos(gurka, st)));
@@ -195,9 +169,35 @@ void conn_sendinfo(struct conndata *data) {
   }
 }
 
+void conn_act(struct conndata *data) {
+  struct sector *s;
+  if (!strcmp(data->rbuf, "help")) {
+    conn_send(data, "No help available\n");
+  } else if (!strcmp(data->rbuf, "quit")) {
+    conn_send(data, "Bye!\n");
+    conn_cleanexit(data);
+  } else if (!strncmp(data->rbuf, "go ", 3)) {
+    if (strlen(data->rbuf) > 3) {
+      s = getsectorbyname(univ, data->rbuf+3);
+      if (s != NULL) {
+	conn_send(data, "Entering %s\n", s->name);
+	data->pl->position = GET_ID(s);
+	conn_sendinfo(data);
+      } else {
+	conn_send(data, "Sector not found.\n");
+      }
+    } else {
+      conn_send(data, ERR_SYNTAX);
+    }
+  } else {
+    conn_send(data, "Sorry, I don't understand.\n");
+  }
+}
+
 void conn_handlesignal(struct conndata *data, int signal) {
   switch (signal) {
     case MSG_TERM:
+      conn_send(data, "server is shutting down, you are being disconnected.\n");
       conn_cleanexit(data);
       break;
     default:
@@ -208,10 +208,16 @@ void conn_handlesignal(struct conndata *data, int signal) {
 void conn_loop(struct conndata *data) {
   int rb, i;
   char* ptr;
+  
+  conn_sendinfo(data);
+
   while (1) {
     rb = 0;
 
     do {
+
+      conn_send(data, "yastg> ");
+
       // FIXME: Doesn't handle CTRL-D for some reason.
       FD_ZERO(&data->rfds);
       FD_SET(data->peerfd, &data->rfds);
@@ -262,7 +268,6 @@ void conn_loop(struct conndata *data) {
     mprintf("received \"%s\" on socket\n", data->rbuf);
 
     conn_act(data);
-    conn_sendinfo(data);
 
   }
 }
@@ -275,8 +280,6 @@ void* conn_main(void *dataptr) {
   data->pl->name = strdup("Alfred");
   data->pl->position = GET_ID(univ->sectors->array);
 
-  mprintf("data is at %p\n", data);
-  mprintf("data->peer is at %p\n", data->peer);
   log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
   conn_loop(data);
   log_printfn("connection", "peer %s disconnected, cleaning up", data->peer);

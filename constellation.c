@@ -14,6 +14,7 @@
 #include "star.h"
 #include "sarray.h"
 #include "array.h"
+#include "stable.h"
 
 void loadconstellations(struct universe *u) {
   struct configtree *ctree, *e;
@@ -57,6 +58,7 @@ void addconstellation(struct universe *u, char* cname) {
     sarray_add(u->sectors, s);
     free(s);
     s = sarray_getbyid(u->sectors, &i);
+    stable_add(u->sectornames, s->name, s);
 
     if (fs == 0) {
       // This was the first sector generated for this constellation
