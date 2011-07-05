@@ -8,7 +8,7 @@
  * DJBs "times 33" hash
  */
 unsigned long hash33(char *key) {
-  unsigned long hash = 0;
+  unsigned long hash = 5381;
   if (key == NULL)
     bug("%s", "trying to hash a null pointer");
   while (*key) {
@@ -22,42 +22,78 @@ void* stable_create() {
   struct stable *s;
   MALLOC_DIE(s, sizeof(*s));
   memset(s, '\0', sizeof(*s));
+  pthread_mutex_init(&s->mutex, NULL);
   return s;
 }
 
-void* stable_add(struct stable *t, char *key, void *data) {
+void stable_add(struct stable *t, char *key, void *data) {
+  int i;
   unsigned long hash = hash33(key) % STABLE_SIZE;
-  struct st_elem *cur = t->table[hash], *next;
-  if (cur) {
-    next = cur->next;
-    while (next != NULL) {
-      cur = next;
-      next = next->next;
-    }
-    MALLOC_DIE(cur->next, sizeof(*cur->next));
-    next = cur->next;
+  struct st_elem *prev, *cur, *next;
+  pthread_mutex_lock(&t->mutex);
+  cur = t->table[hash];
+  if (!cur) {
+    MALLOC_DIE(cur, sizeof(*cur));
+    t->table[hash] = cur;
+    cur->prev = NULL;
+    cur->next = NULL;
   } else {
-    MALLOC_DIE(t->table[hash], sizeof(*next));
-    next = t->table[hash];
-    cur = NULL;
+    while (cur) {
+      i = strcmp(cur->data, data);
+      if (i == 0) {
+	bug("stable already contains element %s (address %p)", key, data);
+      } else if (i < 0) {
+	prev = cur;
+	cur = cur->next;
+	if (cur) {
+	  next = cur->next;
+	} else {
+	  next = NULL;
+	}
+      } else if (i > 0) {
+	prev = cur->prev;
+	next = cur;
+	cur = NULL;
+      }
+    }
+    MALLOC_DIE(cur, sizeof(*cur));
+    cur->prev = prev;
+    cur->next = next;
+    if (prev) {
+      prev->next = cur;
+    }
+    if (next) {
+      next->prev = cur;
+    }
   }
-  next->data = data;
-  next->prev = cur;
-  next->next = NULL;
-  return next;
+  cur->data = data;
+  t->elements++;
+  pthread_mutex_unlock(&t->mutex);
 }
 
 void* stable_get(struct stable *t, char *key) {
+  int i;
   unsigned long hash = hash33(key) % STABLE_SIZE;
-  struct st_elem *elem = t->table[hash];
-  while ((elem != NULL) && (strcmp(elem->data, key) != 0))
+  struct st_elem *elem;
+  void *ptr;
+  pthread_mutex_lock(&t->mutex);
+  elem = t->table[hash];
+  while ((elem != NULL) && ((i = strcmp(elem->data, key)) < 0))
     elem = elem->next;
-  return (void*)elem;
+  if (i == 0) {
+    ptr = (void*)elem->data;
+  } else {
+    ptr = NULL;
+  }
+  pthread_mutex_unlock(&t->mutex);
+  return ptr;
 }
 
 void stable_rm(struct stable *t, char *key) {
   unsigned long hash = hash33(key) % STABLE_SIZE;
-  struct st_elem *cur = stable_get(t, key), *prev;
+  struct st_elem *prev, *cur;
+  pthread_mutex_lock(&t->mutex);
+  cur = stable_get(t, key);
   if (cur == NULL)
     bug("string %s does not exist in stable", key);
   prev = cur->prev;
@@ -70,12 +106,15 @@ void stable_rm(struct stable *t, char *key) {
       cur->next->prev = prev;
     free(cur);
   }
+  t->elements--;
+  pthread_mutex_unlock(&t->mutex);
 }
 
 void stable_free(struct stable *t) {
   unsigned long l;
   struct st_elem *cur;
   struct st_elem *next;
+  pthread_mutex_lock(&t->mutex);
   for (l = 0; l < STABLE_SIZE; l++) {
     cur = t->table[l];
     while (cur) {
@@ -84,5 +123,7 @@ void stable_free(struct stable *t) {
       cur = next;
     }
   }
+  pthread_mutex_unlock(&t->mutex);
+  pthread_mutex_destroy(&t->mutex);	// FIXME: race condition if another thread is waiting to use t->mutex ... can we destroy a locked mutex?
   free(t);
 }
