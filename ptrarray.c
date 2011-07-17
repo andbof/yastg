@@ -25,20 +25,31 @@ void ptrarray_incsize(struct ptrarray *a) {
 
 void ptrarray_push(struct ptrarray *a, void *e) {
   void *ptr;
-  if (a->elements == a->allocated) ptrarray_incsize(a);
-  memcpy(a->array + a->elements * sizeof(void*), &e, sizeof(void*));
+  if (a->elements == a->allocated)
+    ptrarray_incsize(a);
+  MEMCPY_DIE(a->array + a->elements * sizeof(void*), &e, sizeof(void*));
   a->elements++;
 }
 
-void ptrarray_rm(struct ptrarray *a, size_t n) {
-  if (n < a->elements) {
-    memmove(a->array + n * sizeof(void*), a->array + (n + 1) * sizeof(void*), (a->elements - 1) * sizeof(void*) - n * sizeof(void*));
+void* ptrarray_pop(struct ptrarray *a) {
+  void **ptr;
+  if (a->elements > 0) {
+    ptr = a->array + (a->elements - 1) * sizeof(void*);
+    a->elements--;
+    return *ptr;
+  } else {
+    return NULL;
   }
-  a->elements--;
 }
 
 void* ptrarray_get(struct ptrarray *a, size_t n) {
   return *(void**)(a->array + (sizeof(void*) * n));
+}
+
+void ptrarray_rm(struct ptrarray *a, size_t n) {
+  if (n < a->elements)
+    MEMMOVE_DIE(a->array + n * sizeof(void*), a->array + (n + 1) * sizeof(void*), (a->elements - 1) * sizeof(void*) - n * sizeof(void*));
+  a->elements--;
 }
 
 void ptrarray_free(struct ptrarray *a) {
