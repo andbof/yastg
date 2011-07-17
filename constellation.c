@@ -65,14 +65,11 @@ void addconstellation(char* cname) {
       // We need to place this at a suitable point in the universe
       fs = s;
       if (univ->sectors->elements == 1) {
-	mprintf("FIRST SECTOR\n");
 	// The first constellation always goes in (0, 0)
 	x = 0;
 	y = 0;
 	sector_move(s, x, y);
-	mprintf("Sector %p is at %ldx%ld\n", s, x, y);
       } else {
-	mprintf("FIRST SECTOR IN CONSTELLATION\n");
 	// All others are randomly distributed
 	phi = mtrandom_sizet(SIZE_MAX) / (double)SIZE_MAX*2*M_PI;
 	r = 0;
@@ -81,22 +78,17 @@ void addconstellation(char* cname) {
 	  phi += mtrandom_double(CONSTELLATION_PHI_RANDOM);
 	  x = POLTOX(phi, r);
 	  y = POLTOY(phi, r);
-	  mprintf("s = %p, x = %ld, y = %ld\n", s, x, y);
 	  sector_move(s, x, y);
 	  i = countneighbours(s, CONSTELLATION_MIN_DISTANCE);
 	} while (i > 0);
-        printf("Defined %s at %ld %ld\n", s->name, s->x, s->y);
       }
       ptrarray_push(work, s);
     } else if (work->elements == 0) {
-      mprintf("NOTHING LEFT IN WORK\n");
       // This isn't the first sector but no sectors are left in work
       // Put this close to the first sector
       ptrarray_push(work, s);
       makeneighbours(fs, s, 0, 0);
-      printf("Defined %s at %ld %ld\n", s->name, s->x, s->y);
     } else {
-      mprintf("%zu SECTORS IN WORK\n", work->elements);
       // We have sectors in work, put this close to work[0] and add this one to work
       ptrarray_push(work, s);
       makeneighbours(ptrarray_get(work, 0), s, 0, 0);
@@ -104,10 +96,9 @@ void addconstellation(char* cname) {
       if ( mtrandom_sizet(SIZE_MAX) - SIZE_MAX/CONSTELLATION_NEIGHBOUR_CHANCE < 0 ) {
 	ptrarray_rm(work, 0);
       }
-      printf("Defined %s at %ld %ld\n", s->name, s->x, s->y);
     }
 
-    mprintf("created %s\n", s->name);
+    mprintf("created %s (%p) at %ldx%ld\n", s->name, s, s->x, s->y);
       
   }
 

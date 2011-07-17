@@ -140,13 +140,10 @@ void conn_sendinfo(struct conndata *data) {
     conn_error(data, "The sector you are in doesn't exist");
     conn_cleanexit(data);
   }
-  mprintf("Alfred entering %p (%s)\n", s, s->name);
   conn_send(data, "You are in sector %s (coordinates %ldx%ld), habitability %d\n", s->name, s->x, s->y, s->hab);
   conn_send(data, "Snow line at %lu Gm\n", s->snowline);
   conn_send(data, "Habitable zone is from %lu to %lu Gm\n", s->hablow, s->habhigh);
   for (st = 0; st < s->stars->elements; st++) {
-    mprintf("s->stars is %p\n", s->stars);
-    mprintf("s->stars->array is %p\n", s->stars->array);
     sol = ptrarray_get(s->stars, st);
     conn_send(data, "%s: Class %c %s\n", sol->name, stellar_cls[sol->cls], stellar_lum[sol->lum]);
     string = hundreths(sol->lumval);

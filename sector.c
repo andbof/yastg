@@ -97,8 +97,6 @@ struct sector* sector_create(char *name) {
     MALLOC_DIE(sol->name, strlen(s->name)+3);
     sprintf(sol->name, "%s %c", s->name, i+65);
   }
-  mprintf("s->stars is %p\n", s->stars);
-  mprintf("s->stars->array is %p\n", s->stars->array);
   s->hab -= STELLAR_MUL_HAB*(i-1);
   s->hablow = ((struct star*)ptrarray_get(s->stars, 0))->hablow;
   s->habhigh = ((struct star*)ptrarray_get(s->stars, 0))->habhigh;
@@ -106,7 +104,6 @@ struct sector* sector_create(char *name) {
   s->planets = createplanets(s);
   s->bases = ptrarray_init(0);
   // FIXME: bases
-  mprintf("Sector %p is called %s\n", s, s->name);
   return s;
 }
 

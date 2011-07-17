@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "defines.h"
@@ -66,6 +67,7 @@ void stable_add(struct stable *t, char *key, void *data) {
       next->prev = cur;
     }
   }
+  cur->key = key;
   cur->data = data;
   t->elements++;
   pthread_mutex_unlock(&t->mutex);
@@ -78,9 +80,10 @@ void* stable_get(struct stable *t, char *key) {
   void *ptr;
   pthread_mutex_lock(&t->mutex);
   elem = t->table[hash];
-  while ((elem != NULL) && ((i = strcmp(elem->data, key)) < 0))
+  while ((elem != NULL) && ((i = strcmp(elem->key, key)) < 0)) {
     elem = elem->next;
-  if (i == 0) {
+  }
+  if ((elem != NULL) && (i == 0)) {
     ptr = (void*)elem->data;
   } else {
     ptr = NULL;

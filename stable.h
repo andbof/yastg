@@ -12,6 +12,7 @@ struct stable {
 };
 
 struct st_elem {
+  char *key;
   void *data;
   struct st_elem *prev, *next;
 };
