@@ -17,8 +17,8 @@ struct planet* initplanet() {
   MALLOC_DIE(p, sizeof(*p));
   memset(p, 0, sizeof(*p));
   p->id = gen_id();
-  p->bases = sarray_init(sizeof(struct base), 0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
-  p->moons = sarray_init(sizeof(struct planet), 0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id);
+  p->bases = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
+  p->moons = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id);
   return p;
 }
 
@@ -33,7 +33,6 @@ struct planet* loadplanet(struct configtree *ctree) {
     } else if (strcmp(ctree->key, "BASE") == 0) {
       b = loadbase(ctree->sub);
       sarray_add(p->bases, b);
-      free(b);
     } else if (strcmp(ctree->key, "ID") == 0) {
       rm_id(p->id);
       sscanf(ctree->data, "%zu", &(p->id));
@@ -65,11 +64,10 @@ struct planet* createplanet(struct sector* s) {
 struct sarray* createplanets(struct sector* s) {
   int num = 0;
   struct planet *p;
-  struct sarray* planets = sarray_init(sizeof(struct planet), 0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id); 
+  struct sarray* planets = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id); 
   while ((mtrandom_sizet(SIZE_MAX) - SIZE_MAX/PLANET_ODDS < 0) && (num < PLANET_NUM_MAX)) {
     p = createplanet(s);
     sarray_add(planets, p);
-    free(p);
   }
   return planets;
 }

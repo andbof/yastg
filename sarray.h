@@ -14,7 +14,7 @@ struct sarray {
   void* array;
 };
 
-struct sarray* sarray_init(size_t esize, size_t asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*));
+struct sarray* sarray_init(size_t asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*));
 
 void sarray_move(struct sarray *a, struct sarray *b);
 

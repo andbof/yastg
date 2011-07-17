@@ -1,8 +1,6 @@
 #ifndef HAS_DEFINES_H
 #define HAS_DEFINES_H
 
-#include <pthread.h>
-
 /* Global compiler directives */
 
 #define _GNU_SOURCE
@@ -23,10 +21,6 @@ struct ptr_num {
   void* ptr;
   size_t num;
 };
-
-/* Global variables */
-
-pthread_mutex_t stdout_mutex;
 
 /* Global messages */
 
@@ -70,7 +64,7 @@ extern const char* greek[GREEK_N];
 
 #define bug(FMT, ...)				\
   do {						\
-    log_printfn("panic", "Oops! YASTG has encountered an internal bug and is crashing. Error in %s %d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
+    log_printfn("panic", "Oops! YASTG has encountered an internal bug in %s:%d and is crashing: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
     exit(1);					\
   } while(0)
 
@@ -106,11 +100,11 @@ extern const char* greek[GREEK_N];
 #define MIN(x, y)			\
   ((x < y) ? x : y)
 
-#define mprintf(...);                   \
+#define mprintf(...)			\
   do {					\
-    pthread_mutex_lock(&stdout_mutex);  \
+    flockfile(stdout);			\
     printf(__VA_ARGS__);                \
-    pthread_mutex_unlock(&stdout_mutex);\
+    funlockfile(stdout);		\
   } while(0)
 
 /* Misc functions */

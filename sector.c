@@ -20,7 +20,7 @@ struct sector* sector_init() {
   memset(s, 0, sizeof(*s));
   s->id = gen_id();
   s->phi = 0.0;
-  s->linkids = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
+  s->linkids = sarray_init(0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
   return s;
 }
 
@@ -47,9 +47,9 @@ struct sector* sector_load(struct configtree *ctree) {
   struct star *sol;
   size_t i;
   int haspos = 0;
-  s->stars = sarray_init(sizeof(struct star), 0, SARRAY_ENFORCE_UNIQUE, &star_free, &sort_id);
-  s->planets = sarray_init(sizeof(struct planet), 0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id);
-  s->bases = sarray_init(sizeof(struct base), 0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
+  s->stars = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &star_free, &sort_id);
+  s->planets = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id);
+  s->bases = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
   while (ctree) {
     if (strcmp(ctree->key, "GNAME") == 0) {
       s->gname = strdup(ctree->data);
@@ -57,15 +57,12 @@ struct sector* sector_load(struct configtree *ctree) {
     } else if (strcmp(ctree->key, "PLANET") == 0) {
       p = loadplanet(ctree->sub);
       sarray_add(s->planets, p);
-      free(p);
     } else if (strcmp(ctree->key, "BASE") == 0) {
       b = loadbase(ctree->sub);
       sarray_add(s->bases, b);
-      free(b);
     } else if (strcmp(ctree->key, "STAR") == 0) {
       sol = loadstar(ctree->sub);
       sarray_add(s->stars, sol);
-      free(sol);
     } else if (strcmp(ctree->key, "POS") == 0) {
       sscanf(ctree->data, "%lu %lu", &s->x, &s->y);
       haspos = 1;
@@ -102,48 +99,50 @@ struct sector* sector_create(char *name) {
   s->habhigh = ((struct star*)s->stars->array)->habhigh;
   s->snowline = ((struct star*)s->stars->array)->snowline;
   s->planets = createplanets(s);
-  s->bases = sarray_init(sizeof(struct base), 0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
+  s->bases = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
   // FIXME: bases
   return s;
 }
 
 void sector_move(struct universe *u, struct sector *s, long x, long y) {
-  struct ulong_id uid;
-  struct double_id did;
+  struct ulong_id *uid;
+  struct double_id *did;
   struct ptr_num *pn;
   struct sector *stmp;
   size_t st;
   s->x = x;
   s->y = y;
-  uid.id = s->id;
-  uid.i = XYTORAD(s->x, s->y);
-  did.id = s->id;
-  did.i = XYTOPHI(s->x, s->y);
+  MALLOC_DIE(uid, sizeof(*uid));
+  uid->id = s->id;
+  uid->i = XYTORAD(s->x, s->y);
+  MALLOC_DIE(did, sizeof(*did));
+  did->id = s->id;
+  did->i = XYTOPHI(s->x, s->y);
   // We need to make sure we're not adding this sector twice to srad and sphi
   // However, they're not sorted by id so this is a bit cumbersome
-  pn = sarray_getlnbyid(u->srad, &uid.i);
+  pn = sarray_getlnbyid(u->srad, &uid->i);
   for (st = 0; st < pn->num; st++) {
-    stmp = (struct sector*)(pn->ptr+st*u->srad->element_size);
+    stmp = (struct sector*)(pn->ptr+st);
     if (stmp->id == s->id) {
-      sarray_rmbyptr(u->srad, pn->ptr+st*u->srad->element_size);
+      sarray_rmbyptr(u->srad, pn->ptr+st);
       break;
     }
   }
   free(pn);
-  pn = sarray_getlnbyid(u->sphi, &did.i);
+  pn = sarray_getlnbyid(u->sphi, &did->i);
   for (st = 0; st < pn->num; st++) {
-    stmp = (struct sector*)(pn->ptr+st*u->sphi->element_size);
+    stmp = (struct sector*)(pn->ptr+st);
     if (stmp->id == s->id) {
-      sarray_rmbyptr(u->sphi, pn->ptr+st*u->sphi->element_size);
+      sarray_rmbyptr(u->sphi, pn->ptr+st);
       break;
     }
   }
   free(pn);
   // Now update the coordinates and add them to srad and sphi
-  s->r = uid.i;
-  sarray_add(u->srad, &uid);
-  s->phi = did.i;
-  sarray_add(u->sphi, &did);
+  s->r = uid->i;
+  sarray_add(u->srad, uid);
+  s->phi = did->i;
+  sarray_add(u->sphi, did);
 //  printf("Moved sector %zx (%s) to %ldx%ld (%lux%1.6f)\n", s->id, s->name, s->x, s->y, s->r, s->phi);
 }
 

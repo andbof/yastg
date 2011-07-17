@@ -11,7 +11,7 @@
 static struct sarray *id_array;
 
 void init_id() {
-  id_array = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
+  id_array = sarray_init(0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
 }
 
 void id_destroy() {
@@ -79,20 +79,6 @@ int sort_ulong(void *a, void *b) {
 //  return GET_ULONG(a) - GET_ULONG(b);
 }
 
-/*
- * Sorts based on assuming a and b points to signed longs.
- 
-int sort_dlong(void *a, void *b) {
-  if (GET_DLONG(b) > GET_DLONG(a)) {
-    return -1;
-  } else if (GET_DLONG(b) < GET_DLONG(a)) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
-*/
-
 int sort_double(void *a, void *b) {
   if (GET_DOUBLE(a) > GET_DOUBLE(b)) {
     return -1;
@@ -101,5 +87,4 @@ int sort_double(void *a, void *b) {
   } else {
     return 0;
   }
-//  return GET_DOUBLE(a) - GET_DOUBLE(b);
 }

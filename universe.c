@@ -53,12 +53,17 @@ void universe_free(struct universe *u) {
 
 void linksectors(struct universe *u, size_t id1, size_t id2) {
   struct sector *s1, *s2;
+  size_t *pid1, *pid2;
+  MALLOC_DIE(pid1, sizeof(*pid1));
+  MALLOC_DIE(pid2, sizeof(*pid2));
   if (!(s1 = sarray_getbyid(u->sectors, &id1)))
     bug("Sector %zx to link with %zx not found\n", id1, id2);
   if (!(s2 = sarray_getbyid(u->sectors, &id2)))
     bug("Failed finding %zx to link with %zx\n", id2, id1);
-  sarray_add(s1->linkids, &id2);
-  sarray_add(s2->linkids, &id1);
+  *pid1 = id1;
+  *pid2 = id2;
+  sarray_add(s1->linkids, pid2);
+  sarray_add(s2->linkids, pid1);
 }
 
 int makeneighbours(struct universe *u, size_t id1, size_t id2, unsigned long min, unsigned long max) {
@@ -89,7 +94,7 @@ int makeneighbours(struct universe *u, size_t id1, size_t id2, unsigned long min
 struct sarray* getneighbours(struct universe *u, struct sector *s, unsigned long dist) {
   size_t i;
   struct sector *t;
-  struct sarray *result = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
+  struct sarray *result = sarray_init(0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
   for (i = 0; i < u->sectors->elements; i++) {
     t = (struct sector*)sarray_getbypos(u->sectors, i);
     if ((t->id != s->id) && (sector_distance(t, s) < dist))
@@ -118,10 +123,10 @@ struct universe* createuniverse(struct sarray *civs) {
   u->id = 0;
   u->name = NULL;
   u->numsector = 0;
-  u->sectors = sarray_init(sizeof(struct sector), 0, SARRAY_ENFORCE_UNIQUE, &sector_free, &sort_id);
+  u->sectors = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &sector_free, &sort_id);
   u->sectornames = stable_create();
-  u->srad = sarray_init(sizeof(struct ulong_id), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
-  u->sphi = sarray_init(sizeof(struct double_id), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
+  u->srad = sarray_init(0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
+  u->sphi = sarray_init(0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
   for (i = 0; i < civs->elements; i++) {
     power += ((struct civ*)sarray_getbypos(civs, i))->power;
   }

@@ -197,14 +197,13 @@ struct star* createstar() {
 }
 
 struct sarray* createstars() {
-  struct sarray *sa = sarray_init(sizeof(struct star), 0, SARRAY_ENFORCE_UNIQUE, &star_free, &sort_id);
+  struct sarray *sa = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &star_free, &sort_id);
   struct star *s;
   int num = star_gennum();
   int i;
   for (i = 0; i < num; i++) {
     s = createstar();
     sarray_add(sa, s);
-    free(s);
   }
   return sa;
 }

@@ -17,16 +17,12 @@
  * Initializes a sorted array. Allocates memory and sets initial options.
  * esize is the element size and asize the initial array size.
  */
-struct sarray* sarray_init(size_t esize, size_t asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*)) {
+struct sarray* sarray_init(size_t asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*)) {
   struct sarray *a;
-  if (esize < 0 || asize < 0) {
-    bug("illegal usage of function initsarray(), esize = %zu, asize = %zu", esize, asize);
-  }
   MALLOC_DIE(a, sizeof(*a));
   a->elements = 0;
-  a->element_size = esize;
   if (asize > 0) {
-    MALLOC_DIE(a->array, asize*esize);
+    MALLOC_DIE(a->array, asize);
     a->allocated = asize;
   } else {
     a->array = NULL;
@@ -56,29 +52,11 @@ void sarray_move(struct sarray *a, struct sarray *b) {
  * sorting function defined in the sarray.
  */
 void* sarray_getbyid(struct sarray *a, void *key) {
-  void *ptr;
   if (!a->elements) {
     // Array has zero elements
-//    printf("GETTING ELEMENT IN NULL ARRAY @%p (a->elements is %zu)\n", a, a->elements);
     return NULL;
   } else {
-    ptr = sarray_recgetbyid(a, key, 0, a->elements-1);
-    return ptr;
-  }
-}
-
-void* sarray_bubblegetbyid(struct sarray *a, void *key) {
-  size_t i = 0;
-  while (i < a->elements*a->element_size && a->sortfnc(a->array+i, key) > 0)
-    i += a->element_size;
-  if (i >= a->elements*a->element_size) {
-    // Element was not found
-    return NULL;
-  } else if (a->sortfnc(key, a->array+i) == 0) {
-    return (a->array+i);
-  } else {
-    // Element was not found
-    return NULL;
+    return sarray_recgetbyid(a, key, 0, a->elements-1);
   }
 }
 
@@ -87,7 +65,7 @@ void* sarray_bubblegetbyid(struct sarray *a, void *key) {
  * Uses the sorting function defined internally in the sarray.
  */
 void* sarray_recgetbyid(struct sarray *a, void *key, size_t l, size_t u) {
-  void *half = a->array+l*a->element_size+((u-l)>>1)*a->element_size;
+  void *half = a->array + l + ((u - l) >> 1);
   if (u < l) {
     // We've ended up with the upper bound lower than the lower, this is probably
     // a rounding error. Element does not exist.
@@ -95,14 +73,14 @@ void* sarray_recgetbyid(struct sarray *a, void *key, size_t l, size_t u) {
     return NULL;
   } else if (a->sortfnc(key, half) == 0) {
     // We've stumbled upon the element, return it.
-    return (void*)half;
+    return *((void**)half);
   } else if (u - l < 3) {
     // We only have zero, two or three elements left in the array, check if tha
     // if so, return it. Otherwise return the null pointer.
-    if (a->sortfnc(key, a->array+l*a->element_size) == 0) {
-      return a->array+l*a->element_size;
-    } else if (a->sortfnc(key, a->array+u*a->element_size) == 0) {
-      return a->array+u*a->element_size;
+    if (a->sortfnc(key, a->array + l) == 0) {
+      return *(void**)(a->array + l);
+    } else if (a->sortfnc(key, a->array + u) == 0) {
+      return *(void**)(a->array + u);
     } else {
       return NULL;
     }
@@ -120,7 +98,7 @@ void* sarray_recgetbyid(struct sarray *a, void *key, size_t l, size_t u) {
  * Only really useful for SARRAY_ALLOW_MULTIPLE sarrays.
  */
 struct ptr_num* sarray_getlnbyid(struct sarray *a, void *key) {
-  void* ptr;
+  void **ptr;
   struct ptr_num *result;
   MALLOC_DIE(result, sizeof(*result));
   if (!a->elements) {
@@ -131,13 +109,13 @@ struct ptr_num* sarray_getlnbyid(struct sarray *a, void *key) {
     if ((ptr = sarray_recgetbyid(a, key, 0, a->elements-1))) {
       // FIXME: This can be more efficient
       // Find the lower bound
-      result->ptr = ptr;
-      while ((a->sortfnc(result->ptr, key) == 0) && (result->ptr > a->array))
+      result->ptr = *ptr;
+      while ((a->sortfnc(*(void**)result->ptr, key) == 0) && (result->ptr > a->array))
 	result->ptr--;
       // Find the number of elements
-      while ((a->sortfnc(ptr, key) == 0) && (ptr < a->array+a->elements*a->element_size))
+      while ((a->sortfnc(*ptr, key) == 0) && (*ptr < a->array + a->elements))
 	ptr++;
-      result->num = (ptr - result->ptr)/(a->element_size);
+      result->num = *ptr - result->ptr;
     } else {
       result->ptr = NULL;
       result->num = 0;
@@ -155,9 +133,8 @@ void* sarray_getprevbyid(struct sarray *a, void *key) {
   if (!a->elements) {
     // Array has zero elements, return element -1
     // (even though this is outside the memory area)
-    return (a->array-a->element_size);
+    return a->array;
   } else {
-//    printf("FOO: CALLING bubblegetprev for (a, key) = (%p, %zx) (key@%p)\n", a, key, &key);
     ptr = sarray_bubblegetprev(a, key);
     return ptr;
   }
@@ -165,16 +142,15 @@ void* sarray_getprevbyid(struct sarray *a, void *key) {
 
 void* sarray_bubblegetprev(struct sarray *a, void *key) {
   size_t i = 0;
-//  printf("i = %zd, a->element_size=%zu, a->array = %p, a->elements=%zu, &key=%p, a->sortfnc@%p\n", i, a->element_size, a->array, a->elements, key, a->sortfnc);
-  while ((i < a->elements) && (a->sortfnc(a->array+i*a->element_size, key) < 0)) {
+  while ((i < a->elements) && (a->sortfnc(*(void**)(a->array + i), key) < 0)) {
     i++;
   }
-  if ((i == 0) && (a->sortfnc(a->array+i*a->element_size, key) > -1)) {
+  if ((i == 0) && (a->sortfnc(*(void**)(a->array + i), key) > -1)) {
     // Previous element is actually element -1, return it (even though it is outside the array)
-    return a->array - a->element_size;
+    return *(void**)a->array;
   }
   i--;
-  return a->array+i*a->element_size;
+  return *(void**)(a->array + i);
 }
 
 void* sarray_recgetprev(struct sarray *a, void *key, size_t u, size_t l) {
@@ -183,28 +159,10 @@ void* sarray_recgetprev(struct sarray *a, void *key, size_t u, size_t l) {
 }
 
 /*
- * Finds an element by name. Assumes the element starts with an size_t, then
- * contains a pointer to the name.
- *
- * NOTE: THIS IS A REALLY UGLY HACK. FIXME APPLIES.
- */
-/*
-void* sarray_getbyname(struct sarray *a, char *name) {
-  int i;
-  for (i = 0; i < a->elements; i++) {
-    if (strcmp(*(char**)(a->array+i*a->element_size+sizeof(size_t)), name) == 0) {
-      return (a->array+i*a->element_size);
-    }
-  }
-  bug("element name %s not found", name);
-}
-*/
-
-/*
  * Get element from sarray by number
  */
 void* sarray_getbypos(struct sarray *a, size_t n) {
-  return (a->array+n*a->element_size);
+  return a->array + n;
 }
 
 /*
@@ -218,9 +176,9 @@ int sarray_add(struct sarray *a, void *e) {
   if (a->elements == a->allocated) {
     // The last element of the array is used. This means we have to increase the allocated size
     // for the array.
-    if (!(ptr = realloc(a->array, (a->allocated+REALLOC_STEP)*a->element_size))) {
+    if (!(ptr = realloc(a->array, a->allocated+REALLOC_STEP))) {
       // We couldn't allocate more memory. Bail out.
-      die("realloc to %zu bytes failed", (a->allocated+REALLOC_STEP)*a->element_size);
+      die("realloc to %zu bytes failed", a->allocated+REALLOC_STEP);
     }
     a->array = ptr;
     a->allocated += REALLOC_STEP;
@@ -237,12 +195,12 @@ int sarray_add(struct sarray *a, void *e) {
   if (!(ptr = sarray_getprevbyid(a, e))) {
     bug("%s", "something went wrong when trying to find the previous element");
   }
-  ptr += a->element_size;	// ptr now points to the first element to be moved
-  MEMMOVE_DIE(ptr+a->element_size, ptr, a->elements*a->element_size-(ptr-a->array));
+  ptr++;	// ptr now points to the first element to be moved
+  MEMMOVE_DIE(ptr + 1, ptr, a->elements - (ptr - a->array));
   // We will now insert the element at the position specified by ptr, since the other
   // data has been moved out of the way
   a->elements++;
-  memcpy(ptr, e, a->element_size);
+  ptr = e;
   // Return 1 since we succeeded
   return 1;
 }
@@ -252,7 +210,7 @@ void sarray_rmbyid(struct sarray *a, void *key) {
   if (!(ptr = sarray_getbyid(a, key))) {
     bug("tried to remove element with id %zx but element was not found", *((size_t*)key));
   }
-  MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
+  MEMMOVE_DIE(ptr, ptr + 1, a->elements-1-(ptr-a->array));
   a->elements--;
 }
 
@@ -262,7 +220,7 @@ void sarray_freebyid(struct sarray *a, void *key) {
     bug("tried to remove element with id %zx but element was not found", *((size_t*)key));
   }
   a->freefnc(ptr);
-  MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
+  MEMMOVE_DIE(ptr, ptr + 1, a->elements-1-(ptr-a->array));
   a->elements--;
 }
 
@@ -271,22 +229,22 @@ void sarray_rmbypos(struct sarray *a, size_t pos) {
   if (!(ptr = sarray_getbypos(a, pos))) {
     bug("tried to remove element %zu but failed", pos);
   }
-  MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
+  MEMMOVE_DIE(ptr, ptr + 1, a->elements-1-(ptr-a->array));
   a->elements--;
 }
 
 void sarray_rmbyptr(struct sarray *a, void* ptr) {
-  if (ptr > a->array+a->elements*a->element_size)
+  if (ptr > a->array+a->elements)
     bug("tried to remove ptr %p from array %p, but it is outside the array", ptr, a);
-  MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
+  MEMMOVE_DIE(ptr, ptr + 1, a->elements-1-(ptr-a->array));
   a->elements--;
 }
 
 void sarray_print(struct sarray *a) {
-  int i;
+  void *ptr;
   printf("printarray (%zu elements):", a->elements);
-  for (i = 0; i < a->elements; i++) {
-    printf(" %zu", GET_ID(a->array+i*a->element_size));
+  for (ptr = a->array; ptr < a->array + a->elements; ptr++) {
+    printf(" %p", ptr);
   }
   printf("\n");
 }
@@ -295,8 +253,7 @@ void sarray_free(struct sarray *a) {
   size_t l;
   if (a->freefnc) {
     for (l = 0; l < a->elements; l++) {
-//      printf("Accessing element %zu of %zu\n", l, a->elements);
-      (*(a->freefnc))(a->array+l*a->element_size);
+      (*(a->freefnc))(a->array+l);
     }
   }
   free(a->array);
@@ -323,7 +280,6 @@ int sarray_test() {
   MALLOC_DIE(a, sizeof(*a));
   a->allocated=0;
   a->elements=0;
-  a->element_size=sizeof(struct foo);
   MALLOC_DIE(a->array, sizeof(struct foo)*SORTEDARRAY_N);
   a->allocated=SORTEDARRAY_N;
   memset(a->array, 0, sizeof(struct foo)*SORTEDARRAY_N);

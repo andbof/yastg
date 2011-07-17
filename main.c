@@ -100,9 +100,6 @@ int main(int argc, char **argv) {
   printf("Creating universe\n");
   univ = createuniverse(civs);
 
-  // Initialize screen (this fixes the screen/console mutex)
-  pthread_mutex_init(&stdout_mutex, NULL);
-
   // Start server thread
   if (pipe(srvfd) != 0)
     die("%s", "Could not create server pipe");

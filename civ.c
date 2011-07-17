@@ -23,7 +23,7 @@ struct civ* loadciv(struct configtree *ctree) {
   char *st;
   c->presectors = array_init(sizeof(struct sector), 0, &sector_free);
   c->availnames = array_init(sizeof(char*), 0, &ptr_free);
-  c->sectors = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
+  c->sectors = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &free, &sort_id);
   ctree=ctree->sub;
   while (ctree) {
     if (strcmp(ctree->key, "NAME") == 0) {
@@ -48,7 +48,7 @@ struct sarray* loadcivs() {
   DIR *dirp;
   struct dirent *de;
   struct configtree *ctree;
-  struct sarray *a = sarray_init(sizeof(struct civ), 0, SARRAY_ENFORCE_UNIQUE, &civ_free, &sort_id);
+  struct sarray *a = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &civ_free, &sort_id);
   struct civ *cv;
   char* path = NULL;
   int pathlen = 0;
@@ -65,7 +65,6 @@ struct sarray* loadcivs() {
       cv = loadciv(ctree);
       destroyctree(ctree);
       sarray_add(a, cv);
-      free(cv);		// All data, including pointers to others objects, have been copied. We need to free cv now.
     }
   }
   if (path != NULL) free(path);
