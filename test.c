@@ -16,6 +16,9 @@ void run_tests() {
   printf("  array: ");
   array_test();
   printf("passed\n");
+  printf("  avltree: ");
+  avl_test();
+  printf("passed\n");
   printf("  stack: ");
   stack_test();
   printf("passed\n");

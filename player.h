@@ -3,7 +3,7 @@
 
 struct player {
   char* name;
-  size_t position;
+  struct sector* position;
 };
 
 void player_free();

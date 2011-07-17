@@ -7,14 +7,14 @@
 
 /* Global struct definitions */
 
-struct ulong_id {
+struct ulong_ptr {
   unsigned long i;
-  size_t id;
+  void *ptr;
 };
 
-struct double_id {
+struct double_ptr {
   double i;
-  size_t id;
+  void *ptr;
 };
 
 struct ptr_num {

@@ -7,7 +7,7 @@
 #define CONSTELLATION_PHI_RANDOM 1.0
 #define CONSTELLATION_MAXNUM 3
 
-void loadconstellations(struct universe *u);
-void addconstellation(struct universe *u, char* cname);
+void loadconstellations();
+void addconstellation(char* cname);
 
 #endif

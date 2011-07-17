@@ -60,7 +60,7 @@ void server_handlesignal(int signal, size_t param) {
       server_cleanexit();
       break;
     case MSG_RM:
-      log_printfn("server", "thread %zx is terminating, freeing structs", param);
+      log_printfn("server", "thread %zx is terminating, cleaning up", param);
       cd = sarray_getbyid(std, &param);
       if (cd != NULL) {
 	pthread_join(cd->thread, NULL);
@@ -149,7 +149,7 @@ void* server_main(void* p) {
   size_t st;
   struct sockaddr_storage peer_addr;
   socklen_t sin_size = sizeof(peer_addr);
-  std = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &conndata_free, &sort_id);
+  std = sarray_init(sizeof(struct conndata), 0, SARRAY_ENFORCE_UNIQUE, &conndata_free, &sort_id);
   struct conndata *cd;
 
   srvthread = pthread_self();

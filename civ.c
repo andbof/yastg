@@ -3,11 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
-#include <pthread.h>
 #include "defines.h"
 #include "log.h"
 #include "mtrandom.h"
 #include "civ.h"
+#include "ptrarray.h"
 #include "sector.h"
 #include "sarray.h"
 #include "array.h"
@@ -18,12 +18,11 @@
 struct civ* loadciv(struct configtree *ctree) {
   struct civ *c;
   MALLOC_DIE(c, sizeof(*c));
-  c->id = gen_id();
   struct sector *s;
   char *st;
-  c->presectors = array_init(sizeof(struct sector), 0, &sector_free);
-  c->availnames = array_init(sizeof(char*), 0, &ptr_free);
-  c->sectors = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &free, &sort_id);
+  c->presectors = ptrarray_init(0);
+  c->availnames = ptrarray_init(0);
+  c->sectors = ptrarray_init(0);
   ctree=ctree->sub;
   while (ctree) {
     if (strcmp(ctree->key, "NAME") == 0) {
@@ -32,23 +31,23 @@ struct civ* loadciv(struct configtree *ctree) {
     } else if (strcmp(ctree->key, "POWER") == 0) {
       sscanf(ctree->data, "%d", &c->power);
     } else if (strcmp(ctree->key, "SECTOR") == 0) {
-      s = sector_load(ctree->sub);
-      array_push(c->presectors, s);
-      free(s);	// We don't call free_sector here since free_sector will delete all contents associated with s (and we need to reference them in c->sectors)
+//	FIXME: We won't do this now as we don't support it
+//      s = sector_load(ctree->sub);
+//      ptrarray_push(c->presectors, s);
     } else if (strcmp(ctree->key, "SNAME") == 0) {
       st = strdup(ctree->data);
-      array_push(c->availnames, &st); // FIXME: Will this leak memory?
+      ptrarray_push(c->availnames, st);
     }
     ctree = ctree->next;
   }
   return c;
 }
 
-struct sarray* loadcivs() {
+struct array* loadcivs() {
   DIR *dirp;
   struct dirent *de;
   struct configtree *ctree;
-  struct sarray *a = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &civ_free, &sort_id);
+  struct array *a = array_init(sizeof(struct civ), 0, &civ_free);
   struct civ *cv;
   char* path = NULL;
   int pathlen = 0;
@@ -64,7 +63,8 @@ struct sarray* loadcivs() {
       ctree = parseconfig(path);
       cv = loadciv(ctree);
       destroyctree(ctree);
-      sarray_add(a, cv);
+      array_push(a, cv);
+      free(cv);		// All data, including pointers to others objects, have been copied. We need to free cv now.
     }
   }
   if (path != NULL) free(path);
@@ -74,61 +74,60 @@ struct sarray* loadcivs() {
 
 void civ_free(void *ptr) {
   struct civ* c = ptr;
-  sarray_free(c->sectors);
-  free(c->sectors);
-  array_free(c->presectors);
-  free(c->presectors);
-  array_free(c->availnames);
-  free(c->availnames);
+  size_t st;
+  ptrarray_free(c->sectors);
+  ptrarray_free(c->presectors);
+  for (st = 0; st < c->availnames->elements; st++)
+    free(ptrarray_get(c->availnames, st));
+  ptrarray_free(c->availnames);
   free(c->name);
 }
 
 #define UNIVERSE_CIV_FRAC 0.4
 #define UNIVERSE_MIN_INTERCIV_DISTANCE 100
 
-void spawncivs(struct universe *u, struct sarray *civs) {
+void spawncivs(struct universe *u, struct array *civs) {
   size_t i, j, k, nhab, chab, tpow;
   struct sector *s;
-  struct sarray *neigh;
+  struct ptrarray *neigh;
   struct civ *c;
   nhab = u->sectors->elements * UNIVERSE_CIV_FRAC;
   // Calculate total civilization power (we need this to be able
   // to get their relative values)
   tpow = 0;
   for (i = 0; i < civs->elements; i++) {
-    tpow += ((struct civ*)sarray_getbypos(civs, i))->power;
+    tpow += ((struct civ*)array_get(civs, i))->power;
   }
   // First, spawn all civilizations in separate home systems
   for (i = 0; i < civs->elements; i++) {
-    c = sarray_getbypos(civs, i);
+    c = array_get(civs, i);
     do {
-      s = sarray_getbypos(u->sectors, mtrandom_sizet(u->sectors->elements));
       k = 1;
+      s = ptrarray_get(u->sectors, mtrandom_sizet(u->sectors->elements));
       if (!s->owner) {
-	neigh = getneighbours(u, s, UNIVERSE_MIN_INTERCIV_DISTANCE);
+	neigh = getneighbours(s, UNIVERSE_MIN_INTERCIV_DISTANCE);
 	for (j = 0; j < neigh->elements; j++) {
-	  s = sarray_getbyid(u->sectors, &GET_ID(sarray_getbypos(neigh, j)));
-	  k = s->owner;
-	  if (k)
+	  if (((struct sector*)ptrarray_get(neigh, j))->owner != 0) {
+	    k = 0;
 	    break;
+	  }
 	}
-	sarray_free(neigh);
-	free(neigh);
+	ptrarray_free(neigh);
       } else {
 	k = 0;
       }
-    } while (s->owner != 0);
-    printf("Chose %zx (%s) as home system for %s\n", s->id, s->name, c->name);
-    s->owner = c->id;
-    c->home = s->id;
-    sarray_add(c->sectors, &s->id);
+    } while (!k);
+    printf("Chose %s as home system for %s\n", s->name, c->name);
+    s->owner = c;
+    c->home = s;
+    ptrarray_push(c->sectors, s);
   }
   mprintf("Growing civilizations ...\n");
   chab = civs->elements;
   while (chab < nhab) {
     // Grow civilizations
     for (i = 0; i < civs->elements; i++) {
-      c = sarray_getbypos(civs, i);
+      c = array_get(civs, i);
       if (mtrandom_sizet(tpow) < c->power) {
 	growciv(u, c);
 	chab++;
@@ -139,7 +138,7 @@ void spawncivs(struct universe *u, struct sarray *civs) {
 
   printf("Civilization stats:\n");
   for (i = 0; i < civs->elements; i++) {
-    c = sarray_getbypos(civs, i);
+    c = array_get(civs, i);
     printf("  %s has %zu sectors (%.2f%%) with power %u\n", c->name, c->sectors->elements, (float)c->sectors->elements/chab*100, c->power);
   }
   printf("%zu sectors of %zu are inhabited (%.2f%%)\n", chab, u->sectors->elements, (float)chab/u->sectors->elements*100);
@@ -149,36 +148,25 @@ void spawncivs(struct universe *u, struct sarray *civs) {
 #define CIV_GROW_STEP 10
 
 void growciv(struct universe *u, struct civ *c) {
-  struct sector *s;
-  struct sarray *neigh;
+  struct sector *s, *t;
+  struct ptrarray *neigh;
   size_t i;
-  size_t *ptr;
   unsigned long rad = CIV_GROW_MIN;
-  ptr = sarray_getbypos(c->sectors, mtrandom_sizet(c->sectors->elements));
+  t = ptrarray_get(c->sectors, mtrandom_sizet(c->sectors->elements));
   do {
     s = NULL;
-    neigh = getneighbours(u, sarray_getbyid(u->sectors, ptr), rad);
-//    printf("Found %zu neighbors\n", neigh->elements);
+    neigh = getneighbours(t, rad);
     for (i = 0; i < neigh->elements; i++) {
-      s = sarray_getbyid(u->sectors, &GET_ID(sarray_getbypos(neigh, i)));
-      if (!s->owner) {
-//	printf("Found system %s owned by no one!\n", s->name);
+      s = ptrarray_get(neigh, i);
+      if (!s->owner)
 	break;
-      } else {
-//	printf("System %s is already owned by %zx\n", s->name, s->owner);
-      }
     }
     if ((s == NULL) || (s->owner)) {
       rad += CIV_GROW_STEP;
- //     printf("radial search distance is now %lu\n", rad);
     }
-    sarray_free(neigh);
-    free(neigh);
+    ptrarray_free(neigh);
   } while ((s == NULL) || (s->owner));
-//  printf("Growing civ %s to system %zx (%s) at %ld %ld\n", c->name, s->id, s->name, s->x, s->y);
-  s->owner = c->id;
-  // Link sectors *before* adding them to c->sectors (as sarray_add might
-  // move ptr if a realloc occurs)
-  linksectors(u, s->id, *ptr);
-  sarray_add(c->sectors, &s->id);
+  s->owner = c;
+  linksectors(s, t);
+  ptrarray_push(c->sectors, s);
 }

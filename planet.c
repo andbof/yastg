@@ -7,18 +7,16 @@
 #include "sector.h"
 #include "planet.h"
 #include "base.h"
-#include "sarray.h"
+#include "ptrarray.h"
 #include "parseconfig.h"
-#include "id.h"
 #include "mtrandom.h"
 
 struct planet* initplanet() {
   struct planet *p;
   MALLOC_DIE(p, sizeof(*p));
   memset(p, 0, sizeof(*p));
-  p->id = gen_id();
-  p->bases = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
-  p->moons = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id);
+  p->bases = ptrarray_init(0);
+  p->moons = ptrarray_init(0);
   return p;
 }
 
@@ -32,11 +30,7 @@ struct planet* loadplanet(struct configtree *ctree) {
       p->type = ctree->data[0];
     } else if (strcmp(ctree->key, "BASE") == 0) {
       b = loadbase(ctree->sub);
-      sarray_add(p->bases, b);
-    } else if (strcmp(ctree->key, "ID") == 0) {
-      rm_id(p->id);
-      sscanf(ctree->data, "%zu", &(p->id));
-      insert_id(p->id);
+      ptrarray_push(p->bases, b);
     }
     ctree = ctree->next;
   }
@@ -45,11 +39,10 @@ struct planet* loadplanet(struct configtree *ctree) {
 
 void planet_free(void *ptr) {
   struct planet *p = ptr;
-  sarray_free(p->bases);
-  free(p->bases);
-  sarray_free(p->moons);
-  free(p->moons);
+  ptrarray_free(p->bases);
+  ptrarray_free(p->moons);
   free(p->name);
+  free(p);
 }
 
 #define PLANET_ODDS 7
@@ -61,13 +54,13 @@ struct planet* createplanet(struct sector* s) {
   return p;
 }
 
-struct sarray* createplanets(struct sector* s) {
+struct ptrarray* createplanets(struct sector* s) {
   int num = 0;
   struct planet *p;
-  struct sarray* planets = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id); 
+  struct ptrarray* planets = ptrarray_init(0);
   while ((mtrandom_sizet(SIZE_MAX) - SIZE_MAX/PLANET_ODDS < 0) && (num < PLANET_NUM_MAX)) {
     p = createplanet(s);
-    sarray_add(planets, p);
+    ptrarray_push(planets, p);
   }
   return planets;
 }

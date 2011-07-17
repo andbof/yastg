@@ -6,7 +6,6 @@
 #include "parseconfig.h"
 
 struct base {
-  size_t id;
   char *name;
   char type;
   int docks;

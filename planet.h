@@ -2,7 +2,7 @@
 #define HAS_PLANET_H
 
 #include "sector.h"
-#include "sarray.h"
+#include "array.h"
 #include "parseconfig.h"
 
 struct sector;
@@ -13,11 +13,10 @@ static char planet_types[PLANET_TYPE_N] = {
 };
 
 struct planet {
-  size_t id;
   char *name;
   int type;
-  struct sarray *bases;
-  struct sarray *moons;
+  struct ptrarray *bases;
+  struct ptrarray *moons;
 };
 
 struct planet* loadplanet(struct configtree *ctree);
@@ -26,6 +25,6 @@ void planet_free(void *ptr);
 
 struct planet* createplanet();
 
-struct sarray* createplanets(struct sector *s);
+struct ptrarray* createplanets(struct sector *s);
 
 #endif

@@ -7,8 +7,7 @@
 #include "defines.h"
 #include "log.h"
 #include "star.h"
-#include "id.h"
-#include "sarray.h"
+#include "ptrarray.h"
 #include "parseconfig.h"
 #include "mtrandom.h"
 
@@ -67,7 +66,6 @@ struct star* loadstar(struct configtree *ctree) {
   sol->hab = 0;
   sol->name = NULL;
   while (ctree) {
-    sol->id = gen_id();
     if (strcmp(ctree->key, "NAME") == 0) {
       sol->name = strdup(ctree->data);
     } else if (strcmp(ctree->key, "CLASS") == 0) {
@@ -183,7 +181,6 @@ unsigned long star_getsnowline(struct star *s) {
 struct star* createstar() {
   struct star *s;
   MALLOC_DIE(s, sizeof(struct star));
-  s->id = gen_id();
   s->name = NULL;
   s->cls = star_gencls();
   s->lum = star_genlum();
@@ -196,19 +193,20 @@ struct star* createstar() {
   return s;
 }
 
-struct sarray* createstars() {
-  struct sarray *sa = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &star_free, &sort_id);
+struct ptrarray* createstars() {
   struct star *s;
-  int num = star_gennum();
   int i;
+  struct ptrarray *a = ptrarray_init(0);
+  int num = star_gennum();
   for (i = 0; i < num; i++) {
     s = createstar();
-    sarray_add(sa, s);
+    ptrarray_push(a, s);
   }
-  return sa;
+  return a;
 }
 
 void star_free(void *ptr) {
   struct star *s = ptr;
   free(s->name);
+  free(s);
 }

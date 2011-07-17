@@ -5,13 +5,11 @@
 #include "base.h"
 #include "sarray.h"
 #include "parseconfig.h"
-#include "id.h"
 
 struct base* loadbase(struct configtree *ctree) {
   struct base *b;
   MALLOC_DIE(b, sizeof(*b));
   memset(b, 0, sizeof(*b));
-  b->id = gen_id();
   b->inventory = NULL; // FIXME
   b->players = NULL; // FIXME
   b->docks = 0; // FIXME
@@ -22,10 +20,6 @@ struct base* loadbase(struct configtree *ctree) {
       b->type = ctree->data[0];
     } else if (strcmp(ctree->key, "DOCKS") == 0) {
       sscanf(ctree->data, "%d", &(b->docks));
-    } else if (strcmp(ctree->key, "ID") == 0) {
-      rm_id(b->id);
-      sscanf(ctree->data, "%zu", &(b->id));
-      insert_id(b->id);
     }
     // FIXME: inventory + players
     ctree = ctree->next;
@@ -38,4 +32,5 @@ void base_free(void *ptr) {
   free(b->name);
   if (b->inventory) free(b->inventory);
   if (b->players) free(b->players);
+  free(b);
 }

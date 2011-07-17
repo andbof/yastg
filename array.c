@@ -46,7 +46,6 @@ void array_free(struct array *a) {
   size_t l;
   if (a->freefnc) {
     for (l = 0; l < a->elements; l++) {
-//      printf("Calling freefnc for element %zu of %zu @ %p; a @ %p; a->array @ %p\n", l, a->elements, a->array+l*a->element_size, a, a->array);
       (*(a->freefnc))(a->array+l*a->element_size);
     }
   }
@@ -119,6 +118,9 @@ int array_test() {
     bug("%zu elements left in array after all were removed", a->elements);
   }
   // Everything seems to check out. Now we need to free all that memory we have malloc'd.
+  for (i = 0; i < ARRAY_N; i++) {
+    free(u[i]);
+  }
   array_free(a);
   free(a);
   return 1;

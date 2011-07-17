@@ -20,7 +20,6 @@ extern const int stellar_clshab[STELLAR_CLS_N];
 #define STELLAR_MUL_HAB -50
   
 struct star {
-  size_t id;
   char* name;
   int cls, lum, hab;
   unsigned long lumval, hablow, habhigh, snowline;
@@ -37,7 +36,7 @@ unsigned long star_gethabhigh(struct star *s);
 unsigned long star_getsnowline(struct star *s);
 
 struct star* createstar();
-struct sarray* createstars();
+struct ptrarray* createstars();
 void star_free(void *ptr);
 
 #endif

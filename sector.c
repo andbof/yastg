@@ -8,7 +8,7 @@
 #include "sector.h"
 #include "planet.h"
 #include "base.h"
-#include "array.h"
+#include "ptrarray.h"
 #include "sarray.h"
 #include "parseconfig.h"
 #include "id.h"
@@ -18,26 +18,29 @@ struct sector* sector_init() {
   struct sector *s;
   MALLOC_DIE(s, sizeof(*s));
   memset(s, 0, sizeof(*s));
-  s->id = gen_id();
   s->phi = 0.0;
-  s->linkids = sarray_init(0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
+  s->links = ptrarray_init(0);
   return s;
 }
 
 void sector_free(void *ptr) {
+  size_t st;
   struct sector *s = ptr;
   if (s->name)
     free(s->name);
   if (s->gname)
     free(s->gname);
-  sarray_free(s->stars);
-  free(s->stars);
-  sarray_free(s->planets);
-  free(s->planets);
-  sarray_free(s->bases);
-  free(s->bases);
-  sarray_free(s->linkids);
-  free(s->linkids);
+  for (st = 0; st < s->stars->elements; st++)
+    star_free(ptrarray_get(s->stars, st));
+  ptrarray_free(s->stars);
+  for (st = 0; st < s->planets->elements; st++)
+    planet_free(ptrarray_get(s->planets, st));
+  ptrarray_free(s->planets);
+  for (st = 0; st < s->bases->elements; st++)
+    base_free(ptrarray_get(s->bases, st));
+  ptrarray_free(s->bases);
+  ptrarray_free(s->links);
+  free(s);
 }
 
 struct sector* sector_load(struct configtree *ctree) {
@@ -47,22 +50,22 @@ struct sector* sector_load(struct configtree *ctree) {
   struct star *sol;
   size_t i;
   int haspos = 0;
-  s->stars = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &star_free, &sort_id);
-  s->planets = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &planet_free, &sort_id);
-  s->bases = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
+  s->stars = ptrarray_init(0);
+  s->planets = ptrarray_init(0);
+  s->bases = ptrarray_init(0);
   while (ctree) {
     if (strcmp(ctree->key, "GNAME") == 0) {
       s->gname = strdup(ctree->data);
       s->name = NULL;
     } else if (strcmp(ctree->key, "PLANET") == 0) {
       p = loadplanet(ctree->sub);
-      sarray_add(s->planets, p);
+      ptrarray_push(s->planets, p);
     } else if (strcmp(ctree->key, "BASE") == 0) {
       b = loadbase(ctree->sub);
-      sarray_add(s->bases, b);
+      ptrarray_push(s->bases, b);
     } else if (strcmp(ctree->key, "STAR") == 0) {
       sol = loadstar(ctree->sub);
-      sarray_add(s->stars, sol);
+      ptrarray_push(s->stars, sol);
     } else if (strcmp(ctree->key, "POS") == 0) {
       sscanf(ctree->data, "%lu %lu", &s->x, &s->y);
       haspos = 1;
@@ -70,14 +73,14 @@ struct sector* sector_load(struct configtree *ctree) {
     ctree = ctree->next;
   }
   for (i = 0; i < s->stars->elements; i++)
-    s->hab += ((struct star*)sarray_getbypos(s->stars, i))->hab;
+    s->hab += ((struct star*)ptrarray_get(s->stars, i))->hab;
   if (!s->gname)
     die("%s", "required attribute missing in predefined sector: gname");
   if (!haspos)
     die("required attribute missing in predefined sector %s: position", s->name);
-  s->hablow = ((struct star*)s->stars->array)->hablow;
-  s->habhigh = ((struct star*)s->stars->array)->habhigh;
-  s->snowline = ((struct star*)s->stars->array)->snowline;
+  s->hablow = ((struct star*)ptrarray_get(s->stars, 0))->hablow;
+  s->habhigh = ((struct star*)ptrarray_get(s->stars, 0))->habhigh;
+  s->snowline = ((struct star*)ptrarray_get(s->stars, 0))->snowline;
   return s;
 }
 
@@ -89,65 +92,60 @@ struct sector* sector_create(char *name) {
   s->stars = createstars();
   s->hab = 0;
   for (i = 0; i < s->stars->elements; i++) {
-    sol = (struct star*)sarray_getbypos(s->stars, i);
+    sol = ptrarray_get(s->stars, i);
     s->hab += sol->hab;
     MALLOC_DIE(sol->name, strlen(s->name)+3);
     sprintf(sol->name, "%s %c", s->name, i+65);
   }
+  mprintf("s->stars is %p\n", s->stars);
+  mprintf("s->stars->array is %p\n", s->stars->array);
   s->hab -= STELLAR_MUL_HAB*(i-1);
-  s->hablow = ((struct star*)s->stars->array)->hablow;
-  s->habhigh = ((struct star*)s->stars->array)->habhigh;
-  s->snowline = ((struct star*)s->stars->array)->snowline;
+  s->hablow = ((struct star*)ptrarray_get(s->stars, 0))->hablow;
+  s->habhigh = ((struct star*)ptrarray_get(s->stars, 0))->habhigh;
+  s->snowline = ((struct star*)ptrarray_get(s->stars, 0))->snowline;
   s->planets = createplanets(s);
-  s->bases = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &base_free, &sort_id);
+  s->bases = ptrarray_init(0);
   // FIXME: bases
+  mprintf("Sector %p is called %s\n", s, s->name);
   return s;
 }
 
-void sector_move(struct universe *u, struct sector *s, long x, long y) {
-  struct ulong_id *uid;
-  struct double_id *did;
-  struct ptr_num *pn;
+void sector_move(struct sector *s, long x, long y) {
+  struct ulong_ptr uptr;
+  struct double_ptr dptr;
   struct sector *stmp;
   size_t st;
   s->x = x;
   s->y = y;
-  MALLOC_DIE(uid, sizeof(*uid));
-  uid->id = s->id;
-  uid->i = XYTORAD(s->x, s->y);
-  MALLOC_DIE(did, sizeof(*did));
-  did->id = s->id;
-  did->i = XYTOPHI(s->x, s->y);
+  uptr.ptr = s;
+  uptr.i = XYTORAD(s->x, s->y);
+  dptr.ptr = s;
+  dptr.i = XYTOPHI(s->x, s->y);
   // We need to make sure we're not adding this sector twice to srad and sphi
-  // However, they're not sorted by id so this is a bit cumbersome
-  pn = sarray_getlnbyid(u->srad, &uid->i);
-  for (st = 0; st < pn->num; st++) {
-    stmp = (struct sector*)(pn->ptr+st);
-    if (stmp->id == s->id) {
-      sarray_rmbyptr(u->srad, pn->ptr+st);
+  // FIXME: Scales really badly
+  for (st = 0; st < univ->srad->elements; st++) {
+    stmp = sarray_getbypos(univ->srad, st);
+    if (stmp == s) {
+      sarray_rmbypos(univ->srad, st);
       break;
     }
   }
-  free(pn);
-  pn = sarray_getlnbyid(u->sphi, &did->i);
-  for (st = 0; st < pn->num; st++) {
-    stmp = (struct sector*)(pn->ptr+st);
-    if (stmp->id == s->id) {
-      sarray_rmbyptr(u->sphi, pn->ptr+st);
+  for (st = 0; st < univ->sphi->elements; st++) {
+    stmp = sarray_getbypos(univ->sphi, st);
+    if (stmp == s) {
+      sarray_rmbypos(univ->sphi, st);
       break;
     }
   }
-  free(pn);
   // Now update the coordinates and add them to srad and sphi
-  s->r = uid->i;
-  sarray_add(u->srad, uid);
-  s->phi = did->i;
-  sarray_add(u->sphi, did);
-//  printf("Moved sector %zx (%s) to %ldx%ld (%lux%1.6f)\n", s->id, s->name, s->x, s->y, s->r, s->phi);
+  s->r = uptr.i;
+  sarray_add(univ->srad, &uptr);
+  s->phi = dptr.i;
+  sarray_add(univ->sphi, &dptr);
 }
 
 unsigned long sector_distance(struct sector *a, struct sector *b) {
-  long result = sqrt( (double)(b->x-a->x)*(b->x-a->x) + (double)(b->y-a->y)*(b->y-a->y) );
+  long result = sqrt( (double)(b->x - a->x)*(b->x - a->x) + (double)(b->y - a->y)*(b->y - a->y) );
   if (result < 0)
     return -result;
   return result;

@@ -8,6 +8,7 @@
 #include "log.h"
 #include "universe.h"
 #include "sarray.h"
+#include "ptrarray.h"
 #include "array.h"
 #include "id.h"
 #include "planet.h"
@@ -39,8 +40,7 @@
 #define NEIGHBOUR_DISTANCE 50
 
 void universe_free(struct universe *u) {
-  sarray_free(u->sectors);
-  free(u->sectors);
+  ptrarray_free(u->sectors);
   stable_free(u->sectornames);
   sarray_free(u->srad);
   free(u->srad);
@@ -51,28 +51,13 @@ void universe_free(struct universe *u) {
   free(u);
 }
 
-void linksectors(struct universe *u, size_t id1, size_t id2) {
-  struct sector *s1, *s2;
-  size_t *pid1, *pid2;
-  MALLOC_DIE(pid1, sizeof(*pid1));
-  MALLOC_DIE(pid2, sizeof(*pid2));
-  if (!(s1 = sarray_getbyid(u->sectors, &id1)))
-    bug("Sector %zx to link with %zx not found\n", id1, id2);
-  if (!(s2 = sarray_getbyid(u->sectors, &id2)))
-    bug("Failed finding %zx to link with %zx\n", id2, id1);
-  *pid1 = id1;
-  *pid2 = id2;
-  sarray_add(s1->linkids, pid2);
-  sarray_add(s2->linkids, pid1);
+void linksectors(struct sector *s1, struct sector *s2) {
+  ptrarray_push(s1->links, s2);
+  ptrarray_push(s2->links, s1);
 }
 
-int makeneighbours(struct universe *u, size_t id1, size_t id2, unsigned long min, unsigned long max) {
-  struct sector *s1, *s2;
+int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsigned long max) {
   unsigned long x, y;
-  if (!(s1 = sarray_getbyid(u->sectors, &id1)))
-    bug("Sector %zx to get %zx as a neighbour not found\n", id1, id2);
-  if (!(s2 = sarray_getbyid(u->sectors, &id2)))
-    bug("Failed finding %zx in to place near %zx\n", id2, id1);
   if (max > min) {
     x = min + mtrandom_ulong(max - min) + s1->x;
     y = min + mtrandom_ulong(max - min) + s1->y;
@@ -80,85 +65,74 @@ int makeneighbours(struct universe *u, size_t id1, size_t id2, unsigned long min
     x = mtrandom_ulong(NEIGHBOUR_DISTANCE)*2 - NEIGHBOUR_DISTANCE + s1->x;
     y = mtrandom_ulong(NEIGHBOUR_DISTANCE)*2 - NEIGHBOUR_DISTANCE + s1->y;
   }
-  sector_move(u, s2, x, y);
+  sector_move(s2, x, y);
   return 1;
   // FIXME: Placera inte för nära ett annat system
   // försök upp till X gånger, sen returnera 0
 }
 
 /*
- * Returns an sarray of all neighbouring systems within dist ly
+ * Returns an array of all neighbouring systems within dist ly
  * FIXME: This really needs a more efficient implementation, perhaps using u->srad or the like.
- * Perhaps it should also return indices instead of an sarray.
  */
-struct sarray* getneighbours(struct universe *u, struct sector *s, unsigned long dist) {
-  size_t i;
+struct ptrarray* getneighbours(struct sector *s, unsigned long dist) {
+  size_t st;
   struct sector *t;
-  struct sarray *result = sarray_init(0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
-  for (i = 0; i < u->sectors->elements; i++) {
-    t = (struct sector*)sarray_getbypos(u->sectors, i);
-    if ((t->id != s->id) && (sector_distance(t, s) < dist))
-      sarray_add(result, &t->id);
+  struct ptrarray *r = ptrarray_init(0);
+  for (st = 0; st < univ->sectors->elements; st++) {
+    t = ptrarray_get(univ->sectors, st);
+    if (sector_distance(s, t) < dist)
+      ptrarray_push(r, t);
   }
-  return result;
+  return r;
 }
 
-size_t countneighbours(struct universe *u, struct sector *s, unsigned long dist) {
-  size_t i, n = 0;
+size_t countneighbours(struct sector *s, unsigned long dist) {
+  size_t st, r = 0;
   struct sector *t;
-  for (i = 0; i < u->sectors->elements; i++) {
-    t = (struct sector*)sarray_getbypos(u->sectors, i);
-    if ((t->id != s->id) && (sector_distance(t, s) < dist))
-      n++;
+  for (st = 0; st < univ->sectors->elements; st++) {
+    t = ptrarray_get(univ->sectors, st);
+    if ((t != s) && (sector_distance(s, t) < dist))
+      r++;
   }
-  return n;
+  return r;
 }
 
-struct universe* createuniverse(struct sarray *civs) {
-  int i;
+struct universe* universe_create() {
   struct universe *u;
-  int power = 0;
 
   MALLOC_DIE(u, sizeof(*u));
   u->id = 0;
   u->name = NULL;
   u->numsector = 0;
-  u->sectors = sarray_init(0, SARRAY_ENFORCE_UNIQUE, &sector_free, &sort_id);
+  u->sectors = ptrarray_init(0);
   u->sectornames = stable_create();
-  u->srad = sarray_init(0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
-  u->sphi = sarray_init(0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
+  u->srad = sarray_init(sizeof(struct ulong_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
+  u->sphi = sarray_init(sizeof(struct double_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
+
+  return u;
+}
+
+void universe_init(struct array *civs) {
+  int i;
+  int power = 0;
+  
   for (i = 0; i < civs->elements; i++) {
-    power += ((struct civ*)sarray_getbypos(civs, i))->power;
+    power += ((struct civ*)array_get(civs, i))->power;
   }
   /*
    * 1. Decide number of constellations in universe.
    * 2. For each constellation, create a number of sectors, grouping them together.
    */
-  loadconstellations(u);
+  loadconstellations(univ);
   /*
    * 3. Randomly distribute civilizations
    * 4. Let civilizations grow and create hyperspace links
    */
-  spawncivs(u, civs);
-  return u;
-
-}
-
-struct sector* getsectorbyid(struct universe *u, size_t id) {
-  return sarray_getbyid(u->sectors, &id);
+  spawncivs(univ, civs);
 }
 
 struct sector* getsectorbyname(struct universe *u, char *name) {
   unsigned long l;
-  struct sector *s;
   return stable_get(univ->sectornames, name);
-/*
- * for (l = 0; l < u->sectors->elements; l++) {
-    s = sarray_getbypos(u->sectors, l);
-    if (strcmp(s->name, name) == 0) {
-      return s;
-    }
-  }
-  return NULL;
-*/
 }

@@ -15,6 +15,7 @@
 #include "mtrandom.h"
 #include "sarray.h"
 #include "array.h"
+#include "ptrarray.h"
 #include "test.h"
 #include "server.h"
 #include "sector.h"
@@ -67,10 +68,10 @@ int main(int argc, char **argv) {
   struct sector *s, *t;
   struct planet *pl;
   struct star *sol;
-  size_t st;
+  size_t st, su;
   struct sarray *gurka;
   unsigned int tomat;
-  struct sarray *civs;
+  struct array *civs;
 
   // Open log file
   log_init();
@@ -84,7 +85,6 @@ int main(int argc, char **argv) {
 
 #ifdef TEST
   run_tests();
-  exit(0);
 #endif
 
   // Parse command line options
@@ -98,7 +98,8 @@ int main(int argc, char **argv) {
 
   // Create universe
   printf("Creating universe\n");
-  univ = createuniverse(civs);
+  univ = universe_create();
+  universe_init(civs);
 
   // Start server thread
   if (pipe(srvfd) != 0)
@@ -121,48 +122,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  /*
-  while (1) {
-    s = sarray_getbyid(univ->sectors, &alfred->position);
-    printf("You are in sector %s (id %zx, coordinates %ldx%ld), habitability %d\n", s->name, s->id, s->x, s->y, s->hab);
-    printf("Snow line at %lu Gm\n", s->snowline);
-    printf("Habitable zone is from %lu to %lu Gm\n", s->hablow, s->habhigh);
-    for (i = 0; i < s->stars->elements; i++) {
-      sol = (struct star*)sarray_getbypos(s->stars, i);
-      printf("%s: Class %c %s (id %zx)\n", sol->name, stellar_cls[sol->cls], stellar_lum[sol->lum], sol->id);
-      printf("  Surface temperature: %dK, habitability modifier: %d, luminosity: %s \n", sol->temp, sol->hab, hundreths(sol->lumval));
-    }
-    printf("This sector has hyperspace links to\n");
-    for (i = 0; i < s->linkids->elements; i++) {
-      printf("  %s\n", ((struct sector*)sarray_getbyid(univ->sectors, &GET_ID(sarray_getbypos(s->linkids, i))))->name);
-    }
-    printf("Sectors within 50 lys are:\n");
-    gurka = getneighbours(univ, s, 50);
-    for (i = 0; i < gurka->elements; i++) {
-      t = (struct sector*)sarray_getbyid(univ->sectors, sarray_getbypos(gurka, i));
-      printf("  %s at %lu ly\n", t->name, getdistance(s, t));
-    }
-    if (s->owner != 0) {
-      printf("This sector is owned by civ %zx\n", s->id);
-    } else {
-      printf("This sector is not part of any civilization\n");
-    }
-
-    printf("> ");
-    fgets(line, 256, stdin);
-    chomp(line);
-    if (!strcmp(line,"help")) {
-      printf("No help available.\n");
-    } else if (!strncmp(line, "go ", 3)) {
-      alfred->position = GET_ID((struct sector*)sarray_getbyname(univ->sectors, line+3));
-      printf("Entering %s\n", ((struct sector*)sarray_getbyid(univ->sectors, &alfred->position))->name);
-    } else if (!strcmp(line, "quit")) {
-      printf("Bye!\n");
-      exit(0);
-    }
-  }
-  */
-
   /* Kill server thread, this will also kill all player threads */
   i = MSG_TERM;
   st = 0;
@@ -175,8 +134,12 @@ int main(int argc, char **argv) {
 
   /* Destroy all structures and free all memory */
 
-  log_printfn("main", "freeing all structs");
-  sarray_free(civs);
+  log_printfn("main", "cleaning up");
+  for (st = 0; st < univ->sectors->elements; st++) {
+    s = ptrarray_get(univ->sectors, st);
+    sector_free(s);
+  }
+  array_free(civs);
   free(civs);
   free(line);
   universe_free(univ);
