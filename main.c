@@ -118,6 +118,25 @@ int main(int argc, char **argv) {
     chomp(line);
     if (!strcmp(line,"help")) {
       mprintf("No help available.\n");
+    } else if (strncmp(line, "wall ", 5) == 0) {
+      if (strlen(line) > 5) {
+	i = MSG_WALL;
+	st = (size_t)(line + 5);
+	write(srvfd[1], &i, sizeof(i));
+	write(srvfd[1], &st, sizeof(st));
+      } else {
+	mprintf("usage: wall <message>");
+      }
+    } else if (strcmp(line, "pause") == 0) {
+      i = MSG_PAUSE;
+      st = 0;
+      write(srvfd[1], &i, sizeof(i));
+      write(srvfd[1], &st, sizeof(st));
+    } else if (strcmp(line, "resume") == 0) {
+      i = MSG_CONT;
+      st = 0;
+      write(srvfd[1], &i, sizeof(i));
+      write(srvfd[1], &st, sizeof(st));
     } else if (!strcmp(line, "memstat")) {
       minfo = mallinfo();
       mprintf("Memory statistics:\n");

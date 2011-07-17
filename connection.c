@@ -33,6 +33,7 @@ struct conndata* conn_create() {
   struct conndata *data;
   int r = 1;
   data = malloc(sizeof(*data));
+  data->paused = 0;
   if (data != NULL) {
     memset(data, 0, sizeof(*data));
     data->id = gen_id();
@@ -195,10 +196,26 @@ void conn_act(struct conndata *data) {
 }
 
 void conn_handlesignal(struct conndata *data, int signal) {
+  char *str;
   switch (signal) {
     case MSG_TERM:
-      conn_send(data, "server is shutting down, you are being disconnected.\n");
+      conn_send(data, "\nServer is shutting down, you are being disconnected.\n");
       conn_cleanexit(data);
+      break;
+    case MSG_PAUSE:
+      conn_send(data, "\nYou have been paused by God. This might mean the whole universe is currently on hold\n");
+      conn_send(data, "or just you. Anything you enter at the prompt will queue up until you are resumed.\n");
+      data->paused = 1;
+      break;
+    case MSG_CONT:
+      conn_send(data, "\nYou have been resumed, feel free to play away!\n");
+      data->paused = 0;
+      break;
+    case MSG_WALL:
+      conn_send(data, "\nMessage to all connected users:\n");
+      read(data->threadfds[0], &str, sizeof(char*));
+      conn_send(data, str);
+      conn_send(data, "\nEnd of message.\n");
       break;
     default:
       log_printfn("connection", "received unknown signal: %d", signal);
@@ -227,13 +244,19 @@ void conn_loop(struct conndata *data) {
 	log_printfn("connection", "select() reported error, terminating connection %zx", data->id);
 	conn_cleanexit(data);
       }
+
       if (FD_ISSET(data->threadfds[0], &data->rfds)) {
 	// We have received a message on the signalling fd
-	read(data->threadfds[0], &i, sizeof(i));
-	conn_handlesignal(data, i);
+	do {
+	  read(data->threadfds[0], &i, sizeof(i));
+	  conn_handlesignal(data, i);
+	} while (data->paused);
       }
+
       if (FD_ISSET(data->peerfd, &data->rfds)) {
+
 	// We have received something from the peer
+	// FIXME: If peer sends something with a line break, we should interpret it as separate commands
 	rb += recv(data->peerfd, data->rbuf + rb, data->rbufs - rb, 0);
 	if (rb < 1) {
 	  log_printfn("connection", "peer %s disconected, terminating connection %zx", data->peer, data->id);
@@ -255,8 +278,9 @@ void conn_loop(struct conndata *data) {
 	    data->rbuf = ptr;
 	  }
 	}
+
       }
-    } while (data->rbuf[rb - 1] != '\n');
+    } while ((rb == 0) || (data->rbuf[rb - 1] != '\n'));
     
     // Truncate string at EOL (we might have \13\10 or \10)
     if ((rb > 1) && (data->rbuf[rb - 2] == 13)) {

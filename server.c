@@ -52,8 +52,25 @@ void server_cleanexit() {
   pthread_exit(0);
 }
 
+void server_signthread(int fd, void *msg, size_t size) {
+  // FIXME: This should be handled more gracefully
+  if (write(fd, msg, size) < 1)
+    bug("%s", "a thread's signalling fd seems closed");
+}
+
+void server_signallthreads(void *msg, size_t size) {
+  int i;
+  struct conndata *cd;
+  // FIXME: This isn't thread safe, it assumes that std is not modified during the whole sending process
+  for (i = 0; i < std->elements; i++) {
+    cd = sarray_getbypos(std, i);
+    server_signthread(cd->threadfds[1], msg, size);
+  }
+}
+
 void server_handlesignal(int signal, size_t param) {
   struct conndata *cd;
+  int i, j;
   log_printfn("server", "received signal %d", signal);
   switch (signal) {
     case MSG_TERM:
@@ -68,6 +85,21 @@ void server_handlesignal(int signal, size_t param) {
       } else {
 	bug("unknown thread id %zx is terminating", param);
       }
+      break;
+    case MSG_WALL:
+      // FIXME: This assumes that the string at &param is valid for as long as there are threads to
+      // send it to; it should be duplicated.
+      log_printfn("server", "walling all users");
+      server_signallthreads(&signal, sizeof(int));
+      server_signallthreads(&param, sizeof(void*));
+      break;
+    case MSG_PAUSE:
+      log_printfn("server", "pausing the entire universe");
+      server_signallthreads(&signal, sizeof(int));
+      break;
+    case MSG_CONT:
+      log_printfn("server", "universe continuing");
+      server_signallthreads(&signal, sizeof(int));
       break;
     default:
       log_printfn("server", "unknown message received: %d", signal);

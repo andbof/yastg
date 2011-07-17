@@ -21,6 +21,7 @@ struct conndata {
   size_t rbufs, sbufs;
   char *rbuf;
   char *sbuf;
+  int paused;
 };
 
 struct conndata* conn_create();
