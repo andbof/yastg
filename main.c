@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <malloc.h>
 
 #include "defines.h"
 #include "log.h"
@@ -72,6 +73,7 @@ int main(int argc, char **argv) {
   struct sarray *gurka;
   unsigned int tomat;
   struct array *civs;
+  struct mallinfo minfo;
 
   // Open log file
   log_init();
@@ -116,9 +118,26 @@ int main(int argc, char **argv) {
     chomp(line);
     if (!strcmp(line,"help")) {
       mprintf("No help available.\n");
+    } else if (!strcmp(line, "memstat")) {
+      minfo = mallinfo();
+      mprintf("Memory statistics:\n");
+      mprintf("  Memory allocated with sbrk by malloc:           %d bytes\n", minfo.arena);
+      mprintf("  Number of chunks not in use:                    %d\n", minfo.ordblks);
+      mprintf("  Number of chunks allocated with mmap:           %d\n", minfo.hblks);
+      mprintf("  Memory allocated with mmap:                     %d bytes\n", minfo.hblkhd);
+      mprintf("  Memory occupied by chunks handed out by malloc: %d bytes\n", minfo.uordblks);
+      mprintf("  Memory occupied by free chunks:                 %d bytes\n", minfo.fordblks);
+      mprintf("  Size of top-most releasable chunk:              %d bytes\n", minfo.keepcost);
+    } else if (!strcmp(line, "stats")) {
+      mprintf("Statistics:\n");
+      mprintf("  Size of universe:          %zu sectors\n", univ->sectors->elements);
+      mprintf("  Number of users known:     %s\n", "FIXME");
+      mprintf("  Number of users connected: %s\n", "FIXME");
     } else if (!strcmp(line, "quit")) {
       mprintf("Bye!\n");
       running = 0;
+    } else {
+      mprintf("Unknown command or syntax error.\n");
     }
   }
 
