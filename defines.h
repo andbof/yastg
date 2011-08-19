@@ -62,13 +62,13 @@ extern const char* greek[GREEK_N];
 #define die(FMT, ...)				\
   do {						\
     log_printfn("panic", "in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
-    exit(1);					\
+    exit(EXIT_FAILURE);				\
   } while(0)
 
 #define bug(FMT, ...)				\
   do {						\
     log_printfn("panic", "Oops! YASTG has encountered an internal bug in %s:%d and is crashing: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
-    exit(1);					\
+    exit(EXIT_FAILURE);				\
   } while(0)
 
 #define MALLOC_DIE(VAR, SIZE)	\

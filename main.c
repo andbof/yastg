@@ -46,7 +46,7 @@ void parseopts(int argc, char **argv) {
   while ((c = getopt(argc, argv, options)) > 0) {
     switch (c) {
       case 'd': printf("Detached mode\n"); detached = 1; break;
-      default:  exit(1);
+      default:  exit(EXIT_FAILURE);
     }
   }
 }
@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
   // Start server thread
   if (pipe(srvfd) != 0)
     die("%s", "Could not create server pipe");
-  if (pthread_create(&srvthread, NULL, server_main, &srvfd[0]))
+  if (pthread_create(&srvthread, NULL, server_main, &srvfd[0]) != 0)
     die("%s", "Could not launch server thread");
 
   mprintf("Welcome to YASTG v%s (commit %s), built %s %s.\n\n", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     mprintf("console> ");
     fgets(line, 256, stdin); // FIXME
     chomp(line);
-    if (!strcmp(line,"help")) {
+    if (strcmp(line,"help") == 0) {
       mprintf("No help available.\n");
     } else if (strncmp(line, "wall ", 5) == 0) {
       if (strlen(line) > 5) {
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
       st = 0;
       write(srvfd[1], &i, sizeof(i));
       write(srvfd[1], &st, sizeof(st));
-    } else if (!strcmp(line, "memstat")) {
+    } else if (strcmp(line, "memstat") == 0) {
       minfo = mallinfo();
       mprintf("Memory statistics:\n");
       mprintf("  Memory allocated with sbrk by malloc:           %d bytes\n", minfo.arena);
@@ -147,12 +147,12 @@ int main(int argc, char **argv) {
       mprintf("  Memory occupied by chunks handed out by malloc: %d bytes\n", minfo.uordblks);
       mprintf("  Memory occupied by free chunks:                 %d bytes\n", minfo.fordblks);
       mprintf("  Size of top-most releasable chunk:              %d bytes\n", minfo.keepcost);
-    } else if (!strcmp(line, "stats")) {
+    } else if (strcmp(line, "stats") == 0) {
       mprintf("Statistics:\n");
       mprintf("  Size of universe:          %zu sectors\n", univ->sectors->elements);
       mprintf("  Number of users known:     %s\n", "FIXME");
       mprintf("  Number of users connected: %s\n", "FIXME");
-    } else if (!strcmp(line, "quit")) {
+    } else if (strcmp(line, "quit") == 0) {
       mprintf("Bye!\n");
       running = 0;
     } else {
