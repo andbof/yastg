@@ -9,19 +9,16 @@
  */
 void run_tests() {
 #ifdef TEST
-  printf("Running self tests ...\n");
-  printf("  sarray: ");
-  sarray_test();
-  printf("passed\n");
-  printf("  array: ");
-  array_test();
-  printf("passed\n");
-  printf("  avltree: ");
-  avl_test();
-  printf("passed\n");
-  printf("  stack: ");
-  stack_test();
-  printf("passed\n");
-  printf("All self tests passed!\n");
+	printf("Running self tests ...\n");
+	printf("  sarray: ");
+	sarray_test();
+	printf("passed\n");
+	printf("  array: ");
+	array_test();
+	printf("passed\n");
+	printf("  stack: ");
+	stack_test();
+	printf("passed\n");
+	printf("All self tests passed!\n");
 #endif
 }

@@ -2,7 +2,7 @@
 #define HAS_INVENTORY_H
 
 struct inventory {
-  unsigned int placeholder;
+	unsigned int placeholder;
 };
 
 #endif

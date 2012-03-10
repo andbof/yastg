@@ -2,11 +2,11 @@
 #define HAS_ARRAY_H
 
 struct array {
-  size_t elements;
-  size_t allocated;
-  size_t element_size;
-  void (*freefnc)(void*);
-  void* array;
+	size_t elements;
+	size_t allocated;
+	size_t element_size;
+	void (*freefnc)(void*);
+	void* array;
 };
 
 struct array* array_init(size_t esize, size_t asize, void (*freefnc)(void*));

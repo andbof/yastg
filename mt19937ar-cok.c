@@ -22,16 +22,16 @@
    modification, are permitted provided that the following conditions
    are met:
 
-     1. Redistributions of source code must retain the above copyright
-        notice, this list of conditions and the following disclaimer.
+   1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
 
-     2. Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions and the following disclaimer in the
-        documentation and/or other materials provided with the distribution.
+   2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
 
-     3. The names of its contributors may not be used to endorse or promote 
-        products derived from this software without specific prior written 
-        permission.
+   3. The names of its contributors may not be used to endorse or promote 
+   products derived from this software without specific prior written 
+   permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -47,8 +47,8 @@
 
 
    Any feedback is very welcome.
-   http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
-   email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
+http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
+email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 */
 
 #include <stdio.h>
@@ -70,17 +70,17 @@ static unsigned long *mt_next;
 
 /* initializes mt_state[MT_N] with a seed */
 void mt_init_genrand(unsigned long s) {
-  int j;
-  mt_state[0] = s & 0xffffffffUL;
-  for (j = 1; j < MT_N; j++) {
-    mt_state[j] = (1812433253UL * (mt_state[j - 1] ^ (mt_state[j - 1] >> 30)) + j); 
-    /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
-    /* In the previous versions, MSBs of the seed affect   */
-    /* only MSBs of the array mt_state[].                        */
-    /* 2002/01/09 modified by Makoto Matsumoto             */
-    mt_state[j] &= 0xffffffffUL;  /* for >32 bit machines */
-  }
-  mt_left = 1; mt_initf = 1;
+	int j;
+	mt_state[0] = s & 0xffffffffUL;
+	for (j = 1; j < MT_N; j++) {
+		mt_state[j] = (1812433253UL * (mt_state[j - 1] ^ (mt_state[j - 1] >> 30)) + j); 
+		/* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
+		/* In the previous versions, MSBs of the seed affect   */
+		/* only MSBs of the array mt_state[].                        */
+		/* 2002/01/09 modified by Makoto Matsumoto             */
+		mt_state[j] &= 0xffffffffUL;  /* for >32 bit machines */
+	}
+	mt_left = 1; mt_initf = 1;
 }
 
 /* initialize by an array with array-length */
@@ -88,164 +88,164 @@ void mt_init_genrand(unsigned long s) {
 /* key_length is its length */
 /* slight change for C++, 2004/2/26 */
 void mt_init_by_array(unsigned long init_key[], int key_length) {
-  int i, j, k;
-  mt_init_genrand(19650218UL);
-  i = 1; j = 0;
-  k = (MT_N > key_length ? MT_N : key_length);
-  for (; k; k--) {
-    mt_state[i] = (mt_state[i] ^ ((mt_state[i - 1] ^ (mt_state[i - 1] >> 30)) * 1664525UL))
-      + init_key[j] + j; /* non linear */
-    mt_state[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
-    i++; j++;
-    if (i>=MT_N) { mt_state[0] = mt_state[MT_N - 1]; i = 1; }
-    if (j>=key_length) j=0;
-  }
-  for (k = MT_N - 1; k; k--) {
-    mt_state[i] = (mt_state[i] ^ ((mt_state[i - 1] ^ (mt_state[i - 1] >> 30)) * 1566083941UL))
-      - i; /* non linear */
-    mt_state[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
-    i++;
-    if (i >= MT_N) { mt_state[0] = mt_state[MT_N - 1]; i = 1; }
-  }
+	int i, j, k;
+	mt_init_genrand(19650218UL);
+	i = 1; j = 0;
+	k = (MT_N > key_length ? MT_N : key_length);
+	for (; k; k--) {
+		mt_state[i] = (mt_state[i] ^ ((mt_state[i - 1] ^ (mt_state[i - 1] >> 30)) * 1664525UL))
+			+ init_key[j] + j; /* non linear */
+		mt_state[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
+		i++; j++;
+		if (i>=MT_N) { mt_state[0] = mt_state[MT_N - 1]; i = 1; }
+		if (j>=key_length) j=0;
+	}
+	for (k = MT_N - 1; k; k--) {
+		mt_state[i] = (mt_state[i] ^ ((mt_state[i - 1] ^ (mt_state[i - 1] >> 30)) * 1566083941UL))
+			- i; /* non linear */
+		mt_state[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
+		i++;
+		if (i >= MT_N) { mt_state[0] = mt_state[MT_N - 1]; i = 1; }
+	}
 
-  mt_state[0] = 0x80000000UL; /* MSB is 1; assuring non-zero initial array */ 
-  mt_left = 1; mt_initf = 1;
+	mt_state[0] = 0x80000000UL; /* MSB is 1; assuring non-zero initial array */ 
+	mt_left = 1; mt_initf = 1;
 }
 
 static void mt_next_state(void) {
-  unsigned long *p=mt_state;
-  int j;
+	unsigned long *p=mt_state;
+	int j;
 
-  /* if mt_init_genrand() has not been called, */
-  /* a default initial seed is used         */
-  if (mt_initf == 0) mt_init_genrand(5489UL);
+	/* if mt_init_genrand() has not been called, */
+	/* a default initial seed is used         */
+	if (mt_initf == 0) mt_init_genrand(5489UL);
 
-  mt_left = MT_N;
-  mt_next = mt_state;
-  
-  for (j = MT_N - MT_M + 1; --j; p++) 
-    *p = p[MT_M] ^ MT_TWIST(p[0], p[1]);
+	mt_left = MT_N;
+	mt_next = mt_state;
 
-  for (j = MT_M; --j; p++) 
-    *p = p[MT_M - MT_N] ^ MT_TWIST(p[0], p[1]);
+	for (j = MT_N - MT_M + 1; --j; p++) 
+		*p = p[MT_M] ^ MT_TWIST(p[0], p[1]);
 
-  *p = p[MT_M - MT_N] ^ MT_TWIST(p[0], mt_state[0]);
+	for (j = MT_M; --j; p++) 
+		*p = p[MT_M - MT_N] ^ MT_TWIST(p[0], p[1]);
+
+	*p = p[MT_M - MT_N] ^ MT_TWIST(p[0], mt_state[0]);
 }
 
 /* generates a random number on [0,0xffffffff]-interval */
 unsigned long mt_genrand_int32(void) {
-  unsigned long y;
+	unsigned long y;
 
-  if (--mt_left == 0)
-    mt_next_state();
-  y = *mt_next++;
+	if (--mt_left == 0)
+		mt_next_state();
+	y = *mt_next++;
 
-  /* Tempering */
-  y ^= (y >> 11);
-  y ^= (y << 7) & 0x9d2c5680UL;
-  y ^= (y << 15) & 0xefc60000UL;
-  y ^= (y >> 18);
+	/* Tempering */
+	y ^= (y >> 11);
+	y ^= (y << 7) & 0x9d2c5680UL;
+	y ^= (y << 15) & 0xefc60000UL;
+	y ^= (y >> 18);
 
-  return y;
+	return y;
 }
 
 /* generates a random number on [0,0x7fffffff]-interval */
 long mt_genrand_int31(void) {
-  unsigned long y;
+	unsigned long y;
 
-  if (--mt_left == 0)
-    mt_next_state();
-  y = *mt_next++;
+	if (--mt_left == 0)
+		mt_next_state();
+	y = *mt_next++;
 
-  /* Tempering */
-  y ^= (y >> 11);
-  y ^= (y << 7) & 0x9d2c5680UL;
-  y ^= (y << 15) & 0xefc60000UL;
-  y ^= (y >> 18);
+	/* Tempering */
+	y ^= (y >> 11);
+	y ^= (y << 7) & 0x9d2c5680UL;
+	y ^= (y << 15) & 0xefc60000UL;
+	y ^= (y >> 18);
 
-  return (long)(y >> 1);
+	return (long)(y >> 1);
 }
 
 /* generates a random number on [0,1]-real-interval */
 double mt_genrand_real1(void) {
-  unsigned long y;
+	unsigned long y;
 
-  if (--mt_left == 0)
-    mt_next_state();
-  y = *mt_next++;
+	if (--mt_left == 0)
+		mt_next_state();
+	y = *mt_next++;
 
-  /* Tempering */
-  y ^= (y >> 11);
-  y ^= (y << 7) & 0x9d2c5680UL;
-  y ^= (y << 15) & 0xefc60000UL;
-  y ^= (y >> 18);
+	/* Tempering */
+	y ^= (y >> 11);
+	y ^= (y << 7) & 0x9d2c5680UL;
+	y ^= (y << 15) & 0xefc60000UL;
+	y ^= (y >> 18);
 
-  return (double)y * (1.0 / 4294967295.0); 
-  /* divided by 2^32-1 */ 
+	return (double)y * (1.0 / 4294967295.0); 
+	/* divided by 2^32-1 */ 
 }
 
 /* generates a random number on [0,1)-real-interval */
 double mt_genrand_real2(void) {
-  unsigned long y;
+	unsigned long y;
 
-  if (--mt_left == 0)
-    mt_next_state();
-  y = *mt_next++;
+	if (--mt_left == 0)
+		mt_next_state();
+	y = *mt_next++;
 
-  /* Tempering */
-  y ^= (y >> 11);
-  y ^= (y << 7) & 0x9d2c5680UL;
-  y ^= (y << 15) & 0xefc60000UL;
-  y ^= (y >> 18);
+	/* Tempering */
+	y ^= (y >> 11);
+	y ^= (y << 7) & 0x9d2c5680UL;
+	y ^= (y << 15) & 0xefc60000UL;
+	y ^= (y >> 18);
 
-  return (double)y * (1.0 / 4294967296.0); 
-  /* divided by 2^32 */
+	return (double)y * (1.0 / 4294967296.0); 
+	/* divided by 2^32 */
 }
 
 /* generates a random number on (0,1)-real-interval */
 double mt_genrand_real3(void) {
-  unsigned long y;
+	unsigned long y;
 
-  if (--mt_left == 0)
-    mt_next_state();
-  y = *mt_next++;
+	if (--mt_left == 0)
+		mt_next_state();
+	y = *mt_next++;
 
-  /* Tempering */
-  y ^= (y >> 11);
-  y ^= (y << 7) & 0x9d2c5680UL;
-  y ^= (y << 15) & 0xefc60000UL;
-  y ^= (y >> 18);
+	/* Tempering */
+	y ^= (y >> 11);
+	y ^= (y << 7) & 0x9d2c5680UL;
+	y ^= (y << 15) & 0xefc60000UL;
+	y ^= (y >> 18);
 
-  return ((double)y + 0.5) * (1.0 / 4294967296.0); 
-  /* divided by 2^32 */
+	return ((double)y + 0.5) * (1.0 / 4294967296.0); 
+	/* divided by 2^32 */
 }
 
 /* generates a random number on [0,1) with 53-bit resolution*/
 double mt_genrand_res53(void) { 
-  unsigned long a = mt_genrand_int32() >> 5, b = mt_genrand_int32() >> 6; 
-  return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0); 
+	unsigned long a = mt_genrand_int32() >> 5, b = mt_genrand_int32() >> 6; 
+	return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0); 
 } 
 /* These real versions are due to Isaku Wada, 2002/01/09 added */
 
 /*
-int main(void) {
-  int i;
-  unsigned long init[4] = {0x123, 0x234, 0x345, 0x456}, length = 4;
-  mt_init_by_array(init, length);
-  // This is an example of initializing by an array.       
-  // You may use mt_init_genrand(seed) with any 32bit integer 
-  // as a seed for a simpler initialization                
-  printf("1000 outputs of mt_genrand_int32()\n");
-  for (i = 0; i < 1000; i++) {
-    printf("%10lu ", mt_genrand_int32());
-    if (i % 5 == 4) printf("\n");
-  }
-  printf("\n1000 outputs of genrand_real2()\n");
-  for (i = 0; i < 1000; i++) {
-    printf("%10.8f ", mt_genrand_real2());
-    if (i % 5 == 4) printf("\n");
-  }
+   int main(void) {
+   int i;
+   unsigned long init[4] = {0x123, 0x234, 0x345, 0x456}, length = 4;
+   mt_init_by_array(init, length);
+// This is an example of initializing by an array.       
+// You may use mt_init_genrand(seed) with any 32bit integer 
+// as a seed for a simpler initialization                
+printf("1000 outputs of mt_genrand_int32()\n");
+for (i = 0; i < 1000; i++) {
+printf("%10lu ", mt_genrand_int32());
+if (i % 5 == 4) printf("\n");
+}
+printf("\n1000 outputs of genrand_real2()\n");
+for (i = 0; i < 1000; i++) {
+printf("%10.8f ", mt_genrand_real2());
+if (i % 5 == 4) printf("\n");
+}
 
-  return 0;
+return 0;
 }
 */

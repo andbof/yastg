@@ -8,18 +8,18 @@
 /* Global struct definitions */
 
 struct ulong_ptr {
-  unsigned long i;
-  void *ptr;
+	unsigned long i;
+	void *ptr;
 };
 
 struct double_ptr {
-  double i;
-  void *ptr;
+	double i;
+	void *ptr;
 };
 
 struct ptr_num {
-  void* ptr;
-  size_t num;
+	void* ptr;
+	size_t num;
 };
 
 /* Global messages */
@@ -60,55 +60,55 @@ extern const char* greek[GREEK_N];
 /* Global longer helper functions */
 
 #define die(FMT, ...)				\
-  do {						\
-    log_printfn("panic", "in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
-    exit(EXIT_FAILURE);				\
-  } while(0)
+	do {						\
+		log_printfn("panic", "in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
+		exit(EXIT_FAILURE);				\
+	} while(0)
 
 #define bug(FMT, ...)				\
-  do {						\
-    log_printfn("panic", "Oops! YASTG has encountered an internal bug in %s:%d and is crashing: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
-    exit(EXIT_FAILURE);				\
-  } while(0)
+	do {						\
+		log_printfn("panic", "Oops! YASTG has encountered an internal bug in %s:%d and is crashing: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
+		exit(EXIT_FAILURE);				\
+	} while(0)
 
 #define MALLOC_DIE(VAR, SIZE)	\
-  if (!(VAR = malloc(SIZE))) die("malloc %zu bytes failed", SIZE)
+	if (!(VAR = malloc(SIZE))) die("malloc %zu bytes failed", SIZE)
 
 #define REALLOC_DIE(VAR, SIZE)	\
-  if (!(VAR = realloc(VAR, SIZE))) die("realloc %zu bytes failed", SIZE)
+	if (!(VAR = realloc(VAR, SIZE))) die("realloc %zu bytes failed", SIZE)
 
 #define MEMMOVE_DIE(DEST, ORIG, SIZE)	\
-  if (!(memmove(DEST, ORIG, SIZE))) 	\
-    die("memmove %zu bytes from %p to %p failed", SIZE, ORIG, DEST)
+	if (!(memmove(DEST, ORIG, SIZE))) 	\
+die("memmove %zu bytes from %p to %p failed", SIZE, ORIG, DEST)
 
 #define MEMCPY_DIE(DEST, ORIG, SIZE)	\
-  if (!(memcpy(DEST, ORIG, SIZE)))	\
-    die("memcpy %zu bytes from %p to %p failed", SIZE, ORIG, DEST)
+	if (!(memcpy(DEST, ORIG, SIZE)))	\
+die("memcpy %zu bytes from %p to %p failed", SIZE, ORIG, DEST)
 
 #define XYTORAD(x, y)			\
-  (unsigned long)sqrt((double)x*x+y*y)
+	(unsigned long)sqrt((double)x*x+y*y)
 
 #define XYTOPHI(x, y)			\
-  (atan2((double)y, (double)x))
+	(atan2((double)y, (double)x))
 
 #define POLTOX(phi, rad)		\
-  (unsigned long)(rad*cos(phi))
+	(unsigned long)(rad*cos(phi))
 
 #define POLTOY(phi, rad)		\
-  (unsigned long)(rad*sin(phi))
+	(unsigned long)(rad*sin(phi))
 
 #define MAX(x, y)			\
-  ((x > y) ? x : y)
+	((x > y) ? x : y)
 
 #define MIN(x, y)			\
-  ((x < y) ? x : y)
+	((x < y) ? x : y)
 
 #define mprintf(...)			\
-  do {					\
-    flockfile(stdout);			\
-    printf(__VA_ARGS__);                \
-    funlockfile(stdout);		\
-  } while(0)
+	do {					\
+		flockfile(stdout);			\
+		printf(__VA_ARGS__);                \
+		funlockfile(stdout);		\
+	} while(0)
 
 /* Misc functions */
 

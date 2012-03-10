@@ -9,14 +9,14 @@ struct sector;
 
 #define PLANET_TYPE_N 17
 static char planet_types[PLANET_TYPE_N] = {
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'N', 'O', 'P', 'S', 'Y'
+	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'N', 'O', 'P', 'S', 'Y'
 };
 
 struct planet {
-  char *name;
-  int type;
-  struct ptrarray *bases;
-  struct ptrarray *moons;
+	char *name;
+	int type;
+	struct ptrarray *bases;
+	struct ptrarray *moons;
 };
 
 struct planet* loadplanet(struct configtree *ctree);

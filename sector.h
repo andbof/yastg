@@ -6,18 +6,18 @@ struct ptrarray;
 struct configtree;
 
 struct sector {
-  char *name;
-  struct civ *owner;
-  char *gname;
-  long x, y;
-  unsigned long r;
-  double phi;
-  int hab;
-  unsigned long hablow, habhigh, snowline;
-  struct ptrarray *stars;
-  struct ptrarray *planets;
-  struct ptrarray *bases;
-  struct ptrarray *links;
+	char *name;
+	struct civ *owner;
+	char *gname;
+	long x, y;
+	unsigned long r;
+	double phi;
+	int hab;
+	unsigned long hablow, habhigh, snowline;
+	struct ptrarray *stars;
+	struct ptrarray *planets;
+	struct ptrarray *bases;
+	struct ptrarray *links;
 };
 
 struct sector* sector_init();

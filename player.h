@@ -2,8 +2,8 @@
 #define HAS_PLAYER_H
 
 struct player {
-  char* name;
-  struct sector* position;
+	char* name;
+	struct sector* position;
 };
 
 void player_free();

@@ -6,15 +6,15 @@
 #define STABLE_SIZE 65536
 
 struct stable {
-  struct st_elem* table[STABLE_SIZE];
-  pthread_mutex_t mutex;
-  unsigned long elements;
+	struct st_elem* table[STABLE_SIZE];
+	pthread_mutex_t mutex;
+	unsigned long elements;
 };
 
 struct st_elem {
-  char *key;
-  void *data;
-  struct st_elem *prev, *next;
+	char *key;
+	void *data;
+	struct st_elem *prev, *next;
 };
 
 void* stable_create();

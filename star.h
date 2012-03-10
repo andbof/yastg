@@ -18,12 +18,12 @@ extern const int stellar_clshab[STELLAR_CLS_N];
 #define STELLAR_MUL_ODDS 4
 #define STELLAR_MUL_MAX 1 // FIXME: disabled
 #define STELLAR_MUL_HAB -50
-  
+
 struct star {
-  char* name;
-  int cls, lum, hab;
-  unsigned long lumval, hablow, habhigh, snowline;
-  unsigned int temp;
+	char* name;
+	int cls, lum, hab;
+	unsigned long lumval, hablow, habhigh, snowline;
+	unsigned int temp;
 };
 
 struct star* loadstar(struct configtree *ctree);

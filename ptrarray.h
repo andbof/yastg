@@ -2,9 +2,9 @@
 #define HAS_PTRARRAY_H
 
 struct ptrarray {
-  size_t elements;
-  size_t allocated;
-  void* array;
+	size_t elements;
+	size_t allocated;
+	void* array;
 };
 
 struct ptrarray* ptrarray_init(size_t asize);

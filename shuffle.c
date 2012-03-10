@@ -11,15 +11,14 @@
  * if this may not be the case, use a better random
  * number generator. */
 void shuffleptr(void* *array, size_t n) {
-  size_t i, j;
-  void* k;
-  if (n > 1) {
-    for (i = 0; i < n - 1; i++) {
-      j = i + mtrandom_sizet(SIZE_MAX) / (SIZE_MAX / (n - i) + 1);
-      k = array[j];
-      array[j] = array[i];
-      array[i] = k;
-    }
-  }
+	size_t i, j;
+	void* k;
+	if (n > 1) {
+		for (i = 0; i < n - 1; i++) {
+			j = i + mtrandom_sizet(SIZE_MAX) / (SIZE_MAX / (n - i) + 1);
+			k = array[j];
+			array[j] = array[i];
+			array[i] = k;
+		}
+	}
 }
-

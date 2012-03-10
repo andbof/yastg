@@ -6,14 +6,14 @@ struct sarray;
 struct sector;
 
 struct universe {
-  size_t id;			// ID of the universe (or the game?)
-  char* name;			// The name of the universe (or the game?)
-  struct tm *created;		// When the universe was created
-  size_t numsector;		// Number of sectors in universe
-  struct ptrarray *sectors;	// Sectors in universe
-  struct stable *sectornames;	// Sector names, indexed in a string table
-  struct sarray *srad;		// Sector IDs sorted by radial position from (0,0)
-  struct sarray *sphi;		// Sector IDs sorted by angle from (0,0)
+	size_t id;			// ID of the universe (or the game?)
+	char* name;			// The name of the universe (or the game?)
+	struct tm *created;		// When the universe was created
+	size_t numsector;		// Number of sectors in universe
+	struct ptrarray *sectors;	// Sectors in universe
+	struct stable *sectornames;	// Sector names, indexed in a string table
+	struct sarray *srad;		// Sector IDs sorted by radial position from (0,0)
+	struct sarray *sphi;		// Sector IDs sorted by angle from (0,0)
 };
 
 struct universe *univ;

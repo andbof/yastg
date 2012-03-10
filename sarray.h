@@ -5,13 +5,13 @@
 #define SARRAY_ENFORCE_UNIQUE 1
 
 struct sarray {
-  size_t elements;
-  size_t allocated;
-  size_t element_size;
-  int maxkey;
-  void (*freefnc)(void*);
-  int (*sortfnc)(void*, void*);
-  void* array;
+	size_t elements;
+	size_t allocated;
+	size_t element_size;
+	int maxkey;
+	void (*freefnc)(void*);
+	int (*sortfnc)(void*, void*);
+	void* array;
 };
 
 struct sarray* sarray_init(size_t esize, size_t asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*));

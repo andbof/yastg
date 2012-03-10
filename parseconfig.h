@@ -4,10 +4,10 @@
 #include <stdio.h>
 
 struct configtree {
-  char *key;
-  char *data;
-  struct configtree *sub;
-  struct configtree *next;
+	char *key;
+	char *data;
+	struct configtree *sub;
+	struct configtree *next;
 };
 
 struct configtree* parseconfig(char *fname);

@@ -4,12 +4,12 @@
 struct universe;
 
 struct civ {
-  char* name;
-  struct sector* home;
-  int power;
-  struct ptrarray* presectors;
-  struct ptrarray* availnames;
-  struct ptrarray* sectors;
+	char* name;
+	struct sector* home;
+	int power;
+	struct ptrarray* presectors;
+	struct ptrarray* availnames;
+	struct ptrarray* sectors;
 };
 
 struct civ* loadciv();

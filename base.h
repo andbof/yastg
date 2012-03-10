@@ -6,11 +6,11 @@
 #include "parseconfig.h"
 
 struct base {
-  char *name;
-  char type;
-  int docks;
-  void *inventory;
-  void *players;
+	char *name;
+	char type;
+	int docks;
+	void *inventory;
+	void *players;
 };
 
 struct base* loadbase(struct configtree *ctree);

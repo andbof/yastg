@@ -10,18 +10,18 @@
 #define CONN_MAXBUFSIZE 10240
 
 struct conndata {
-  size_t id;
-  pthread_t thread;
-  fd_set rfds;
-  int peerfd, serverfd, threadfds[2];
-  pthread_mutex_t fd_mutex;
-  struct sockaddr_storage sock;
-  char *peer;
-  struct player *pl;
-  size_t rbufs, sbufs;
-  char *rbuf;
-  char *sbuf;
-  int paused;
+	size_t id;
+	pthread_t thread;
+	fd_set rfds;
+	int peerfd, serverfd, threadfds[2];
+	pthread_mutex_t fd_mutex;
+	struct sockaddr_storage sock;
+	char *peer;
+	struct player *pl;
+	size_t rbufs, sbufs;
+	char *rbuf;
+	char *sbuf;
+	int paused;
 };
 
 struct conndata* conn_create();
