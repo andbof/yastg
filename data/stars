@@ -1,0 +1,57 @@
+# https://secure.wikimedia.org/wikipedia/en/wiki/Stellar_classification
+STAR {
+  CLASS O 0
+  DESC O-type hypergiant
+  HAB 0
+  ODDS 5
+}
+STAR {
+  CLASS O I
+  DESC O-type supergiant
+  HAB 0
+  ODDS 20
+}
+STAR {
+  CLASS O V
+  DESC O-type main sequence star
+  MASS 15 90
+  TEMP 30000 52000
+  HAB 5
+  ODDS 2
+}
+STAR {
+  CLASS B V
+  DESC B-type main sequence star
+  ODDS 10
+  HAB 10
+}
+STAR {
+  CLASS A V
+  DESC A-type main sequence star
+  ODDS 50
+  HAB 15
+}
+STAR {
+  CLASS F V
+  DESC F-type main sequence star
+  ODDS 100
+  HAB 30
+}
+STAR {
+  CLASS G V
+  DESC G-type main sequence star
+  ODDS 200
+  HAB 75
+}
+STAR {
+  CLASS K V
+  DESC K-type main sequence star
+  ODDS 350
+  HAB 100
+}
+STAR {
+  CLASS M V
+  DESC M-type main sequence star
+  ODDS 500
+  HAB 60
+}
