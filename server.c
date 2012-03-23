@@ -30,12 +30,12 @@ static int sockfd, signfdw, signfdr, maxfd;
 
 void server_cleanexit() {
 	int i, *j;
-	int msg = MSG_TERM;
+	enum msg m = MSG_TERM;
 	struct conndata *cd;
 	log_printfn("server", "sending terminate to all player threads");
 	for (i = 0; i < std->elements; i++) {
 		cd = sarray_getbypos(std, i);
-		if (write(cd->threadfds[1], &msg, sizeof(msg)) < 1)
+		if (write(cd->threadfds[1], &m, sizeof(m)) < 1)
 			bug("thread %zx's signalling fd seems closed", cd->id);
 	}
 	log_printfn("server", "waiting for all player threads to terminate");
@@ -68,7 +68,7 @@ void server_signallthreads(void *msg, size_t size) {
 	}
 }
 
-void server_handlesignal(int signal, size_t param) {
+void server_handlesignal(enum msg signal, size_t param) {
 	struct conndata *cd;
 	int i, j;
 	log_printfn("server", "received signal %d", signal);

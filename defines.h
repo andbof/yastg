@@ -22,13 +22,13 @@ struct ptr_num {
 	size_t num;
 };
 
-/* Global messages */
-
-#define MSG_PAUSE	(int)1
-#define MSG_CONT	(int)2
-#define MSG_WALL	(int)4
-#define MSG_TERM	(int)8
-#define MSG_RM		(int)16
+enum msg {
+	MSG_PAUSE	= 1,
+	MSG_CONT	= 2,
+	MSG_WALL	= 4,
+	MSG_TERM	= 8,
+	MSG_RM		= 16
+};
 
 #define ERR_SYNTAX "Syntax error, see help"
 
