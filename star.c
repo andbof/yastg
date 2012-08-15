@@ -162,7 +162,7 @@ int star_gencls(void)
 int star_gennum()
 {
 	int num = 1;
-	while (mtrandom_sizet(SIZE_MAX) - SIZE_MAX/STELLAR_MUL_ODDS < 0)
+	while (mtrandom_sizet(SIZE_MAX) < SIZE_MAX/STELLAR_MUL_ODDS)
 		num++;
 	if (num > STELLAR_MUL_MAX)
 		num = STELLAR_MUL_MAX;

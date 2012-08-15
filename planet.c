@@ -63,7 +63,7 @@ struct ptrarray* createplanets(struct sector* s)
 	int num = 0;
 	struct planet *p;
 	struct ptrarray* planets = ptrarray_init(0);
-	while ((mtrandom_sizet(SIZE_MAX) - SIZE_MAX/PLANET_ODDS < 0) && (num < PLANET_NUM_MAX)) {
+	while ((mtrandom_sizet(SIZE_MAX) < SIZE_MAX/PLANET_ODDS) && (num < PLANET_NUM_MAX)) {
 		p = createplanet(s);
 		ptrarray_push(planets, p);
 	}

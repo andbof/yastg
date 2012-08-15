@@ -95,9 +95,8 @@ void addconstellation(char* cname)
 			ptrarray_push(work, s);
 			makeneighbours(ptrarray_get(work, 0), s, 0, 0);
 			/* Determine if work[0] has enough neighbours, if so remove it */
-			if ( mtrandom_sizet(SIZE_MAX) - SIZE_MAX/CONSTELLATION_NEIGHBOUR_CHANCE < 0 ) {
+			if (mtrandom_sizet(SIZE_MAX) < SIZE_MAX/CONSTELLATION_NEIGHBOUR_CHANCE)
 				ptrarray_rm(work, 0);
-			}
 		}
 
 		mprintf("created %s (%p) at %ldx%ld\n", s->name, s, s->x, s->y);
