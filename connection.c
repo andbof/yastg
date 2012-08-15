@@ -173,7 +173,7 @@ void conn_sendinfo(struct conndata *data) {
 void conn_act(struct conndata *data) {
 	struct sector *s;
 	if (!strcmp(data->rbuf, "help")) {
-		conn_send(data, "No help available\n");
+		conn_send(data, "go <sector>	Move to sector <name>");
 	} else if (!strcmp(data->rbuf, "quit")) {
 		conn_send(data, "Bye!\n");
 		conn_cleanexit(data);
@@ -195,7 +195,7 @@ void conn_act(struct conndata *data) {
 	}
 }
 
-void conn_handlesignal(struct conndata *data, int signal) {
+void conn_handlesignal(struct conndata *data, enum msg signal) {
 	char *str;
 	switch (signal) {
 		case MSG_TERM:
@@ -259,7 +259,7 @@ void conn_loop(struct conndata *data) {
 				// FIXME: If peer sends something with a line break, we should interpret it as separate commands
 				rb += recv(data->peerfd, data->rbuf + rb, data->rbufs - rb, 0);
 				if (rb < 1) {
-					log_printfn("connection", "peer %s disconected, terminating connection %zx", data->peer, data->id);
+					log_printfn("connection", "peer %s disconnected, terminating connection %zx", data->peer, data->id);
 					conn_cleanexit(data);
 				}
 				if ((rb == data->rbufs) && (data->rbuf[rb - 1] != '\n')) {
