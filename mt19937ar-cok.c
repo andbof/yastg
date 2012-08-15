@@ -69,7 +69,8 @@ static int mt_initf = 0;
 static unsigned long *mt_next;
 
 /* initializes mt_state[MT_N] with a seed */
-void mt_init_genrand(unsigned long s) {
+void mt_init_genrand(unsigned long s)
+{
 	int j;
 	mt_state[0] = s & 0xffffffffUL;
 	for (j = 1; j < MT_N; j++) {
@@ -87,7 +88,8 @@ void mt_init_genrand(unsigned long s) {
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 /* slight change for C++, 2004/2/26 */
-void mt_init_by_array(unsigned long init_key[], int key_length) {
+void mt_init_by_array(unsigned long init_key[], int key_length)
+{
 	int i, j, k;
 	mt_init_genrand(19650218UL);
 	i = 1; j = 0;
@@ -112,7 +114,8 @@ void mt_init_by_array(unsigned long init_key[], int key_length) {
 	mt_left = 1; mt_initf = 1;
 }
 
-static void mt_next_state(void) {
+static void mt_next_state(void)
+{
 	unsigned long *p=mt_state;
 	int j;
 
@@ -133,7 +136,8 @@ static void mt_next_state(void) {
 }
 
 /* generates a random number on [0,0xffffffff]-interval */
-unsigned long mt_genrand_int32(void) {
+unsigned long mt_genrand_int32(void)
+{
 	unsigned long y;
 
 	if (--mt_left == 0)
@@ -150,7 +154,8 @@ unsigned long mt_genrand_int32(void) {
 }
 
 /* generates a random number on [0,0x7fffffff]-interval */
-long mt_genrand_int31(void) {
+long mt_genrand_int31(void)
+{
 	unsigned long y;
 
 	if (--mt_left == 0)
@@ -167,7 +172,8 @@ long mt_genrand_int31(void) {
 }
 
 /* generates a random number on [0,1]-real-interval */
-double mt_genrand_real1(void) {
+double mt_genrand_real1(void)
+{
 	unsigned long y;
 
 	if (--mt_left == 0)
@@ -185,7 +191,8 @@ double mt_genrand_real1(void) {
 }
 
 /* generates a random number on [0,1)-real-interval */
-double mt_genrand_real2(void) {
+double mt_genrand_real2(void)
+{
 	unsigned long y;
 
 	if (--mt_left == 0)
@@ -203,7 +210,8 @@ double mt_genrand_real2(void) {
 }
 
 /* generates a random number on (0,1)-real-interval */
-double mt_genrand_real3(void) {
+double mt_genrand_real3(void)
+{
 	unsigned long y;
 
 	if (--mt_left == 0)
@@ -221,31 +229,38 @@ double mt_genrand_real3(void) {
 }
 
 /* generates a random number on [0,1) with 53-bit resolution*/
-double mt_genrand_res53(void) { 
+double mt_genrand_res53(void)
+{
 	unsigned long a = mt_genrand_int32() >> 5, b = mt_genrand_int32() >> 6; 
 	return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0); 
 } 
 /* These real versions are due to Isaku Wada, 2002/01/09 added */
 
-/*
-   int main(void) {
-   int i;
-   unsigned long init[4] = {0x123, 0x234, 0x345, 0x456}, length = 4;
-   mt_init_by_array(init, length);
-// This is an example of initializing by an array.       
-// You may use mt_init_genrand(seed) with any 32bit integer 
-// as a seed for a simpler initialization                
-printf("1000 outputs of mt_genrand_int32()\n");
-for (i = 0; i < 1000; i++) {
-printf("%10lu ", mt_genrand_int32());
-if (i % 5 == 4) printf("\n");
-}
-printf("\n1000 outputs of genrand_real2()\n");
-for (i = 0; i < 1000; i++) {
-printf("%10.8f ", mt_genrand_real2());
-if (i % 5 == 4) printf("\n");
-}
+#if 0
+	int main(void)
+	{
+		int i;
+		unsigned long init[4] = {0x123, 0x234, 0x345, 0x456}, length = 4;
+		mt_init_by_array(init, length);
 
-return 0;
-}
-*/
+		/* This is an example of initializing by an array.
+		   You may use mt_init_genrand(seed) with any 32bit integer
+		   as a seed for a simpler initialization */
+
+		printf("1000 outputs of mt_genrand_int32()\n");
+		for (i = 0; i < 1000; i++) {
+			printf("%10lu ", mt_genrand_int32());
+			if (i % 5 == 4)
+				printf("\n");
+		}
+
+		printf("\n1000 outputs of genrand_real2()\n");
+		for (i = 0; i < 1000; i++) {
+			printf("%10.8f ", mt_genrand_real2());
+			if (i % 5 == 4)
+				printf("\n");
+		}
+
+		return 0;
+	}
+#endif

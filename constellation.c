@@ -17,7 +17,8 @@
 #include "array.h"
 #include "stable.h"
 
-void loadconstellations() {
+void loadconstellations()
+{
 	struct configtree *ctree, *e;
 	size_t ncons = 0;
 	ctree = parseconfig("data/constellations");
@@ -34,7 +35,8 @@ void loadconstellations() {
 	destroyctree(ctree);
 }
 
-void addconstellation(char* cname) {
+void addconstellation(char* cname)
+{
 	size_t nums, numc, i;
 	char *string;
 	struct sector *fs, *s;
@@ -44,7 +46,7 @@ void addconstellation(char* cname) {
 	unsigned long r;
 	MALLOC_DIE(string, strlen(cname)+GREEK_LEN+2);
 
-	// Determine number of sectors in constellation
+	/* Determine number of sectors in constellation */
 	nums = mtrandom_sizet(GREEK_N);
 	if (nums == 0)
 		nums = 1;
@@ -54,23 +56,23 @@ void addconstellation(char* cname) {
 	fs = NULL;
 	for (numc = 0; numc < nums; numc++) {
 
-		// Create a new sector and put it in s
+		/* Create a new sector and put it in s */
 		sprintf(string, "%s %s", greek[numc], cname);
 		s = sector_create(string);
 		ptrarray_push(univ->sectors, s);
 		stable_add(univ->sectornames, s->name, s);
 
 		if (fs == NULL) {
-			// This was the first sector generated for this constellation
-			// We need to place this at a suitable point in the universe
+			/* This was the first sector generated for this constellation
+			   We need to place this at a suitable point in the universe */
 			fs = s;
 			if (univ->sectors->elements == 1) {
-				// The first constellation always goes in (0, 0)
+				/* The first constellation always goes in (0, 0) */
 				x = 0;
 				y = 0;
 				sector_move(s, x, y);
 			} else {
-				// All others are randomly distributed
+				/* All others are randomly distributed */
 				phi = mtrandom_sizet(SIZE_MAX) / (double)SIZE_MAX*2*M_PI;
 				r = 0;
 				do {
@@ -84,15 +86,15 @@ void addconstellation(char* cname) {
 			}
 			ptrarray_push(work, s);
 		} else if (work->elements == 0) {
-			// This isn't the first sector but no sectors are left in work
-			// Put this close to the first sector
+			/* This isn't the first sector but no sectors are left in work
+			   Put this close to the first sector */
 			ptrarray_push(work, s);
 			makeneighbours(fs, s, 0, 0);
 		} else {
-			// We have sectors in work, put this close to work[0] and add this one to work
+			/* We have sectors in work, put this close to work[0] and add this one to work */
 			ptrarray_push(work, s);
 			makeneighbours(ptrarray_get(work, 0), s, 0, 0);
-			// Determine if work[0] has enough neighbours, if so remove it
+			/* Determine if work[0] has enough neighbours, if so remove it */
 			if ( mtrandom_sizet(SIZE_MAX) - SIZE_MAX/CONSTELLATION_NEIGHBOUR_CHANCE < 0 ) {
 				ptrarray_rm(work, 0);
 			}
@@ -106,4 +108,3 @@ void addconstellation(char* cname) {
 	ptrarray_free(work);
 
 }
-

@@ -11,41 +11,41 @@
 #include "parseconfig.h"
 #include "mtrandom.h"
 
-// Stellar luminosity classes
+/* Stellar luminosity classes */
 const char *stellar_lum[STELLAR_LUM_N] = {
 	"0",  "Ia", "Ib", "II", "III", "IV", "V",  "VI", "VII"
 };
-// Odds for each luminosity class
+/* Odds for each luminosity class */
 const int stellar_lumodds[STELLAR_LUM_N] = {
 	1,    2,    4,    8,    25,    32,   75,   98,   100
 };
-// Habitability modifiers for each luminosity class
+/* Habitability modifiers for each luminosity class */
 const int stellar_lumhab[STELLAR_LUM_N] = {
 	-100, -90,  -90,  -70,  -30,   0,    +100, +80,  +80
 };
 
-// Spectral classes
+/* Spectral classes */
 const char stellar_cls[STELLAR_CLS_N] = {
 	'O',   'B',    'A',  'F', 'G',  'K',  'M'
 };
-// Odds for each spectral class
+/* Odds for each spectral class */
 const int stellar_clsodds[STELLAR_CLS_N] = {
 	3,     19,     83,   283, 1043, 2253, 10000
 };
-// Luminosity ceiling per luminosity class, defined in hundreth of solar units
+/* Luminosity ceiling per luminosity class, defined in hundreth of solar units */
 const unsigned long stellar_clslum[STELLAR_CLS_N+1] = {
 	9999900,3000000,2500,500, 150,  60,   8, 	1
 };
-// Temperature ceiling per luminosity class, defined in Kelvin
+/* Temperature ceiling per luminosity class, defined in Kelvin */
 const unsigned int stellar_clstmp[STELLAR_CLS_N+1] = {
 	99999, 33000,  10000,7500,6000, 5200, 3700,	2500
 };
-// Odds for multiple systems for each class
-// FIXME: This is not used
+/* Odds for multiple systems for each class
+   FIXME: This is not used */
 const int stellar_clsmul[STELLAR_CLS_N] = {
 	95,   90,    85,  70,  40,   30,   20
 };
-// Habitability modifiers for each class
+/* Habitability modifiers for each class */
 const int stellar_clshab[STELLAR_CLS_N] = {
 	-200, -150, -100, -50, +10,  +30, +50
 };
@@ -53,7 +53,8 @@ const int stellar_clshab[STELLAR_CLS_N] = {
 /*
  * Parses a configuration tree and returns a struct star*
  */
-struct star* loadstar(struct configtree *ctree) {
+struct star* loadstar(struct configtree *ctree)
+{
 	struct star *sol;
 	int i;
 	int habset = 0;
@@ -112,14 +113,14 @@ struct star* loadstar(struct configtree *ctree) {
 		die("required attribute missing for predefined star %s: stellar class", sol->name);
 	if (!lumset)
 		die("required attribute missing for predefined star %s: stellar luminosity", sol->name);
-	// FIXME:
+	/* FIXME: */
 	if (!lumvalset)
 		sol->lumval = stellar_clslum[sol->cls + 1] + mtrandom_sizet(stellar_clslum[sol->cls]) - stellar_clslum[sol->cls + 1];
 	sol->hab = stellar_clshab[sol->cls] + stellar_lumhab[sol->lum];
 	if (!tempset)
 		sol->temp = stellar_clstmp[sol->cls + 1] + mtrandom_sizet(stellar_clstmp[sol->cls])-stellar_clstmp[sol->cls + 1];
-	// Rough guess looking at
-	// https://secure.wikimedia.org/wikipedia/en/wiki/Habitable_zone
+	/* Rough guess looking at
+	   https://secure.wikimedia.org/wikipedia/en/wiki/Habitable_zone */
 	sol->hablow = star_gethablow(sol);
 	sol->habhigh = star_gethabhigh(sol);
 	sol->snowline = star_getsnowline(sol);
@@ -129,7 +130,8 @@ struct star* loadstar(struct configtree *ctree) {
 /*
  * Returns a random star luminosity
  */
-int star_genlum(void) {
+int star_genlum(void)
+{
 	unsigned int chance = mtrandom_uint(stellar_lumodds[STELLAR_LUM_N - 1]);
 	int i;
 	for (i = 0; i < STELLAR_LUM_N; i++) {
@@ -143,7 +145,8 @@ int star_genlum(void) {
 /*
  * Returns a random star classification.
  */
-int star_gencls(void) {
+int star_gencls(void)
+{
 	unsigned int chance = mtrandom_uint(stellar_clsodds[STELLAR_CLS_N - 1]);
 	int i;
 	for (i = 0; i < STELLAR_CLS_N; i++) {
@@ -156,29 +159,35 @@ int star_gencls(void) {
 /*
  * Returns the number of stars to be created
  */
-int star_gennum() {
+int star_gennum()
+{
 	int num = 1;
-	while (mtrandom_sizet(SIZE_MAX) - SIZE_MAX/STELLAR_MUL_ODDS < 0) num++;
+	while (mtrandom_sizet(SIZE_MAX) - SIZE_MAX/STELLAR_MUL_ODDS < 0)
+		num++;
 	if (num > STELLAR_MUL_MAX)
 		num = STELLAR_MUL_MAX;
 	return num;
 }
 
-unsigned long star_gethablow(struct star *s) {
-	// Rough guess looking at
-	// https://secure.wikimedia.org/wikipedia/en/wiki/Habitable_zone
+unsigned long star_gethablow(struct star *s)
+{
+	/* Rough guess looking at
+	   https://secure.wikimedia.org/wikipedia/en/wiki/Habitable_zone */
 	return sqrt((double)s->lumval/100.0)*HAB_ZONE_START*GM_PER_AU;
 }
 
-unsigned long star_gethabhigh(struct star *s) {
+unsigned long star_gethabhigh(struct star *s)
+{
 	return sqrt((double)s->lumval/100.0)*HAB_ZONE_END*GM_PER_AU;
 }
 
-unsigned long star_getsnowline(struct star *s) {
+unsigned long star_getsnowline(struct star *s)
+{
 	return sqrt((double)s->lumval/100.0)*SNOW_LINE;
 }
 
-struct star* createstar() {
+struct star* createstar()
+{
 	struct star *s;
 	MALLOC_DIE(s, sizeof(struct star));
 	s->name = NULL;
@@ -193,7 +202,8 @@ struct star* createstar() {
 	return s;
 }
 
-struct ptrarray* createstars() {
+struct ptrarray* createstars()
+{
 	struct star *s;
 	int i;
 	struct ptrarray *a = ptrarray_init(0);
@@ -205,7 +215,8 @@ struct ptrarray* createstars() {
 	return a;
 }
 
-void star_free(void *ptr) {
+void star_free(void *ptr)
+{
 	struct star *s = ptr;
 	free(s->name);
 	free(s);

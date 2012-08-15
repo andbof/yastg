@@ -41,7 +41,8 @@ extern int sockfd;
 static pthread_t srvthread;
 static int srvfd[2];
 
-void parseopts(int argc, char **argv) {
+static void parseopts(int argc, char **argv)
+{
 	char c;
 	while ((c = getopt(argc, argv, options)) > 0) {
 		switch (c) {
@@ -58,16 +59,18 @@ void parseopts(int argc, char **argv) {
 /*
  * Removes a trailing newline from a string, if it exists.
  */
-void chomp(char* s) {
+static void chomp(char* s)
+{
 	size_t predlen = strlen(s) -1;
 	if (s[predlen] == '\n')
 		s[predlen] = '\0';
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 	int i;
 	int running = 1;
-	char *line = malloc(256); // FIXME
+	char *line = malloc(256); /* FIXME */
 	struct configtree *ctree;
 	struct civ *cv;
 	struct sector *s, *t;
@@ -79,12 +82,12 @@ int main(int argc, char **argv) {
 	struct array *civs;
 	struct mallinfo minfo;
 
-	// Open log file
+	/* Open log file */
 	log_init();
 	log_printfn("main", "YASTG initializing");
 	log_printfn("main", "v%s (commit %s), built %s %s", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
 
-	// Initialize
+	/* Initialize */
 	srand(time(NULL));
 	mtrandom_init();
 	init_id();
@@ -93,21 +96,21 @@ int main(int argc, char **argv) {
 	run_tests();
 #endif
 
-	// Parse command line options
+	/* Parse command line options */
 	parseopts(argc, argv);
 
-	// Load config files
+	/* Load config files */
 	printf("Parsing configuration files\n");
 	printf("  civilizations: ");
 	civs = loadcivs();
 	printf("done, %zu civs loaded.\n", civs->elements);
 
-	// Create universe
+	/* Create universe */
 	printf("Creating universe\n");
 	univ = universe_create();
 	universe_init(civs);
 
-	// Start server thread
+	/* Start server thread */
 	if (pipe(srvfd) != 0)
 		die("%s", "Could not create server pipe");
 	if (pthread_create(&srvthread, NULL, server_main, &srvfd[0]) != 0)
@@ -118,7 +121,7 @@ int main(int argc, char **argv) {
 	mprintf("Universe has %zu sectors in total\n", univ->sectors->elements);
 	while (running) {
 		mprintf("console> ");
-		fgets(line, 256, stdin); // FIXME
+		fgets(line, 256, stdin); /* FIXME */
 		chomp(line);
 		if (strcmp(line,"help") == 0) {
 			mprintf("No help available.\n");
@@ -192,4 +195,3 @@ int main(int argc, char **argv) {
 	return 0;
 
 }
-

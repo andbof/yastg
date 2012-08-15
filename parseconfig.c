@@ -11,7 +11,8 @@
  * Duplicates a string but removes whitespace from the beginning and end of the string.
  * If the string consists of just whitespace, an empty string is returned.
  */
-static char* strdupsp(char *s) {
+static char* strdupsp(char *s)
+{
 	long unsigned int i = 0;
 	char *t;
 
@@ -47,7 +48,8 @@ static char* strdupsp(char *s) {
  *
  * and returns a configtree structure.
  */
-struct configtree* parseconfig(char *fname) {
+struct configtree* parseconfig(char *fname)
+{
 	FILE *f;
 	struct configtree *root;
 
@@ -68,7 +70,8 @@ struct configtree* parseconfig(char *fname) {
 	return root;
 }
 
-struct configtree* recparseconfig(FILE *f, char *fname) {
+struct configtree* recparseconfig(FILE *f, char *fname)
+{
 	struct configtree *root = NULL, *ce = NULL;
 	int hassub;
 	size_t i, j;
@@ -81,38 +84,37 @@ struct configtree* recparseconfig(FILE *f, char *fname) {
 
 	while (fgets(buf+bufidx, buflen-bufidx, f) != NULL) {
 		if (!(strchr(buf, '\n'))) {
-			// We haven't read a whole line. Increase the buffer size
-			// and try again.
-			if (buflen < INT_MAX << 2) {
+			/* We haven't read a whole line. Increase the buffer size
+			   and try again. */
+			if (buflen < INT_MAX << 2)
 				buflen <<= 2;
-			} else if (buflen == INT_MAX) {
+			else if (buflen == INT_MAX)
 				die("line %lu too long in %s", linen, fname);
-			} else {
+			else
 				buflen = INT_MAX;
-			}
 			REALLOC_DIE(buf, buflen);
 		} else {
-			// Remove line break
+			/* Remove line break */
 			c = strchr(buf, '\n');
 			*c = '\0';
 
-			// Remove comments
+			/* Remove comments */
 			c = strchr(buf, '#');
 			if (c)
 				*c = '\0';
 
 			if (strlen(buf) > 0) {
 
-				// Remove preceding whitespace
+				/* Remove preceding whitespace */
 				i = 0;
 				while ((buf[i] == ' ') || (buf[i] == '\t'))
 					i++;
 
-				// This is the end of a sub
+				/* This is the end of a sub */
 				if (buf[i] == '}')
 					break;
 
-				// Allocate space for field
+				/* Allocate space for field */
 				if (root == NULL) {
 					MALLOC_DIE(root, sizeof(*root));
 					ce = root;
@@ -122,7 +124,7 @@ struct configtree* recparseconfig(FILE *f, char *fname) {
 					ce->next = NULL;
 				}
 
-				// Extract key
+				/* Extract key */
 				j = i;
 				while ((j < strlen(buf)) && (buf[j] != ' '))
 					j++;
@@ -136,14 +138,15 @@ struct configtree* recparseconfig(FILE *f, char *fname) {
 					ce->key = strdupsp(buf+i);
 					j++;
 
-					// Determine if this line is a parent or not (trailed by '{')
+					/* Determine if this line is a parent or not (trailed by '{') */
 					hassub = 0;
 					if ((c = strchr(buf+j, '{'))) {
 						*c = '\0';
 						hassub = 1;
 					}
 
-					// Remove trailing whitespace
+					/* Remove trailing whitespace */
+					/* printf("j is %d\n", j); */
 					c = strchr(buf+j, '\0')-1;
 					while ((*c == ' ' || *c == '\t' ) && (*c != '\0'))
 						c--;
@@ -155,7 +158,7 @@ struct configtree* recparseconfig(FILE *f, char *fname) {
 						ce->data = strdupsp(buf+j);
 					}
 
-					// If this has subelements, parse them recursively
+					/* If this has subelements, parse them recursively */
 					if (hassub)
 						ce->sub = recparseconfig(f, fname);
 					else
@@ -175,7 +178,8 @@ struct configtree* recparseconfig(FILE *f, char *fname) {
  * Recursively free all subnodes in a configtree.
  * Will free the entire tree if called on root node.
  */
-void destroyctree(struct configtree *ctree) {
+void destroyctree(struct configtree *ctree)
+{
 	struct configtree *ptree;
 
 	while (ctree) {

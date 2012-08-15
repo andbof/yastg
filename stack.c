@@ -9,7 +9,8 @@
 /*
  * Initializes the stack. Not thread safe.
  */
-struct stack* stack_init(size_t len, size_t esize) {
+struct stack* stack_init(size_t len, size_t esize)
+{
 	struct stack *s;
 	size_t lensize = len * esize;
 	MALLOC_DIE(s, sizeof(*s));
@@ -34,7 +35,8 @@ struct stack* stack_init(size_t len, size_t esize) {
  * Increases the size of the stack to two times the current size.
  * Not thread safe!
  */
-void stack_grow(struct stack *s) {
+void stack_grow(struct stack *s)
+{
 	size_t len;
 	if (s->allocend != NULL) {
 		len = s->allocend - s->datastart + s->esize;
@@ -52,16 +54,18 @@ void stack_grow(struct stack *s) {
  * Decreases the size of the stack to half the current size if possible
  * Not thread safe!
  */
-void stack_shrink(struct stack *s) {
+void stack_shrink(struct stack *s)
+{
 	size_t len;
-	// FIXME: Implement
+	/* FIXME: Implement */
 }
 
 /*
  * Adds an element to the end of the stack in
  * a thread-safe way.
  */
-void stack_push(struct stack *s, void *ptr) {
+void stack_push(struct stack *s, void *ptr)
+{
 	pthread_mutex_lock(&s->mutex);
 	if (s->dataend == s->allocend) {
 		stack_grow(s);
@@ -75,7 +79,8 @@ void stack_push(struct stack *s, void *ptr) {
  * Quick-pops the stack. This does not lock/unlock the mutex and
  * does not copy the data to another position in memory.
  */
-void* stack_qpop(struct stack *s) {
+void* stack_qpop(struct stack *s)
+{
 	void *data;
 	data = s->dataend;
 	s->dataend -= s->esize;
@@ -86,15 +91,17 @@ void* stack_qpop(struct stack *s) {
  * Pops the stack in a thread-safe way, copying the last element
  * to another position in memory before returning it.
  */
-void stack_pop(struct stack *s, void *data) {
+void stack_pop(struct stack *s, void *data)
+{
 	pthread_mutex_lock(&s->mutex);
 	memcpy(data, s->dataend, s->esize);
 	s->dataend -= s->esize;
-	stack_shrink(s);	// FIXME: Don't do this if the stack is more than 1/3 full (or something)
+	stack_shrink(s);	/* FIXME: Don't do this if the stack is more than 1/3 full (or something) */
 	pthread_mutex_unlock(&s->mutex);
 }
 
-void stack_free(struct stack *s) {
+void stack_free(struct stack *s)
+{
 	free(s->datastart);
 	free(s);
 }
@@ -103,23 +110,21 @@ void stack_free(struct stack *s) {
 
 #define STACK_N 8
 
-void stack_test() {
+void stack_test()
+{
 	int u[STACK_N];
 	int v[STACK_N];
 	int i;
 	struct stack *s = stack_init(0, sizeof(int));
-	for (i = 0; i < STACK_N; i++) {
+	for (i = 0; i < STACK_N; i++)
 		u[i] = i;
-	}
-	for (i = 0; i < STACK_N; i++) {
+	for (i = 0; i < STACK_N; i++)
 		stack_push(s, &u[i]);
-	}
 	for (i = STACK_N-1; i > -1; i--) {
-		if (i % 2 == 0) {
+		if (i % 2 == 0)
 			stack_pop(s, &v[i]);
-		} else {
+		else
 			v[i] = *((int*)stack_qpop(s));
-		}
 	}
 	for (i = 0; i < STACK_N; i++) {
 		if (u[i] != v[i])

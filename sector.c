@@ -14,7 +14,8 @@
 #include "id.h"
 #include "star.h"
 
-struct sector* sector_init() {
+struct sector* sector_init()
+{
 	struct sector *s;
 	MALLOC_DIE(s, sizeof(*s));
 	memset(s, 0, sizeof(*s));
@@ -43,7 +44,8 @@ void sector_free(void *ptr) {
 	free(s);
 }
 
-struct sector* sector_load(struct configtree *ctree) {
+struct sector* sector_load(struct configtree *ctree)
+{
 	struct sector *s = sector_init();
 	struct planet *p;
 	struct base *b;
@@ -84,7 +86,8 @@ struct sector* sector_load(struct configtree *ctree) {
 	return s;
 }
 
-struct sector* sector_create(char *name) {
+struct sector* sector_create(char *name)
+{
 	int i;
 	struct star *sol;
 	struct sector *s = sector_init();
@@ -103,11 +106,12 @@ struct sector* sector_create(char *name) {
 	s->snowline = ((struct star*)ptrarray_get(s->stars, 0))->snowline;
 	s->planets = createplanets(s);
 	s->bases = ptrarray_init(0);
-	// FIXME: bases
+	/* FIXME: bases */
 	return s;
 }
 
-void sector_move(struct sector *s, long x, long y) {
+void sector_move(struct sector *s, long x, long y)
+{
 	struct ulong_ptr uptr;
 	struct double_ptr dptr;
 	struct sector *stmp;
@@ -118,8 +122,8 @@ void sector_move(struct sector *s, long x, long y) {
 	uptr.i = XYTORAD(s->x, s->y);
 	dptr.ptr = s;
 	dptr.i = XYTOPHI(s->x, s->y);
-	// We need to make sure we're not adding this sector twice to srad and sphi
-	// FIXME: Scales really badly
+	/* We need to make sure we're not adding this sector twice to srad and sphi
+	   FIXME: Scales really badly */
 	for (st = 0; st < univ->srad->elements; st++) {
 		stmp = sarray_getbypos(univ->srad, st);
 		if (stmp == s) {
@@ -134,7 +138,7 @@ void sector_move(struct sector *s, long x, long y) {
 			break;
 		}
 	}
-	// Now update the coordinates and add them to srad and sphi
+	/* Now update the coordinates and add them to srad and sphi */
 	s->r = uptr.i;
 	sarray_add(univ->srad, &uptr);
 	s->phi = dptr.i;

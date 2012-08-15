@@ -29,7 +29,8 @@
 
 extern struct universe *univ;
 
-struct conndata* conn_create() {
+struct conndata* conn_create()
+{
 	struct conndata *data;
 	int r = 1;
 	data = malloc(sizeof(*data));
@@ -63,7 +64,8 @@ struct conndata* conn_create() {
 	return data;
 }
 
-void conn_signalserver(struct conndata *data, int signal, size_t param) {
+void conn_signalserver(struct conndata *data, int signal, size_t param)
+{
 	if ((write(data->serverfd, &signal, sizeof(signal))) < 1)
 		bug("server signalling fd seems closed when sending signal to remove me %d, %s", errno, strerror(errno));
 	if (write(data->serverfd, &param, sizeof(param)) < 1)
@@ -74,7 +76,8 @@ void conn_signalserver(struct conndata *data, int signal, size_t param) {
  * This function needs to be very safe as it can be called on a
  * half-initialized conndata structure if something went wrong.
  */
-void conndata_free(void *ptr) {
+void conndata_free(void *ptr)
+{
 	struct conndata *data = ptr;
 	if (data != NULL) {
 		if (data->peerfd)
@@ -96,13 +99,15 @@ void conndata_free(void *ptr) {
 	}
 }
 
-void conn_cleanexit(struct conndata *data) {
+void conn_cleanexit(struct conndata *data)
+{
 	log_printfn("connection", "connection %zx is terminating", data->id);  
 	conn_signalserver(data, MSG_RM, data->id);
 	pthread_exit(0);
 }
 
-void conn_send(struct conndata *data, char *format, ...) {
+void conn_send(struct conndata *data, char *format, ...)
+{
 	va_list ap;
 	size_t len, sb = 0;
 	pthread_mutex_lock(&data->fd_mutex);
@@ -118,20 +123,22 @@ void conn_send(struct conndata *data, char *format, ...) {
 		if (sb < 1) {
 			log_printfn("connection", "send error (connection id %zx), terminating connection", data->id);
 			pthread_mutex_unlock(&data->fd_mutex);
-			conn_cleanexit(data); // FIXME: What happens if another read is waiting to send data? It will try to access a destroyed mutex ...
+			conn_cleanexit(data); /* FIXME: What happens if another read is waiting to send data? It will try to access a destroyed mutex ... */
 		}
 	} while (sb < len);
 
 	pthread_mutex_unlock(&data->fd_mutex);
 }
 
-void conn_error(struct conndata *data, char *format, ...) {
+void conn_error(struct conndata *data, char *format, ...)
+{
 	va_list ap;
 	conn_send(data, "Oops! An internal error occured.\nYour current state is NOT saved and you are being forcibly disconnected.\nSorry!");
 	conn_cleanexit(data);
 }
 
-void conn_sendinfo(struct conndata *data) {
+void conn_sendinfo(struct conndata *data)
+{
 	size_t st;
 	char *string;
 	struct star *sol;
@@ -156,7 +163,7 @@ void conn_sendinfo(struct conndata *data) {
 		conn_send(data, "  %s\n", ((struct sector*)ptrarray_get(s->links, st))->name);
 	}
 	conn_send(data, "Sectors within 50 lys are:\n");
-	// FIXME: getneighbours() is awful
+	/* FIXME: getneighbours() is awful */
 	gurka = getneighbours(s, 50);
 	for (st = 0; st < gurka->elements; st++) {
 		t = ptrarray_get(gurka, st);
@@ -170,7 +177,8 @@ void conn_sendinfo(struct conndata *data) {
 	}
 }
 
-void conn_act(struct conndata *data) {
+void conn_act(struct conndata *data)
+{
 	struct sector *s;
 	if (!strcmp(data->rbuf, "help")) {
 		conn_send(data, "go <sector>	Move to sector <name>");
@@ -195,7 +203,8 @@ void conn_act(struct conndata *data) {
 	}
 }
 
-void conn_handlesignal(struct conndata *data, enum msg signal) {
+void conn_handlesignal(struct conndata *data, enum msg signal)
+{
 	char *str;
 	switch (signal) {
 		case MSG_TERM:
@@ -222,7 +231,8 @@ void conn_handlesignal(struct conndata *data, enum msg signal) {
 	}
 }
 
-void conn_loop(struct conndata *data) {
+void conn_loop(struct conndata *data)
+{
 	int rb, i;
 	char* ptr;
 
@@ -235,7 +245,7 @@ void conn_loop(struct conndata *data) {
 
 			conn_send(data, "yastg> ");
 
-			// FIXME: Doesn't handle CTRL-D for some reason.
+			/* FIXME: Doesn't handle CTRL-D for some reason. */
 			FD_ZERO(&data->rfds);
 			FD_SET(data->peerfd, &data->rfds);
 			FD_SET(data->threadfds[0], &data->rfds);
@@ -246,7 +256,7 @@ void conn_loop(struct conndata *data) {
 			}
 
 			if (FD_ISSET(data->threadfds[0], &data->rfds)) {
-				// We have received a message on the signalling fd
+				/* We have received a message on the signalling fd */
 				do {
 					read(data->threadfds[0], &i, sizeof(i));
 					conn_handlesignal(data, i);
@@ -255,8 +265,8 @@ void conn_loop(struct conndata *data) {
 
 			if (FD_ISSET(data->peerfd, &data->rfds)) {
 
-				// We have received something from the peer
-				// FIXME: If peer sends something with a line break, we should interpret it as separate commands
+				/* We have received something from the peer
+				   FIXME: If peer sends something with a line break, we should interpret it as separate commands */
 				rb += recv(data->peerfd, data->rbuf + rb, data->rbufs - rb, 0);
 				if (rb < 1) {
 					log_printfn("connection", "peer %s disconnected, terminating connection %zx", data->peer, data->id);
@@ -282,12 +292,11 @@ void conn_loop(struct conndata *data) {
 			}
 		} while ((rb == 0) || (data->rbuf[rb - 1] != '\n'));
 
-		// Truncate string at EOL (we might have \13\10 or \10)
-		if ((rb > 1) && (data->rbuf[rb - 2] == 13)) {
+		/* Truncate string at EOL (we might have \13\10 or \10) */
+		if ((rb > 1) && (data->rbuf[rb - 2] == 13))
 			data->rbuf[rb - 2] = '\0';
-		} else {
+		else
 			data->rbuf[rb - 1] = '\0';
-		}
 
 		mprintf("received \"%s\" on socket\n", data->rbuf);
 
@@ -296,10 +305,11 @@ void conn_loop(struct conndata *data) {
 	}
 }
 
-void* conn_main(void *dataptr) {
+void* conn_main(void *dataptr)
+{
 	struct conndata *data = dataptr;
-	// temporary solution
-	// Create player
+	/* temporary solution */
+	/* Create player */
 	data->pl = malloc(sizeof(struct player));
 	data->pl->name = strdup("Alfred");
 	data->pl->position = ptrarray_get(univ->sectors, 0);

@@ -11,7 +11,8 @@
 #include "parseconfig.h"
 #include "mtrandom.h"
 
-struct planet* initplanet() {
+struct planet* initplanet()
+{
 	struct planet *p;
 	MALLOC_DIE(p, sizeof(*p));
 	memset(p, 0, sizeof(*p));
@@ -20,7 +21,8 @@ struct planet* initplanet() {
 	return p;
 }
 
-struct planet* loadplanet(struct configtree *ctree) {
+struct planet* loadplanet(struct configtree *ctree)
+{
 	struct base *b;
 	struct planet *p = initplanet();
 	while (ctree) {
@@ -37,7 +39,8 @@ struct planet* loadplanet(struct configtree *ctree) {
 	return p;
 }
 
-void planet_free(void *ptr) {
+void planet_free(void *ptr)
+{
 	struct planet *p = ptr;
 	ptrarray_free(p->bases);
 	ptrarray_free(p->moons);
@@ -48,13 +51,15 @@ void planet_free(void *ptr) {
 #define PLANET_ODDS 7
 #define PLANET_NUM_MAX 11
 
-struct planet* createplanet(struct sector* s) {
+struct planet* createplanet(struct sector* s)
+{
 	struct planet *p;
 	MALLOC_DIE(p, sizeof(*p));
 	return p;
 }
 
-struct ptrarray* createplanets(struct sector* s) {
+struct ptrarray* createplanets(struct sector* s)
+{
 	int num = 0;
 	struct planet *p;
 	struct ptrarray* planets = ptrarray_init(0);

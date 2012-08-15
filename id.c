@@ -10,37 +10,43 @@
 
 static struct sarray *id_array;
 
-void init_id() {
+void init_id()
+{
 	id_array = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
 }
 
-void id_destroy() {
+void id_destroy()
+{
 	sarray_free(id_array);
 	free(id_array);
 }
 
-size_t gen_id() {
+size_t gen_id()
+{
 	size_t i;
 	void *ptr;
 	do {
-		i = mtrandom_sizet(SIZE_MAX); // FIXME should be hash
+		i = mtrandom_sizet(SIZE_MAX); /* FIXME should be hash */
 		ptr = sarray_getbyid(id_array, &i);
 	} while (ptr || i == 0);
 	return i;
 }
 
-void insert_id(size_t id) {
+void insert_id(size_t id)
+{
 	sarray_add(id_array, &id);
 }
 
-void rm_id(size_t id) {
+void rm_id(size_t id)
+{
 	sarray_rmbypos(id_array, id);
 }
 
-char* hundreths(unsigned long l) {
+char* hundreths(unsigned long l)
+{
 	int mod = l%100;
 	char* result;
-	MALLOC_DIE(result, 10);	// FIXME: Memory leak
+	MALLOC_DIE(result, 10);	/* FIXME: Memory leak */
 	if (mod < 10) {
 		sprintf(result, "%lu.0%lu", l/100, l%100);
 	} else {
@@ -54,29 +60,29 @@ char* hundreths(unsigned long l) {
  * Will return neg if b is larger than a, 0 if they're equal and pos if
  * a is larger than b;
  */
-int sort_id(void *a, void *b) {
-	if (GET_ID(b) > GET_ID(a)) {
+int sort_id(void *a, void *b)
+{
+	if (GET_ID(b) > GET_ID(a))
 		return -1;
-	} else if (GET_ID(b) < GET_ID(a)) {
+	else if (GET_ID(b) < GET_ID(a))
 		return 1;
-	} else {
+	else
 		return 0;
-	}
-	//  return GET_ID(a) - GET_ID(b);
+	/*  return GET_ID(a) - GET_ID(b); */
 }
 
 /*
  * Sorts based on assuming a and b points to unsigned longs.
  */
-int sort_ulong(void *a, void *b) {
-	if (GET_ULONG(b) > GET_ULONG(a)) {
+int sort_ulong(void *a, void *b)
+{
+	if (GET_ULONG(b) > GET_ULONG(a))
 		return -1;
-	} else if (GET_ULONG(b) < GET_ULONG(a)) {
+	else if (GET_ULONG(b) < GET_ULONG(a))
 		return 1;
-	} else {
+	else
 		return 0;
-	}
-	//  return GET_ULONG(a) - GET_ULONG(b);
+	/*  return GET_ULONG(a) - GET_ULONG(b); */
 }
 
 /*
@@ -93,13 +99,13 @@ int sort_ulong(void *a, void *b) {
  }
  */
 
-int sort_double(void *a, void *b) {
-	if (GET_DOUBLE(a) > GET_DOUBLE(b)) {
+int sort_double(void *a, void *b)
+{
+	if (GET_DOUBLE(a) > GET_DOUBLE(b))
 		return -1;
-	} else if (GET_DOUBLE(b) < GET_DOUBLE(a)) {
+	else if (GET_DOUBLE(b) < GET_DOUBLE(a))
 		return 1;
-	} else {
+	else
 		return 0;
-	}
-	//  return GET_DOUBLE(a) - GET_DOUBLE(b);
+	/*  return GET_DOUBLE(a) - GET_DOUBLE(b); */
 }

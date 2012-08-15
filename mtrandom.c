@@ -8,7 +8,8 @@
 
 #define RANDOM_DEV "/dev/urandom"
 
-void mtrandom_init() {
+void mtrandom_init()
+{
 	FILE *f;
 	unsigned long seed;
 	int n;
@@ -25,33 +26,37 @@ void mtrandom_init() {
 	mt_init_genrand(seed);
 }
 
-inline unsigned int mtrandom_uint(unsigned int range) {
+inline unsigned int mtrandom_uint(unsigned int range)
+{
 	unsigned long r = mt_genrand_int32() % range;
 	return (unsigned int)r;
 }
 
-inline unsigned long mtrandom_ulong(unsigned long range) {
+inline unsigned long mtrandom_ulong(unsigned long range)
+{
 	assert(sizeof(unsigned long) <= 4);
 	unsigned long r = mt_genrand_int32() % range;
 	return r;
 }
 
-inline double mtrandom_double(double range) {
-	// This method will actually generate a numerical distribution error
-	// of range * 2^(-32), but it is good enough for our purposes.
+inline double mtrandom_double(double range)
+{
+	/* This method will actually generate a numerical distribution error
+	   of range * 2^(-32), but it is good enough for our purposes. */
 	double r = floor(mt_genrand_real2() * range);
 	return r;
 }
 
-inline size_t mtrandom_sizet(size_t range) {
+inline size_t mtrandom_sizet(size_t range)
+{
 	unsigned long r = mt_genrand_int32() % range;
 	return (size_t)r;
 }
 
-inline int mtrandom_bool() {
-	if (mt_genrand_int32() <= (ULONG_MAX >> 1)) {
+inline int mtrandom_bool()
+{
+	if (mt_genrand_int32() <= (ULONG_MAX >> 1))
 		return 1;
-	} else {
+	else
 		return 0;
-	}
 }

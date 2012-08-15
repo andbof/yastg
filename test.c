@@ -7,7 +7,8 @@
 /*
  * Run self tests. We assume the self test will call exit(n) if failed, where n != 0.
  */
-void run_tests() {
+void run_tests()
+{
 #ifdef TEST
 	printf("Running self tests ...\n");
 	printf("  sarray: ");

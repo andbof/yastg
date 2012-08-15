@@ -16,9 +16,7 @@ struct civ* loadciv();
 
 struct array* loadcivs();
 
+void civ_spawncivs(struct universe *u, struct array *civs);
 void civ_free(void *ptr);
-
-void spawncivs(struct universe *u, struct array *civs);
-void growciv(struct universe *u, struct civ *c);
 
 #endif

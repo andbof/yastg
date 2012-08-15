@@ -8,7 +8,8 @@
 
 #define PTRARRAY_REALLOC_STEP 1
 
-struct ptrarray* ptrarray_init(size_t asize) {
+struct ptrarray* ptrarray_init(size_t asize)
+{
 	struct ptrarray *a;
 	MALLOC_DIE(a, sizeof(*a));
 	a->elements = 0;
@@ -17,13 +18,15 @@ struct ptrarray* ptrarray_init(size_t asize) {
 	return a;
 }
 
-void ptrarray_incsize(struct ptrarray *a) {
+void ptrarray_incsize(struct ptrarray *a)
+{
 	unsigned int step = PTRARRAY_REALLOC_STEP;
 	REALLOC_DIE(a->array, (a->allocated + step) * sizeof(void*));
 	a->allocated += step;
 }
 
-void ptrarray_push(struct ptrarray *a, void *e) {
+void ptrarray_push(struct ptrarray *a, void *e)
+{
 	void *ptr;
 	if (a->elements == a->allocated)
 		ptrarray_incsize(a);
@@ -31,7 +34,8 @@ void ptrarray_push(struct ptrarray *a, void *e) {
 	a->elements++;
 }
 
-void* ptrarray_pop(struct ptrarray *a) {
+void* ptrarray_pop(struct ptrarray *a)
+{
 	void **ptr;
 	if (a->elements > 0) {
 		ptr = a->array + (a->elements - 1) * sizeof(void*);
@@ -42,18 +46,20 @@ void* ptrarray_pop(struct ptrarray *a) {
 	}
 }
 
-void* ptrarray_get(struct ptrarray *a, size_t n) {
+void* ptrarray_get(struct ptrarray *a, size_t n)
+{
 	return *(void**)(a->array + (sizeof(void*) * n));
 }
 
-void ptrarray_rm(struct ptrarray *a, size_t n) {
+void ptrarray_rm(struct ptrarray *a, size_t n)
+{
 	if (n < a->elements)
 		MEMMOVE_DIE(a->array + n * sizeof(void*), a->array + (n + 1) * sizeof(void*), (a->elements - 1) * sizeof(void*) - n * sizeof(void*));
 	a->elements--;
 }
 
-void ptrarray_free(struct ptrarray *a) {
+void ptrarray_free(struct ptrarray *a)
+{
 	free(a->array);
 	free(a);
 }
-

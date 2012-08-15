@@ -51,11 +51,11 @@ extern const char* greek[GREEK_N];
 
 /* Astronomical constants */
 
-#define GM_PER_AU 1496			// gigameters per astronomical unit
-#define AU_PER_LY 63239			// Astronomical units per light year
-#define HAB_ZONE_START 0.95		// Start of habitable zone in a sol like system, in AU
-#define HAB_ZONE_END 1.37		// End of habitable zone in a sol like system, in AU
-#define SNOW_LINE (2.7*GM_PER_AU)	// Upper limit of rocky planetary formation in a sol-like system
+#define GM_PER_AU 1496			/* gigameters per astronomical unit */
+#define AU_PER_LY 63239			/* Astronomical units per light year */
+#define HAB_ZONE_START 0.95		/* Start of habitable zone in a sol like system, in AU */
+#define HAB_ZONE_END 1.37		/* End of habitable zone in a sol like system, in AU */
+#define SNOW_LINE (2.7*GM_PER_AU)	/* Upper limit of rocky planetary formation in a sol-like system */
 
 /* Global longer helper functions */
 

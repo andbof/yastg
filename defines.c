@@ -6,6 +6,7 @@ const char* greek[GREEK_N] = {
 	"Mu", "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega"
 };
 
-void ptr_free(void *ptr) {
+void ptr_free(void *ptr)
+{
 	free((void*)*(int*)ptr);
 }
