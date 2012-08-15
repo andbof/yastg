@@ -2,6 +2,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdint.h>
+#include <assert.h>
 #include "defines.h"
 #include "log.h"
 #include "sector.h"
@@ -41,6 +42,7 @@ struct planet* loadplanet(struct configtree *ctree)
 
 void planet_free(void *ptr)
 {
+	assert(ptr != NULL);
 	struct planet *p = ptr;
 	ptrarray_free(p->bases);
 	ptrarray_free(p->moons);

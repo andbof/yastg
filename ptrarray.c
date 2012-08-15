@@ -1,12 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include "defines.h"
 #include "log.h"
 #include "ptrarray.h"
 #include "sector.h"
-
-#define PTRARRAY_REALLOC_STEP 1
 
 struct ptrarray* ptrarray_init(size_t asize)
 {
@@ -14,15 +13,25 @@ struct ptrarray* ptrarray_init(size_t asize)
 	MALLOC_DIE(a, sizeof(*a));
 	a->elements = 0;
 	a->allocated = asize;
-	MALLOC_DIE(a->array, asize * sizeof(void*));
+
+	if (asize > 0) {
+		MALLOC_DIE(a->array, asize * sizeof(void*));
+	} else {
+		a->array = NULL;
+	}
+
 	return a;
 }
 
+#define PTRARRAY_REALLOC_STEP 1
 void ptrarray_incsize(struct ptrarray *a)
 {
-	unsigned int step = PTRARRAY_REALLOC_STEP;
-	REALLOC_DIE(a->array, (a->allocated + step) * sizeof(void*));
-	a->allocated += step;
+	if (a->array) {
+		REALLOC_DIE(a->array, (a->allocated + PTRARRAY_REALLOC_STEP) * sizeof(void*));
+	} else {
+		MALLOC_DIE(a->array, PTRARRAY_REALLOC_STEP * sizeof(void*));
+	}
+	a->allocated += PTRARRAY_REALLOC_STEP;
 }
 
 void ptrarray_push(struct ptrarray *a, void *e)
@@ -48,6 +57,10 @@ void* ptrarray_pop(struct ptrarray *a)
 
 void* ptrarray_get(struct ptrarray *a, size_t n)
 {
+	if (a->array == NULL)
+		assert(a->elements == 0);
+	assert(n <= a->elements);
+	printf("ptrarray_get(): a = %p, a->array = %p, a->elements = %zu\n", a, a->array, a->elements);
 	return *(void**)(a->array + (sizeof(void*) * n));
 }
 
@@ -60,6 +73,10 @@ void ptrarray_rm(struct ptrarray *a, size_t n)
 
 void ptrarray_free(struct ptrarray *a)
 {
-	free(a->array);
+	assert(a != NULL);
+	/* It is possible for a->array to be NULL if ptrarray_init was called with
+	 * asize = 0 and the array hasn't been used. */
+	if (a->array)
+		free(a->array);
 	free(a);
 }

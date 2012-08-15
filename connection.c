@@ -167,11 +167,12 @@ void conn_sendinfo(struct conndata *data)
 	gurka = getneighbours(s, 50);
 	for (st = 0; st < gurka->elements; st++) {
 		t = ptrarray_get(gurka, st);
-		conn_send(data, "  %s at %lu ly\n", t->name, sector_distance(s, t));
+		if (t != s)
+			conn_send(data, "  %s at %lu ly\n", t->name, sector_distance(s, t));
 	}
 	ptrarray_free(gurka);
 	if (s->owner != NULL) {
-		conn_send(data, "This sector is owned by civ %zx\n", s->name);
+		conn_send(data, "This sector is owned by civ %s\n", s->name);
 	} else {
 		conn_send(data, "This sector is not part of any civilization\n");
 	}
