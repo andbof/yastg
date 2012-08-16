@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "test.h"
 #include "sarray.h"
-#include "array.h"
 #include "stack.h"
 
 /*
@@ -13,9 +12,6 @@ void run_tests()
 	printf("Running self tests ...\n");
 	printf("  sarray: ");
 	sarray_test();
-	printf("passed\n");
-	printf("  array: ");
-	array_test();
 	printf("passed\n");
 	printf("  stack: ");
 	stack_test();

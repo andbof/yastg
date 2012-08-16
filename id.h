@@ -3,9 +3,9 @@
 
 void init_id();
 void id_destroy();
-size_t gen_id();
-void insert_id(size_t id);
-void rm_id(size_t id);
+unsigned long gen_id();
+void insert_id(unsigned long id);
+void rm_id(unsigned long id);
 int sort_id(void *a, void *b);
 int sort_ulong(void *a, void *b);
 int sort_dlong(void *a, void *b);

@@ -1,6 +1,7 @@
 #ifndef HAS_STAR_H
 #define HAS_STAR_H
 
+#include "sector.h"
 #include "parseconfig.h"
 
 #define STELLAR_LUM_N 9
@@ -36,7 +37,7 @@ unsigned long star_gethabhigh(struct star *s);
 unsigned long star_getsnowline(struct star *s);
 
 struct star* createstar();
-struct ptrarray* createstars();
+void createstars(struct sector *sector);
 void star_free(void *ptr);
 
 #endif

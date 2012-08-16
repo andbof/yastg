@@ -15,8 +15,7 @@
 #include "log.h"
 #include "mtrandom.h"
 #include "sarray.h"
-#include "array.h"
-#include "ptrarray.h"
+#include "ptrlist.h"
 #include "test.h"
 #include "server.h"
 #include "sector.h"
@@ -79,7 +78,7 @@ int main(int argc, char **argv)
 	size_t st, su;
 	struct sarray *gurka;
 	unsigned int tomat;
-	struct array *civs;
+	struct civ *civs = civ_create();
 	struct mallinfo minfo;
 
 	/* Open log file */
@@ -102,12 +101,12 @@ int main(int argc, char **argv)
 	/* Load config files */
 	printf("Parsing configuration files\n");
 	printf("  civilizations: ");
-	civs = loadcivs();
-	printf("done, %zu civs loaded.\n", civs->elements);
-
+	civ_load_all(civs);
+	printf("done, %lu civs loaded.\n", list_len(&civs->list));
 	/* Create universe */
 	printf("Creating universe\n");
 	univ = universe_create();
+
 	universe_init(civs);
 
 	/* Start server thread */
@@ -117,8 +116,8 @@ int main(int argc, char **argv)
 		die("%s", "Could not launch server thread");
 
 	mprintf("Welcome to YASTG v%s (commit %s), built %s %s.\n\n", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
+	mprintf("Universe has %lu sectors in total\n", ptrlist_len(univ->sectors));
 
-	mprintf("Universe has %zu sectors in total\n", univ->sectors->elements);
 	while (running) {
 		mprintf("console> ");
 		fgets(line, 256, stdin); /* FIXME */
@@ -156,7 +155,7 @@ int main(int argc, char **argv)
 			mprintf("  Size of top-most releasable chunk:              %d bytes\n", minfo.keepcost);
 		} else if (strcmp(line, "stats") == 0) {
 			mprintf("Statistics:\n");
-			mprintf("  Size of universe:          %zu sectors\n", univ->sectors->elements);
+			mprintf("  Size of universe:          %lu sectors\n", ptrlist_len(univ->sectors));
 			mprintf("  Number of users known:     %s\n", "FIXME");
 			mprintf("  Number of users connected: %s\n", "FIXME");
 		} else if (strcmp(line, "quit") == 0) {
@@ -180,16 +179,21 @@ int main(int argc, char **argv)
 	/* Destroy all structures and free all memory */
 
 	log_printfn("main", "cleaning up");
-	for (st = 0; st < univ->sectors->elements; st++) {
-		s = ptrarray_get(univ->sectors, st);
+	struct list_head *p, *q;
+	ptrlist_for_each_entry(s, univ->sectors, p) {
+		printf("Freeing sector %s\n", s->name);
 		sector_free(s);
 	}
-	array_free(civs);
-	free(civs);
-	free(line);
-	universe_free(univ);
-	id_destroy();
+	list_for_each_safe(p, q, &civs->list) {
+		cv = list_entry(p, struct civ, list);
+		list_del(p);
+		civ_free(cv);
+	}
+	civ_free(civs);
 
+	id_destroy();
+	universe_free(univ);
+	free(line);
 	log_close();
 
 	return 0;

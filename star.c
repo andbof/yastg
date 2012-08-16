@@ -3,11 +3,10 @@
 #include <limits.h>
 #include <string.h>
 #include <math.h>
-#include <stdint.h>
 #include "defines.h"
 #include "log.h"
 #include "star.h"
-#include "ptrarray.h"
+#include "ptrlist.h"
 #include "parseconfig.h"
 #include "mtrandom.h"
 
@@ -115,10 +114,10 @@ struct star* loadstar(struct configtree *ctree)
 		die("required attribute missing for predefined star %s: stellar luminosity", sol->name);
 	/* FIXME: */
 	if (!lumvalset)
-		sol->lumval = stellar_clslum[sol->cls + 1] + mtrandom_sizet(stellar_clslum[sol->cls]) - stellar_clslum[sol->cls + 1];
+		sol->lumval = stellar_clslum[sol->cls + 1] + mtrandom_uint(stellar_clslum[sol->cls]) - stellar_clslum[sol->cls + 1];
 	sol->hab = stellar_clshab[sol->cls] + stellar_lumhab[sol->lum];
 	if (!tempset)
-		sol->temp = stellar_clstmp[sol->cls + 1] + mtrandom_sizet(stellar_clstmp[sol->cls])-stellar_clstmp[sol->cls + 1];
+		sol->temp = stellar_clstmp[sol->cls + 1] + mtrandom_uint(stellar_clstmp[sol->cls])-stellar_clstmp[sol->cls + 1];
 	/* Rough guess looking at
 	   https://secure.wikimedia.org/wikipedia/en/wiki/Habitable_zone */
 	sol->hablow = star_gethablow(sol);
@@ -162,7 +161,8 @@ int star_gencls(void)
 int star_gennum()
 {
 	int num = 1;
-	while (mtrandom_sizet(SIZE_MAX) < SIZE_MAX/STELLAR_MUL_ODDS)
+	size_t ran;
+	while ((ran = mtrandom_uint(UINT_MAX)) < UINT_MAX/STELLAR_MUL_ODDS)
 		num++;
 	if (num > STELLAR_MUL_MAX)
 		num = STELLAR_MUL_MAX;
@@ -193,26 +193,24 @@ struct star* createstar()
 	s->name = NULL;
 	s->cls = star_gencls();
 	s->lum = star_genlum();
-	s->lumval = stellar_clslum[s->cls+1] + mtrandom_sizet(stellar_clslum[s->cls]) - stellar_clslum[s->cls + 1];
+	s->lumval = stellar_clslum[s->cls+1] + mtrandom_uint(stellar_clslum[s->cls]) - stellar_clslum[s->cls + 1];
 	s->hab = stellar_clshab[s->cls] + stellar_lumhab[s->lum];
-	s->temp = stellar_clstmp[s->cls+1] + mtrandom_sizet(stellar_clstmp[s->cls]) - stellar_clstmp[s->cls + 1];
+	s->temp = stellar_clstmp[s->cls+1] + mtrandom_uint(stellar_clstmp[s->cls]) - stellar_clstmp[s->cls + 1];
 	s->hablow = star_gethablow(s);
 	s->habhigh = star_gethabhigh(s);
 	s->snowline = star_getsnowline(s);
 	return s;
 }
 
-struct ptrarray* createstars()
+void createstars(struct sector *sector)
 {
 	struct star *s;
 	int i;
-	struct ptrarray *a = ptrarray_init(0);
 	int num = star_gennum();
 	for (i = 0; i < num; i++) {
 		s = createstar();
-		ptrarray_push(a, s);
+		ptrlist_push(sector->stars, s);
 	}
-	return a;
 }
 
 void star_free(void *ptr)

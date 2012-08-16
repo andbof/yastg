@@ -1,8 +1,9 @@
-#ifndef _LINUX_LIST_H
-#define _LINUX_LIST_H
+#ifndef _HAS_LIST_H
+#define _HAS_LIST_H
 
 /* Shamelessly stolen from Linux kernel 3.4.6 */
 
+#include <stddef.h>
 #include "defines.h"
 
 struct list_head {
@@ -362,6 +363,18 @@ static inline void list_splice_tail_init(struct list_head *list,
 }
 
 /**
+ * container_of - cast a member of a structure out to the containing structure
+ *
+ * @ptr:        the pointer to the member.
+ * @type:       the type of the container struct this is embedded in.
+ * @member:     the name of the member within the struct.
+ *
+ */
+#define container_of(ptr, type, member) ({                      \
+        const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+        (type *)( (char *)__mptr - offsetof(type,member) );})
+
+/**
  * list_entry - get the struct for this entry
  * @ptr:	the &struct list_head pointer.
  * @type:	the type of the struct this is embedded in.
@@ -376,10 +389,21 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @type:	the type of the struct this is embedded in.
  * @member:	the name of the list_struct within the struct.
  *
- * Note, that list is expected to be not empty.
+ * Note: list is assumed to not be empty.
  */
 #define list_first_entry(ptr, type, member) \
 	list_entry((ptr)->next, type, member)
+
+/**
+ * list_last_entry - get the last element from a list
+ * @ptr:	the list head to take the element from.
+ * @type:	the type of the struct this is embedded in.
+ * @member:	the name of the list_struct within the struct.
+ *
+ * Note: list is assumed to not be empty.
+ */
+#define list_last_entry(ptr, type, member) \
+	list_entry((ptr)->prev, type, member)
 
 /**
  * list_for_each	-	iterate over a list
@@ -576,6 +600,19 @@ static inline void list_splice_tail_init(struct list_head *list,
  */
 #define list_safe_reset_next(pos, n, member)				\
 	n = list_entry(pos->member.next, typeof(*pos), member)
+
+/*
+ * Count the length of the linked list head. This walks through the
+ * entire list and is therefore pretty expensive.
+ */
+static inline unsigned long list_len(struct list_head *head)
+{
+	unsigned long i = 0;
+	struct list_head *pos;
+	list_for_each(pos, head)
+		i++;
+	return i;
+}
 
 /*
  * Double linked lists with a single pointer list head.

@@ -4,6 +4,7 @@
  * - Created header file mt19937ar-cok.h
  * - Changed names to mt_* namespace
  * - Fixed coding style to be consistent with project in general
+ * - Changed long to int32_t (which seems to be what was really intended)
  */
 
 /* 
@@ -52,6 +53,7 @@ email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 */
 
 #include <stdio.h>
+#include <stdint.h>
 #include "mt19937ar-cok.h"
 
 /* Period parameters */  
@@ -63,13 +65,13 @@ email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 #define MT_MIXBITS(u,v) ( ((u) & MT_UMASK) | ((v) & MT_LMASK) )
 #define MT_TWIST(u,v) ((MT_MIXBITS(u,v) >> 1) ^ ((v)&1UL ? MT_MATRIX_A : 0UL))
 
-static unsigned long mt_state[MT_N]; /* the array for the mt_state vector  */
+static uint32_t mt_state[MT_N]; /* the array for the mt_state vector  */
 static int mt_left = 1;
 static int mt_initf = 0;
-static unsigned long *mt_next;
+static uint32_t *mt_next;
 
 /* initializes mt_state[MT_N] with a seed */
-void mt_init_genrand(unsigned long s)
+void mt_init_genrand(uint32_t s)
 {
 	int j;
 	mt_state[0] = s & 0xffffffffUL;
@@ -88,7 +90,7 @@ void mt_init_genrand(unsigned long s)
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 /* slight change for C++, 2004/2/26 */
-void mt_init_by_array(unsigned long init_key[], int key_length)
+void mt_init_by_array(uint32_t init_key[], int key_length)
 {
 	int i, j, k;
 	mt_init_genrand(19650218UL);
@@ -116,7 +118,7 @@ void mt_init_by_array(unsigned long init_key[], int key_length)
 
 static void mt_next_state(void)
 {
-	unsigned long *p=mt_state;
+	uint32_t *p=mt_state;
 	int j;
 
 	/* if mt_init_genrand() has not been called, */
@@ -136,9 +138,9 @@ static void mt_next_state(void)
 }
 
 /* generates a random number on [0,0xffffffff]-interval */
-unsigned long mt_genrand_int32(void)
+uint32_t mt_genrand_int32(void)
 {
-	unsigned long y;
+	uint32_t y;
 
 	if (--mt_left == 0)
 		mt_next_state();
@@ -154,9 +156,9 @@ unsigned long mt_genrand_int32(void)
 }
 
 /* generates a random number on [0,0x7fffffff]-interval */
-long mt_genrand_int31(void)
+int32_t mt_genrand_int31(void)
 {
-	unsigned long y;
+	uint32_t y;
 
 	if (--mt_left == 0)
 		mt_next_state();
@@ -174,7 +176,7 @@ long mt_genrand_int31(void)
 /* generates a random number on [0,1]-real-interval */
 double mt_genrand_real1(void)
 {
-	unsigned long y;
+	uint32_t y;
 
 	if (--mt_left == 0)
 		mt_next_state();
@@ -193,7 +195,7 @@ double mt_genrand_real1(void)
 /* generates a random number on [0,1)-real-interval */
 double mt_genrand_real2(void)
 {
-	unsigned long y;
+	uint32_t y;
 
 	if (--mt_left == 0)
 		mt_next_state();
@@ -212,7 +214,7 @@ double mt_genrand_real2(void)
 /* generates a random number on (0,1)-real-interval */
 double mt_genrand_real3(void)
 {
-	unsigned long y;
+	uint32_t y;
 
 	if (--mt_left == 0)
 		mt_next_state();
@@ -231,7 +233,7 @@ double mt_genrand_real3(void)
 /* generates a random number on [0,1) with 53-bit resolution*/
 double mt_genrand_res53(void)
 {
-	unsigned long a = mt_genrand_int32() >> 5, b = mt_genrand_int32() >> 6; 
+	uint32_t a = mt_genrand_int32() >> 5, b = mt_genrand_int32() >> 6; 
 	return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0); 
 } 
 /* These real versions are due to Isaku Wada, 2002/01/09 added */
@@ -240,7 +242,7 @@ double mt_genrand_res53(void)
 	int main(void)
 	{
 		int i;
-		unsigned long init[4] = {0x123, 0x234, 0x345, 0x456}, length = 4;
+		uint32_t init[4] = {0x123, 0x234, 0x345, 0x456}, length = 4;
 		mt_init_by_array(init, length);
 
 		/* This is an example of initializing by an array.

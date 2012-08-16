@@ -1,14 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include <stdint.h>
 #include <assert.h>
 #include "defines.h"
 #include "log.h"
 #include "sector.h"
 #include "planet.h"
 #include "base.h"
-#include "ptrarray.h"
+#include "ptrlist.h"
 #include "parseconfig.h"
 #include "mtrandom.h"
 
@@ -17,8 +16,8 @@ struct planet* initplanet()
 	struct planet *p;
 	MALLOC_DIE(p, sizeof(*p));
 	memset(p, 0, sizeof(*p));
-	p->bases = ptrarray_init(0);
-	p->moons = ptrarray_init(0);
+	p->bases = ptrlist_init();
+	p->moons = ptrlist_init();
 	return p;
 }
 
@@ -33,19 +32,18 @@ struct planet* loadplanet(struct configtree *ctree)
 			p->type = ctree->data[0];
 		} else if (strcmp(ctree->key, "BASE") == 0) {
 			b = loadbase(ctree->sub);
-			ptrarray_push(p->bases, b);
+			ptrlist_push(p->bases, b);
 		}
 		ctree = ctree->next;
 	}
 	return p;
 }
 
-void planet_free(void *ptr)
+void planet_free(struct planet *p)
 {
-	assert(ptr != NULL);
-	struct planet *p = ptr;
-	ptrarray_free(p->bases);
-	ptrarray_free(p->moons);
+	assert(p != NULL);
+	ptrlist_free(p->bases);
+	ptrlist_free(p->moons);
 	free(p->name);
 	free(p);
 }
@@ -60,14 +58,14 @@ struct planet* createplanet(struct sector* s)
 	return p;
 }
 
-struct ptrarray* createplanets(struct sector* s)
+struct ptrlist* createplanets(struct sector* s)
 {
 	int num = 0;
 	struct planet *p;
-	struct ptrarray* planets = ptrarray_init(0);
-	while ((mtrandom_sizet(SIZE_MAX) < SIZE_MAX/PLANET_ODDS) && (num < PLANET_NUM_MAX)) {
+	struct ptrlist* planets = ptrlist_init();
+	while ((mtrandom_uint(UINT_MAX) < UINT_MAX/PLANET_ODDS) && (num < PLANET_NUM_MAX)) {
 		p = createplanet(s);
-		ptrarray_push(planets, p);
+		ptrlist_push(planets, p);
 	}
 	return planets;
 }

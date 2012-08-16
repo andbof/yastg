@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 #include "defines.h"
 #include "log.h"
 #include "id.h"
@@ -12,7 +11,7 @@ static struct sarray *id_array;
 
 void init_id()
 {
-	id_array = sarray_init(sizeof(size_t), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
+	id_array = sarray_init(sizeof(unsigned long), 0, SARRAY_ENFORCE_UNIQUE, NULL, &sort_id);
 }
 
 void id_destroy()
@@ -21,23 +20,23 @@ void id_destroy()
 	free(id_array);
 }
 
-size_t gen_id()
+unsigned long gen_id()
 {
-	size_t i;
+	unsigned long i;
 	void *ptr;
 	do {
-		i = mtrandom_sizet(SIZE_MAX); /* FIXME should be hash */
+		i = mtrandom_ulong(ULONG_MAX); /* FIXME should be hash */
 		ptr = sarray_getbyid(id_array, &i);
 	} while (ptr || i == 0);
 	return i;
 }
 
-void insert_id(size_t id)
+void insert_id(unsigned long id)
 {
 	sarray_add(id_array, &id);
 }
 
-void rm_id(size_t id)
+void rm_id(unsigned long id)
 {
 	sarray_rmbypos(id_array, id);
 }

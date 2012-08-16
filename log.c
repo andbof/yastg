@@ -35,6 +35,7 @@ void log_printfn(const char *subsys, const char *format, ...)
 	va_list ap;
 	time_t now = time(NULL);
 	int i = -1;
+
 	pthread_mutex_lock(&log_mutex);
 
 	ctime_r(&now, &log_timestr[0]);

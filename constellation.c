@@ -3,7 +3,6 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
-#include <stdint.h>
 #include "defines.h"
 #include "log.h"
 #include "mtrandom.h"
@@ -13,21 +12,20 @@
 #include "sector.h"
 #include "star.h"
 #include "sarray.h"
-#include "ptrarray.h"
-#include "array.h"
+#include "ptrlist.h"
 #include "stable.h"
 
 void loadconstellations()
 {
 	struct configtree *ctree, *e;
-	size_t ncons = 0;
+	unsigned int ncons = 0;
 	ctree = parseconfig("data/constellations");
 	e = ctree->sub;
 	if (!e->next)
 		die("%s contained no useful data", e->key);
 	e = e->next;
 	while ((e) && (ncons < CONSTELLATION_MAXNUM)) {
-		printf("Calling addconstellation for %s\n", e->key);
+		printf("Adding constellation %s\n", e->key);
 		addconstellation(e->key);
 		e = e->next;
 		ncons++;
@@ -37,21 +35,21 @@ void loadconstellations()
 
 void addconstellation(char* cname)
 {
-	size_t nums, numc, i;
+	unsigned long nums, numc, i;
 	char *string;
 	struct sector *fs, *s;
-	struct ptrarray *work = ptrarray_init(0);
+	struct ptrlist *work = ptrlist_init();
 	unsigned long x, y;
 	double phi;
 	unsigned long r;
 	MALLOC_DIE(string, strlen(cname)+GREEK_LEN+2);
 
 	/* Determine number of sectors in constellation */
-	nums = mtrandom_sizet(GREEK_N);
+	nums = mtrandom_uint(GREEK_N);
 	if (nums == 0)
 		nums = 1;
 
-	mprintf("addconstellation: will create %zu sectors (universe has %zu so far)\n", nums, univ->sectors->elements);
+	mprintf("addconstellation: will create %lu sectors (universe has %lu so far)\n", nums, ptrlist_len(univ->sectors));
 
 	fs = NULL;
 	for (numc = 0; numc < nums; numc++) {
@@ -59,24 +57,24 @@ void addconstellation(char* cname)
 		/* Create a new sector and put it in s */
 		sprintf(string, "%s %s", greek[numc], cname);
 		s = sector_create(string);
-		ptrarray_push(univ->sectors, s);
+		ptrlist_push(univ->sectors, s);
 		stable_add(univ->sectornames, s->name, s);
 
 		if (fs == NULL) {
 			/* This was the first sector generated for this constellation
 			   We need to place this at a suitable point in the universe */
 			fs = s;
-			if (univ->sectors->elements == 1) {
+			if (ptrlist_len(univ->sectors) == 1) {
 				/* The first constellation always goes in (0, 0) */
 				x = 0;
 				y = 0;
 				sector_move(s, x, y);
 			} else {
 				/* All others are randomly distributed */
-				phi = mtrandom_sizet(SIZE_MAX) / (double)SIZE_MAX*2*M_PI;
+				phi = mtrandom_uint(UINT_MAX) / (double)UINT_MAX*2*M_PI;
 				r = 0;
 				do {
-					r += mtrandom_sizet(CONSTELLATION_RANDOM_DISTANCE);
+					r += mtrandom_ulong(CONSTELLATION_RANDOM_DISTANCE);
 					phi += mtrandom_double(CONSTELLATION_PHI_RANDOM);
 					x = POLTOX(phi, r);
 					y = POLTOY(phi, r);
@@ -84,26 +82,26 @@ void addconstellation(char* cname)
 					i = countneighbours(s, CONSTELLATION_MIN_DISTANCE);
 				} while (i > 0);
 			}
-			ptrarray_push(work, s);
-		} else if (work->elements == 0) {
+			ptrlist_push(work, s);
+		} else if (ptrlist_len(work) == 0) {
 			/* This isn't the first sector but no sectors are left in work
 			   Put this close to the first sector */
-			ptrarray_push(work, s);
+			ptrlist_push(work, s);
 			makeneighbours(fs, s, 0, 0);
 		} else {
 			/* We have sectors in work, put this close to work[0] and add this one to work */
-			ptrarray_push(work, s);
-			makeneighbours(ptrarray_get(work, 0), s, 0, 0);
+			ptrlist_push(work, s);
+			makeneighbours(ptrlist_entry(work, 0), s, 0, 0);
 			/* Determine if work[0] has enough neighbours, if so remove it */
-			if (mtrandom_sizet(SIZE_MAX) < SIZE_MAX/CONSTELLATION_NEIGHBOUR_CHANCE)
-				ptrarray_rm(work, 0);
+			if (mtrandom_uint(UINT_MAX) < UINT_MAX/CONSTELLATION_NEIGHBOUR_CHANCE)
+				ptrlist_pull(work);
 		}
 
-		mprintf("created %s (%p) at %ldx%ld\n", s->name, s, s->x, s->y);
+		mprintf("Created %s (%p) at %ldx%ld\n", s->name, s, s->x, s->y);
 
 	}
 
 	free(string);
-	ptrarray_free(work);
+	ptrlist_free(work);
 
 }

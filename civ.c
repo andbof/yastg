@@ -7,70 +7,73 @@
 #include "log.h"
 #include "mtrandom.h"
 #include "civ.h"
-#include "ptrarray.h"
+#include "ptrlist.h"
 #include "sector.h"
 #include "sarray.h"
-#include "array.h"
 #include "parseconfig.h"
 #include "id.h"
 #include "universe.h"
+#include "list.h"
 
 #define CIV_GROW_MIN 10
 #define CIV_GROW_STEP 10
 static void growciv(struct universe *u, struct civ *c)
 {
 	struct sector *s, *t;
-	struct ptrarray *neigh;
+	struct ptrlist *neigh;
+	struct list_head *lh;
 	size_t i;
 	unsigned long rad = CIV_GROW_MIN;
-	t = ptrarray_get(c->sectors, mtrandom_sizet(c->sectors->elements));
+	t = ptrlist_random(c->sectors);
 	do {
 		s = NULL;
 		neigh = getneighbours(t, rad);
-		for (i = 0; i < neigh->elements; i++) {
-			s = ptrarray_get(neigh, i);
+		ptrlist_for_each_entry(s, neigh, lh) {
 			if (!s->owner)
 				break;
 		}
 		if ((s == NULL) || (s->owner))
 			rad += CIV_GROW_STEP;
-		ptrarray_free(neigh);
+		ptrlist_free(neigh);
 	} while ((s == NULL) || (s->owner));
 	s->owner = c;
 	linksectors(s, t);
-	ptrarray_push(c->sectors, s);
+	ptrlist_push(c->sectors, s);
 }
+
 #define UNIVERSE_CIV_FRAC 0.4
 #define UNIVERSE_MIN_INTERCIV_DISTANCE 100
-void civ_spawncivs(struct universe *u, struct array *civs)
+void civ_spawncivs(struct universe *u, struct civ *civs)
 {
-	size_t i, j, k, nhab, chab, tpow;
+	size_t i, j, k;
+	unsigned long chab, nhab, tpow;
 	struct sector *s;
-	struct ptrarray *neigh;
+	struct ptrlist *neigh;
 	struct civ *c;
-	nhab = u->sectors->elements * UNIVERSE_CIV_FRAC;
+	nhab = ptrlist_len(u->sectors) * UNIVERSE_CIV_FRAC;
 	/* Calculate total civilization power (we need this to be able
 	   to get their relative values) */
 	tpow = 0;
-	for (i = 0; i < civs->elements; i++) {
-		tpow += ((struct civ*)array_get(civs, i))->power;
+	list_for_each_entry(c, &civs->list, list) {
+		tpow += c->power;
 	}
 
 	/* First, spawn all civilizations in separate home systems */
-	for (i = 0; i < civs->elements; i++) {
-		c = array_get(civs, i);
+	list_for_each_entry(c, &civs->list, list) {
 		do {
 			k = 1;
-			s = ptrarray_get(u->sectors, mtrandom_sizet(u->sectors->elements));
+			s = ptrlist_random(u->sectors);
 			if (!s->owner) {
 				neigh = getneighbours(s, UNIVERSE_MIN_INTERCIV_DISTANCE);
-				for (j = 0; j < neigh->elements; j++) {
-					if (((struct sector*)ptrarray_get(neigh, j))->owner != 0) {
+				struct sector *t;
+				struct list_head *lh;
+				ptrlist_for_each_entry(t, neigh, lh) {
+					if (t->owner != 0) {
 						k = 0;
 						break;
 					}
 				}
-				ptrarray_free(neigh);
+				ptrlist_free(neigh);
 			} else {
 				k = 0;
 			}
@@ -78,15 +81,15 @@ void civ_spawncivs(struct universe *u, struct array *civs)
 		printf("Chose %s as home system for %s\n", s->name, c->name);
 		s->owner = c;
 		c->home = s;
-		ptrarray_push(c->sectors, s);
+		ptrlist_push(c->sectors, s);
 	}
 
 	mprintf("Growing civilizations ...\n");
-	chab = civs->elements;
+	/* Each civ starts with one sector, current number of habitated sector is therefore == number of civs */
+	chab = list_len(&civs->list);
 	while (chab < nhab) {
-		for (i = 0; i < civs->elements; i++) {
-			c = array_get(civs, i);
-			if (mtrandom_sizet(tpow) < c->power) {
+		list_for_each_entry(c, &civs->list, list) {
+			if (mtrandom_ulong(tpow) < c->power) {
 				growciv(u, c);
 				chab++;
 			}
@@ -94,23 +97,30 @@ void civ_spawncivs(struct universe *u, struct array *civs)
 	}
 	mprintf("done.\n");
 
+	struct list_head *lh;
 	printf("Civilization stats:\n");
-	for (i = 0; i < civs->elements; i++) {
-		c = array_get(civs, i);
-		printf("  %s has %zu sectors (%.2f%%) with power %u\n", c->name, c->sectors->elements, (float)c->sectors->elements/chab*100, c->power);
-	}
-	printf("%zu sectors of %zu are inhabited (%.2f%%)\n", chab, u->sectors->elements, (float)chab/u->sectors->elements*100);
+	list_for_each_entry(c, &civs->list, list)
+		printf("  %s has %lu sectors (%.2f%%) with power %u\n", c->name, ptrlist_len(c->sectors), (float)ptrlist_len(c->sectors)/chab*100, c->power);
+	printf("%lu sectors of %lu are inhabited (%.2f%%)\n", chab, ptrlist_len(u->sectors), (float)chab/ptrlist_len(u->sectors)*100);
+}
+
+struct civ* civ_create()
+{
+	struct civ *c;
+	MALLOC_DIE(c, sizeof(*c));
+	memset(c, 0, sizeof(*c));
+	c->presectors = ptrlist_init();
+	c->availnames = ptrlist_init();
+	c->sectors = ptrlist_init();
+	INIT_LIST_HEAD(&c->list);
+	return c;
 }
 
 struct civ* loadciv(struct configtree *ctree)
 {
-	struct civ *c;
-	MALLOC_DIE(c, sizeof(*c));
+	struct civ *c = civ_create();
 	struct sector *s;
 	char *st;
-	c->presectors = ptrarray_init(0);
-	c->availnames = ptrarray_init(0);
-	c->sectors = ptrarray_init(0);
 	ctree=ctree->sub;
 	while (ctree) {
 		if (strcmp(ctree->key, "NAME") == 0) {
@@ -121,22 +131,21 @@ struct civ* loadciv(struct configtree *ctree)
 		} else if (strcmp(ctree->key, "SECTOR") == 0) {
 			/*	FIXME: We won't do this now as we don't support it
 			        s = sector_load(ctree->sub);
-			        ptrarray_push(c->presectors, s); */
+			        ptrlist_push(c->presectors, s); */
 		} else if (strcmp(ctree->key, "SNAME") == 0) {
 			st = strdup(ctree->data);
-			ptrarray_push(c->availnames, st);
+			ptrlist_push(c->availnames, st);
 		}
 		ctree = ctree->next;
 	}
 	return c;
 }
 
-struct array* loadcivs()
+int civ_load_all(struct civ *civs)
 {
 	DIR *dirp;
 	struct dirent *de;
 	struct configtree *ctree;
-	struct array *a = array_init(sizeof(struct civ), 0, &civ_free);
 	struct civ *cv;
 	char* path = NULL;
 	int pathlen = 0;
@@ -152,23 +161,26 @@ struct array* loadcivs()
 			ctree = parseconfig(path);
 			cv = loadciv(ctree);
 			destroyctree(ctree);
-			array_push(a, cv);
-			free(cv);		/* All data, including pointers to others objects, have been copied. We need to free cv now. */
+			list_add_tail(&(cv->list), &(civs->list));
 		}
 	}
-	if (path != NULL) free(path);
+	if (path != NULL)
+		free(path);
 	closedir(dirp);
-	return a;
+
+	return 0;
 }
 
-void civ_free(void *ptr)
+void civ_free(struct civ *civ)
 {
-	struct civ* c = ptr;
 	size_t st;
-	ptrarray_free(c->sectors);
-	ptrarray_free(c->presectors);
-	for (st = 0; st < c->availnames->elements; st++)
-		free(ptrarray_get(c->availnames, st));
-	ptrarray_free(c->availnames);
-	free(c->name);
+	char *c;
+	struct list_head *lh;
+	ptrlist_free(civ->sectors);
+	ptrlist_free(civ->presectors);
+	ptrlist_for_each_entry(c, civ->availnames, lh)
+		free(c);
+	ptrlist_free(civ->availnames);
+	free(civ->name);
+	free(civ);
 }

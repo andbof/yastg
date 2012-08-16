@@ -1,8 +1,10 @@
 #ifndef HAS_SECTOR_H
 #define HAS_SECTOR_H
 
+#include "list.h"
+
 struct universe;
-struct ptrarray;
+struct ptrlist;
 struct configtree;
 
 struct sector {
@@ -14,10 +16,11 @@ struct sector {
 	double phi;
 	int hab;
 	unsigned long hablow, habhigh, snowline;
-	struct ptrarray *stars;
-	struct ptrarray *planets;
-	struct ptrarray *bases;
-	struct ptrarray *links;
+	struct ptrlist *stars;
+	struct ptrlist *planets;
+	struct ptrlist *bases;
+	struct ptrlist *links;
+	struct list_head list;
 };
 
 struct sector* sector_init();

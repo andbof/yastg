@@ -18,7 +18,7 @@
 #include "log.h"
 #include "connection.h"
 #include "sarray.h"
-#include "ptrarray.h"
+#include "ptrlist.h"
 #include "id.h"
 #include "universe.h"
 #include "sector.h"
@@ -141,8 +141,9 @@ void conn_sendinfo(struct conndata *data)
 	size_t st;
 	char *string;
 	struct star *sol;
-	struct ptrarray *gurka;
+	struct ptrlist *gurka;
 	struct sector *s = data->pl->position, *t;
+	struct list_head *lh;
 	if (s == NULL) {
 		conn_error(data, "The sector you are in doesn't exist");
 		conn_cleanexit(data);
@@ -150,28 +151,28 @@ void conn_sendinfo(struct conndata *data)
 	conn_send(data, "You are in sector %s (coordinates %ldx%ld), habitability %d\n", s->name, s->x, s->y, s->hab);
 	conn_send(data, "Snow line at %lu Gm\n", s->snowline);
 	conn_send(data, "Habitable zone is from %lu to %lu Gm\n", s->hablow, s->habhigh);
-	for (st = 0; st < s->stars->elements; st++) {
-		sol = ptrarray_get(s->stars, st);
+	ptrlist_for_each_entry(sol, s->stars, lh) {
 		conn_send(data, "%s: Class %c %s\n", sol->name, stellar_cls[sol->cls], stellar_lum[sol->lum]);
 		string = hundreths(sol->lumval);
 		conn_send(data, "  Surface temperature: %dK, habitability modifier: %d, luminosity: %s \n", sol->temp, sol->hab, string);
 		free(string);
 	}
+
 	conn_send(data, "This sector has hyperspace links to\n");
-	for (st = 0; st < s->links->elements; st++) {
-		conn_send(data, "  %s\n", ((struct sector*)ptrarray_get(s->links, st))->name);
-	}
+	ptrlist_for_each_entry(t, s->links, lh)
+		conn_send(data, "  %s\n", t->name);
+
 	conn_send(data, "Sectors within 50 lys are:\n");
 	/* FIXME: getneighbours() is awful */
 	gurka = getneighbours(s, 50);
-	for (st = 0; st < gurka->elements; st++) {
-		t = ptrarray_get(gurka, st);
+	ptrlist_for_each_entry(t, gurka, lh) {
 		if (t != s)
 			conn_send(data, "  %s at %lu ly\n", t->name, sector_distance(s, t));
 	}
-	ptrarray_free(gurka);
+	ptrlist_free(gurka);
+
 	if (s->owner != NULL) {
-		conn_send(data, "This sector is owned by civ %s\n", s->name);
+		conn_send(data, "This sector is owned by civ %s\n", s->owner->name);
 	} else {
 		conn_send(data, "This sector is not part of any civilization\n");
 	}
@@ -312,7 +313,7 @@ void* conn_main(void *dataptr)
 	/* Create player */
 	data->pl = malloc(sizeof(struct player));
 	data->pl->name = strdup("Alfred");
-	data->pl->position = ptrarray_get(univ->sectors, 0);
+	data->pl->position = ptrlist_entry(univ->sectors, 0);
 
 	log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
 	conn_loop(data);

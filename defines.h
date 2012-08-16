@@ -1,6 +1,9 @@
 #ifndef HAS_DEFINES_H
 #define HAS_DEFINES_H
 
+#include <stdlib.h>
+#include <stdint.h>
+
 /* Global compiler directives */
 
 #define _GNU_SOURCE
@@ -59,14 +62,16 @@ extern const char* greek[GREEK_N];
 
 /* Global longer helper functions */
 
-#define die(FMT, ...)				\
-	do {						\
+#define die(FMT, ...)						\
+	do {							\
+		printf("yastg: panic in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);		\
 		log_printfn("panic", "in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
 		exit(EXIT_FAILURE);				\
 	} while(0)
 
-#define bug(FMT, ...)				\
-	do {						\
+#define bug(FMT, ...)						\
+	do {							\
+		printf("yastg: Oops! YASTG has encountered an internal bug in %s:%d and is crashing: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);		\
 		log_printfn("panic", "Oops! YASTG has encountered an internal bug in %s:%d and is crashing: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
 		exit(EXIT_FAILURE);				\
 	} while(0)
@@ -121,7 +126,5 @@ extern const char* greek[GREEK_N];
 	} while(0)
 
 /* Misc functions */
-
-void ptr_free(void *ptr);
 
 #endif

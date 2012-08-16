@@ -238,8 +238,8 @@ void* server_main(void* p)
 				}
 			} else {
 				/*	inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[tnum].peer, sizeof(std[tnum].peer)); */
-				st = sizeof(cd->sock);
-				getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &st);
+				socklen_t len = sizeof(cd->sock);
+				getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
 				cd->peer = getpeer(cd->sock);
 				log_printfn("server", "new connection from %s, assigning id %zx", cd->peer, cd->id);
 				if ((i = pthread_create(&cd->thread, NULL, conn_main, cd))) {

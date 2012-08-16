@@ -8,8 +8,7 @@
 #include "log.h"
 #include "universe.h"
 #include "sarray.h"
-#include "ptrarray.h"
-#include "array.h"
+#include "ptrlist.h"
 #include "id.h"
 #include "planet.h"
 #include "base.h"
@@ -41,7 +40,7 @@
 
 void universe_free(struct universe *u)
 {
-	ptrarray_free(u->sectors);
+	ptrlist_free(u->sectors);
 	stable_free(u->sectornames);
 	sarray_free(u->srad);
 	free(u->srad);
@@ -54,8 +53,8 @@ void universe_free(struct universe *u)
 
 void linksectors(struct sector *s1, struct sector *s2)
 {
-	ptrarray_push(s1->links, s2);
-	ptrarray_push(s2->links, s1);
+	ptrlist_push(s1->links, s2);
+	ptrlist_push(s2->links, s1);
 }
 
 int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsigned long max)
@@ -82,16 +81,16 @@ int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsi
  * Returns an array of all neighbouring systems within dist ly
  * FIXME: This really needs a more efficient implementation, perhaps using u->srad or the like.
  */
-struct ptrarray* getneighbours(struct sector *s, unsigned long dist)
+struct ptrlist* getneighbours(struct sector *s, unsigned long dist)
 {
 	size_t st;
 	struct sector *t;
-	struct ptrarray *r = ptrarray_init(0);
+	struct ptrlist *r = ptrlist_init();
+	struct list_head *lh;
 
-	for (st = 0; st < univ->sectors->elements; st++) {
-		t = ptrarray_get(univ->sectors, st);
+	ptrlist_for_each_entry(t, univ->sectors, lh) {
 		if (sector_distance(s, t) < dist)
-			ptrarray_push(r, t);
+			ptrlist_push(r, t);
 	}
 
 	return r;
@@ -101,9 +100,9 @@ size_t countneighbours(struct sector *s, unsigned long dist)
 {
 	size_t st, r = 0;
 	struct sector *t;
+	struct list_head *lh;
 
-	for (st = 0; st < univ->sectors->elements; st++) {
-		t = ptrarray_get(univ->sectors, st);
+	ptrlist_for_each_entry(t, univ->sectors, lh) {
 		if ((t != s) && (sector_distance(s, t) < dist))
 			r++;
 	}
@@ -119,7 +118,7 @@ struct universe* universe_create()
 	u->id = 0;
 	u->name = NULL;
 	u->numsector = 0;
-	u->sectors = ptrarray_init(0);
+	u->sectors = ptrlist_init();
 	u->sectornames = stable_create();
 	u->srad = sarray_init(sizeof(struct ulong_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
 	u->sphi = sarray_init(sizeof(struct double_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
@@ -127,13 +126,14 @@ struct universe* universe_create()
 	return u;
 }
 
-void universe_init(struct array *civs)
+void universe_init(struct civ *civs)
 {
 	int i;
 	int power = 0;
+	struct civ *c;
 
-	for (i = 0; i < civs->elements; i++)
-		power += ((struct civ*)array_get(civs, i))->power;
+	list_for_each_entry(c, &civs->list, list)
+		power += c->power;
 
 	/*
 	 * 1. Decide number of constellations in universe.
