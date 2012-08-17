@@ -14,6 +14,7 @@
 #include "defines.h"
 #include "log.h"
 #include "mtrandom.h"
+#include "cli.h"
 #include "sarray.h"
 #include "ptrlist.h"
 #include "test.h"
@@ -34,6 +35,8 @@
 
 const char* options = "d";
 int detached = 0;
+int running;
+struct cli_tree *cli_root;
 
 extern int sockfd;
 
@@ -56,19 +59,83 @@ static void parseopts(int argc, char **argv)
 }
 
 /*
- * Removes a trailing newline from a string, if it exists.
+ * Removes trailing newlines from a string, if any exists.
  */
 static void chomp(char* s)
 {
-	size_t predlen = strlen(s) -1;
-	if (s[predlen] == '\n')
-		s[predlen] = '\0';
+	for (unsigned int len = strlen(s); len > 0 && s[len - 1] == '\n'; s[len - 1] = '\0', len--);
+}
+
+static int cmd_help(void *ptr, char *param)
+{
+	cli_print_help(stdout, cli_root);
+	return 0;
+}
+
+static int cmd_wall(void *ptr, char *param)
+{
+	if (param) {
+		int i = MSG_WALL;
+		size_t st = (size_t)param;
+		write(srvfd[1], &i, sizeof(i));
+		write(srvfd[1], &st, sizeof(st));
+	} else {
+		mprintf("usage: wall <message>\n");
+	}
+	return 0;
+}
+
+static int cmd_pause(void *ptr, char *param)
+{
+	int i = MSG_PAUSE;
+	size_t st = 0;
+	write(srvfd[1], &i, sizeof(i));
+	write(srvfd[1], &st, sizeof(st));
+	return 0;
+}
+
+static int cmd_resume(void *ptr, char *param)
+{
+	int i = MSG_CONT;
+	size_t st = 0;
+	write(srvfd[1], &i, sizeof(i));
+	write(srvfd[1], &st, sizeof(st));
+	return 0;
+}
+
+static int cmd_memstat(void *ptr, char *param)
+{
+	struct mallinfo minfo = mallinfo();
+	mprintf("Memory statistics:\n");
+	mprintf("  Memory allocated with sbrk by malloc:           %d bytes\n", minfo.arena);
+	mprintf("  Number of chunks not in use:                    %d\n", minfo.ordblks);
+	mprintf("  Number of chunks allocated with mmap:           %d\n", minfo.hblks);
+	mprintf("  Memory allocated with mmap:                     %d bytes\n", minfo.hblkhd);
+	mprintf("  Memory occupied by chunks handed out by malloc: %d bytes\n", minfo.uordblks);
+	mprintf("  Memory occupied by free chunks:                 %d bytes\n", minfo.fordblks);
+	mprintf("  Size of top-most releasable chunk:              %d bytes\n", minfo.keepcost);
+	return 0;
+}
+
+static int cmd_stats(void *ptr, char *param)
+{
+	mprintf("Statistics:\n");
+	mprintf("  Size of universe:          %lu sectors\n", ptrlist_len(univ->sectors));
+	mprintf("  Number of users known:     %s\n", "FIXME");
+	mprintf("  Number of users connected: %s\n", "FIXME");
+	return 0;
+}
+
+static int cmd_quit(void *ptr, char *param)
+{
+	mprintf("Bye!\n");
+	running = 0;
+	return 0;
 }
 
 int main(int argc, char **argv)
 {
 	int i;
-	int running = 1;
 	char *line = malloc(256); /* FIXME */
 	struct configtree *ctree;
 	struct civ *cv;
@@ -79,7 +146,6 @@ int main(int argc, char **argv)
 	struct sarray *gurka;
 	unsigned int tomat;
 	struct civ *civs = civ_create();
-	struct mallinfo minfo;
 
 	/* Open log file */
 	log_init();
@@ -87,6 +153,7 @@ int main(int argc, char **argv)
 	log_printfn("main", "v%s (commit %s), built %s %s", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
 
 	/* Initialize */
+	running = 1;
 	srand(time(NULL));
 	mtrandom_init();
 	init_id();
@@ -97,6 +164,19 @@ int main(int argc, char **argv)
 
 	/* Parse command line options */
 	parseopts(argc, argv);
+
+	/* Register server console commands */
+	printf("Registering server console commands\n");
+	cli_root = cli_tree_create();
+	if (cli_root == NULL)
+		die("%s", "Unable to allocate memory\n");
+	cli_add_cmd(cli_root, "help", cmd_help, NULL, NULL);
+	cli_add_cmd(cli_root, "wall", cmd_wall, NULL, NULL);
+	cli_add_cmd(cli_root, "pause", cmd_pause, NULL, NULL);
+	cli_add_cmd(cli_root, "resume", cmd_resume, NULL, NULL);
+	cli_add_cmd(cli_root, "stats", cmd_stats, NULL, NULL);
+	cli_add_cmd(cli_root, "memstat", cmd_memstat, NULL, NULL);
+	cli_add_cmd(cli_root, "quit", cmd_quit, NULL, NULL);
 
 	/* Load config files */
 	printf("Parsing configuration files\n");
@@ -122,48 +202,9 @@ int main(int argc, char **argv)
 		mprintf("console> ");
 		fgets(line, 256, stdin); /* FIXME */
 		chomp(line);
-		if (strcmp(line,"help") == 0) {
-			mprintf("No help available.\n");
-		} else if (strncmp(line, "wall ", 5) == 0) {
-			if (strlen(line) > 5) {
-				i = MSG_WALL;
-				st = (size_t)(line + 5);
-				write(srvfd[1], &i, sizeof(i));
-				write(srvfd[1], &st, sizeof(st));
-			} else {
-				mprintf("usage: wall <message>");
-			}
-		} else if (strcmp(line, "pause") == 0) {
-			i = MSG_PAUSE;
-			st = 0;
-			write(srvfd[1], &i, sizeof(i));
-			write(srvfd[1], &st, sizeof(st));
-		} else if (strcmp(line, "resume") == 0) {
-			i = MSG_CONT;
-			st = 0;
-			write(srvfd[1], &i, sizeof(i));
-			write(srvfd[1], &st, sizeof(st));
-		} else if (strcmp(line, "memstat") == 0) {
-			minfo = mallinfo();
-			mprintf("Memory statistics:\n");
-			mprintf("  Memory allocated with sbrk by malloc:           %d bytes\n", minfo.arena);
-			mprintf("  Number of chunks not in use:                    %d\n", minfo.ordblks);
-			mprintf("  Number of chunks allocated with mmap:           %d\n", minfo.hblks);
-			mprintf("  Memory allocated with mmap:                     %d bytes\n", minfo.hblkhd);
-			mprintf("  Memory occupied by chunks handed out by malloc: %d bytes\n", minfo.uordblks);
-			mprintf("  Memory occupied by free chunks:                 %d bytes\n", minfo.fordblks);
-			mprintf("  Size of top-most releasable chunk:              %d bytes\n", minfo.keepcost);
-		} else if (strcmp(line, "stats") == 0) {
-			mprintf("Statistics:\n");
-			mprintf("  Size of universe:          %lu sectors\n", ptrlist_len(univ->sectors));
-			mprintf("  Number of users known:     %s\n", "FIXME");
-			mprintf("  Number of users connected: %s\n", "FIXME");
-		} else if (strcmp(line, "quit") == 0) {
-			mprintf("Bye!\n");
-			running = 0;
-		} else {
+
+		if (cli_run_cmd(cli_root, line) < 0)
 			mprintf("Unknown command or syntax error.\n");
-		}
 	}
 
 	/* Kill server thread, this will also kill all player threads */
@@ -194,6 +235,7 @@ int main(int argc, char **argv)
 	id_destroy();
 	universe_free(univ);
 	free(line);
+	cli_tree_destroy(cli_root);
 	log_close();
 
 	return 0;
