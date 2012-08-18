@@ -2,7 +2,7 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "sector.h"
 #include "planet.h"

@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include "defines.h"
+#include "common.h"
 
 const char* greek[GREEK_N] = {
 	"Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa", "Lambda",

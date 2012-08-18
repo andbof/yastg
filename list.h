@@ -4,7 +4,7 @@
 /* Shamelessly stolen from Linux kernel 3.4.6 */
 
 #include <stddef.h>
-#include "defines.h"
+#include "common.h"
 
 struct list_head {
 	struct list_head *next, *prev;

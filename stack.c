@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "stack.h"
 

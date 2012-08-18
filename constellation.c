@@ -3,7 +3,7 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "mtrandom.h"
 #include "universe.h"

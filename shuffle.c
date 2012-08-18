@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <limits.h>
-#include "defines.h"
+#include "common.h"
 #include "mtrandom.h"
 
 /* Shamelessly taken from

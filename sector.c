@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "universe.h"
 #include "civ.h"

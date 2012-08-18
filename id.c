@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "id.h"
 #include "sarray.h"

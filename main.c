@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <malloc.h>
 
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "mtrandom.h"
 #include "cli.h"

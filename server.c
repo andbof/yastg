@@ -13,7 +13,7 @@
 #include <signal.h>
 #include <pthread.h>
 
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "server.h"
 #include "sarray.h"

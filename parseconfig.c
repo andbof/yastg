@@ -2,7 +2,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdlib.h>
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "parseconfig.h"
 #include "id.h"

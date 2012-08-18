@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 
 #define CTIME_LEN 26		/* From ctime() */

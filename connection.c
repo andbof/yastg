@@ -14,7 +14,7 @@
 #include <pthread.h>
 #include <errno.h>
 
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "connection.h"
 #include "server.h"

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <limits.h>
 #include "sarray.h"
-#include "defines.h"
+#include "common.h"
 #include "log.h"
 #include "sarray.h"
 #include "shuffle.h"
