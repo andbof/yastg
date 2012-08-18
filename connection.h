@@ -27,10 +27,6 @@ struct conndata {
 
 struct conndata* conn_create();
 void conndata_free(void *ptr);
-void conn_cleanexit(struct conndata *data);
-void conn_send(struct conndata *data, char *format, ...);
 void* conn_main(void *dataptr);
-
-void conn_signalserver(struct conndata *data, struct signal *msg, char *msgdata);
 
 #endif

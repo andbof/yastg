@@ -127,4 +127,6 @@ extern const char* greek[GREEK_N];
 
 /* Misc functions */
 
+void chomp(char *s);
+
 #endif

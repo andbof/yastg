@@ -58,14 +58,6 @@ static void parseopts(int argc, char **argv)
 	}
 }
 
-/*
- * Removes trailing newlines from a string, if any exists.
- */
-static void chomp(char* s)
-{
-	for (unsigned int len = strlen(s); len > 0 && s[len - 1] == '\n'; s[len - 1] = '\0', len--);
-}
-
 static void write_msg(int fd, struct signal *msg, char *msgdata)
 {
 	if (write(fd, msg, sizeof(*msg)) < 1)

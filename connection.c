@@ -65,7 +65,7 @@ struct conndata* conn_create()
 	return data;
 }
 
-void conn_signalserver(struct conndata *data, struct signal *msg, char *msgdata)
+static void conn_signalserver(struct conndata *data, struct signal *msg, char *msgdata)
 {
 	if (write(data->serverfd, msg, sizeof(msg)) < 1)
 		bug("server signalling fd seems closed when sending signal: error %d (%s)", errno, strerror(errno));
@@ -102,7 +102,7 @@ void conndata_free(void *ptr)
 	}
 }
 
-void conn_cleanexit(struct conndata *data)
+static void conn_cleanexit(struct conndata *data)
 {
 	log_printfn("connection", "connection %zx is terminating", data->id);  
 	struct signal msg = {
@@ -113,7 +113,7 @@ void conn_cleanexit(struct conndata *data)
 	pthread_exit(0);
 }
 
-void conn_send(struct conndata *data, char *format, ...)
+static void conn_send(struct conndata *data, char *format, ...)
 {
 	va_list ap;
 	size_t len, sb = 0;
@@ -136,14 +136,14 @@ void conn_send(struct conndata *data, char *format, ...)
 	pthread_mutex_unlock(&data->fd_mutex);
 }
 
-void conn_error(struct conndata *data, char *format, ...)
+static void conn_error(struct conndata *data, char *format, ...)
 {
 	va_list ap;
 	conn_send(data, "Oops! An internal error occured.\nYour current state is NOT saved and you are being forcibly disconnected.\nSorry!");
 	conn_cleanexit(data);
 }
 
-void conn_sendinfo(struct conndata *data)
+static void conn_sendinfo(struct conndata *data)
 {
 	size_t st;
 	char *string;
@@ -185,7 +185,7 @@ void conn_sendinfo(struct conndata *data)
 	}
 }
 
-void conn_act(struct conndata *data)
+static void conn_act(struct conndata *data)
 {
 	struct sector *s;
 	if (!strcmp(data->rbuf, "help")) {
@@ -211,7 +211,7 @@ void conn_act(struct conndata *data)
 	}
 }
 
-void conn_handlesignal(struct conndata *data, struct signal *msg, char *msgdata)
+static void conn_handlesignal(struct conndata *data, struct signal *msg, char *msgdata)
 {
 	switch (msg->type) {
 	case MSG_TERM:
@@ -251,7 +251,7 @@ static void conn_receivemsg(struct conndata *data, int fd)
 	conn_handlesignal(data, &msg, msgdata);
 }
 
-void conn_loop(struct conndata *data)
+static void conn_loop(struct conndata *data)
 {
 	int rb, i;
 	char* ptr;
@@ -311,11 +311,8 @@ void conn_loop(struct conndata *data)
 			}
 		} while ((rb == 0) || (data->rbuf[rb - 1] != '\n'));
 
-		/* Truncate string at EOL (we might have \13\10 or \10) */
-		if ((rb > 1) && (data->rbuf[rb - 2] == 13))
-			data->rbuf[rb - 2] = '\0';
-		else
-			data->rbuf[rb - 1] = '\0';
+		data->rbuf[rb - 1] = '\0';
+		chomp(data->rbuf);
 
 		mprintf("received \"%s\" on socket\n", data->rbuf);
 
