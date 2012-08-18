@@ -1,6 +1,8 @@
 yastg
 LICENSE
 *.o
+*.P
+*.d
 *~
 *.bak
 *-
