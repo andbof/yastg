@@ -72,9 +72,9 @@ struct conndata* conn_create()
 
 static void conn_signalserver(struct conndata *data, struct signal *msg, char *msgdata)
 {
-	if (write(data->serverfd, msg, sizeof(msg)) < 1)
+	if (write(data->serverfd, msg, sizeof(*msg)) < 1)
 		bug("server signalling fd seems closed when sending signal: error %d (%s)", errno, strerror(errno));
-	if (msgdata) {
+	if (msg->cnt > 0) {
 		if (write(data->serverfd, msgdata, msg->cnt) < 1)
 			bug("server signalling fd seems closed when seems closed when sending data: error %d (%s)", errno, strerror(errno));
 	}
