@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 #include "common.h"
 #include "log.h"
 #include "star.h"
@@ -27,27 +28,67 @@ const int stellar_lumhab[STELLAR_LUM_N] = {
 const char stellar_cls[STELLAR_CLS_N] = {
 	'O',   'B',    'A',  'F', 'G',  'K',  'M'
 };
+
 /* Odds for each spectral class */
 const int stellar_clsodds[STELLAR_CLS_N] = {
 	3,     19,     83,   283, 1043, 2253, 10000
 };
+
 /* Luminosity ceiling per luminosity class, defined in hundreth of solar units */
-const unsigned long stellar_clslum[STELLAR_CLS_N+1] = {
+const unsigned int stellar_clslum[STELLAR_CLS_N+1] = {
 	9999900,3000000,2500,500, 150,  60,   8, 	1
 };
+
 /* Temperature ceiling per luminosity class, defined in Kelvin */
 const unsigned int stellar_clstmp[STELLAR_CLS_N+1] = {
 	99999, 33000,  10000,7500,6000, 5200, 3700,	2500
 };
-/* Odds for multiple systems for each class
-   FIXME: This is not used */
+
+/* Odds for multiple systems for each class */
+#define STELLAR_CLSMUL_MAX 100
 const int stellar_clsmul[STELLAR_CLS_N] = {
 	95,   90,    85,  70,  40,   30,   20
 };
+
 /* Habitability modifiers for each class */
 const int stellar_clshab[STELLAR_CLS_N] = {
 	-200, -150, -100, -50, +10,  +30, +50
 };
+
+static int star_genlum(void)
+{
+	unsigned int chance = mtrandom_uint(stellar_lumodds[STELLAR_LUM_N - 1]);
+	int i;
+	for (i = 0; i < STELLAR_LUM_N; i++) {
+		if (chance < stellar_lumodds[i])
+			return i;
+	}
+	bug("%s", "illegal execution point");
+}
+
+
+static int star_gencls(void)
+{
+	unsigned int chance = mtrandom_uint(stellar_clsodds[STELLAR_CLS_N - 1]);
+	int i;
+	for (i = 0; i < STELLAR_CLS_N; i++) {
+		if (chance < stellar_clsodds[i])
+			return i;
+	}
+	bug("%s", "illegal execution point");
+}
+
+static int star_gentemp(struct star *star)
+{
+	return mtrandom_uint(stellar_clstmp[star->cls] - stellar_clstmp[star->cls + 1])
+		+ stellar_clstmp[star->cls + 1];
+}
+
+static int star_genlumval(struct star *star)
+{
+	return mtrandom_uint(stellar_clslum[star->cls] - stellar_clslum[star->cls + 1])
+		+ stellar_clslum[star->cls + 1];
+}
 
 /*
  * Parses a configuration tree and returns a struct star*
@@ -91,7 +132,7 @@ struct star* loadstar(struct configtree *ctree)
 			if (!lumset)
 				die("invalid stellar luminosity in configuration file: %s\n", ctree->data);
 		} else if (strcmp(ctree->key, "LUMVAL") == 0) {
-			sscanf(ctree->data, "%lu", &(sol->lumval));
+			sscanf(ctree->data, "%u", &(sol->lumval));
 			lumvalset = 1;
 		} else if (strcmp(ctree->key, "TEMP") == 0) {
 			sscanf(ctree->data, "%u", &(sol->temp));
@@ -114,108 +155,69 @@ struct star* loadstar(struct configtree *ctree)
 		die("required attribute missing for predefined star %s: stellar luminosity", sol->name);
 	/* FIXME: */
 	if (!lumvalset)
-		sol->lumval = stellar_clslum[sol->cls + 1] + mtrandom_uint(stellar_clslum[sol->cls]) - stellar_clslum[sol->cls + 1];
+		sol->lumval = star_genlumval(sol);
 	sol->hab = stellar_clshab[sol->cls] + stellar_lumhab[sol->lum];
 	if (!tempset)
-		sol->temp = stellar_clstmp[sol->cls + 1] + mtrandom_uint(stellar_clstmp[sol->cls])-stellar_clstmp[sol->cls + 1];
-	/* Rough guess looking at
-	   https://secure.wikimedia.org/wikipedia/en/wiki/Habitable_zone */
-	sol->hablow = star_gethablow(sol);
-	sol->habhigh = star_gethabhigh(sol);
-	sol->snowline = star_getsnowline(sol);
+		sol->temp = star_gentemp(sol);
+	sol->hablow = star_gethablow(sol->lumval);
+	sol->habhigh = star_gethabhigh(sol->lumval);
 	return sol;
 }
 
-/*
- * Returns a random star luminosity
- */
-int star_genlum(void)
+static int star_generate_more(unsigned int mulodds)
 {
-	unsigned int chance = mtrandom_uint(stellar_lumodds[STELLAR_LUM_N - 1]);
-	int i;
-	for (i = 0; i < STELLAR_LUM_N; i++) {
-		if (chance < stellar_lumodds[i])
-			return i;
-	}
-	bug("%s", "illegal execution point");
+	return (mtrandom_uint(STELLAR_CLSMUL_MAX) < mulodds);
 }
 
-
-/*
- * Returns a random star classification.
- */
-int star_gencls(void)
-{
-	unsigned int chance = mtrandom_uint(stellar_clsodds[STELLAR_CLS_N - 1]);
-	int i;
-	for (i = 0; i < STELLAR_CLS_N; i++) {
-		if (chance < stellar_clsodds[i])
-			return i;
-	}
-	bug("%s", "illegal execution point");
-}
-
-/*
- * Returns the number of stars to be created
- */
-int star_gennum()
-{
-	int num = 1;
-	size_t ran;
-	while ((ran = mtrandom_uint(UINT_MAX)) < UINT_MAX/STELLAR_MUL_ODDS)
-		num++;
-	if (num > STELLAR_MUL_MAX)
-		num = STELLAR_MUL_MAX;
-	return num;
-}
-
-unsigned long star_gethablow(struct star *s)
+unsigned long star_gethablow(unsigned int lumval)
 {
 	/* Rough guess looking at
 	   https://secure.wikimedia.org/wikipedia/en/wiki/Habitable_zone */
-	return sqrt((double)s->lumval/100.0)*HAB_ZONE_START*GM_PER_AU;
+	return sqrt((double)lumval/100.0) * HAB_ZONE_START * GM_PER_AU;
 }
 
-unsigned long star_gethabhigh(struct star *s)
+unsigned long star_gethabhigh(unsigned int lumval)
 {
-	return sqrt((double)s->lumval/100.0)*HAB_ZONE_END*GM_PER_AU;
+	return sqrt((double)lumval/100.0) * HAB_ZONE_END * GM_PER_AU;
 }
 
-unsigned long star_getsnowline(struct star *s)
-{
-	return sqrt((double)s->lumval/100.0)*SNOW_LINE;
-}
-
-struct star* createstar()
+static struct star* star_create()
 {
 	struct star *s;
 	MALLOC_DIE(s, sizeof(struct star));
 	s->name = NULL;
 	s->cls = star_gencls();
 	s->lum = star_genlum();
-	s->lumval = stellar_clslum[s->cls+1] + mtrandom_uint(stellar_clslum[s->cls]) - stellar_clslum[s->cls + 1];
+	s->lumval = star_genlumval(s);
 	s->hab = stellar_clshab[s->cls] + stellar_lumhab[s->lum];
-	s->temp = stellar_clstmp[s->cls+1] + mtrandom_uint(stellar_clstmp[s->cls]) - stellar_clstmp[s->cls + 1];
-	s->hablow = star_gethablow(s);
-	s->habhigh = star_gethabhigh(s);
-	s->snowline = star_getsnowline(s);
+	s->temp = star_gentemp(s);
+	s->hablow = star_gethablow(s->lum);
+	s->habhigh = star_gethabhigh(s->lum);
 	return s;
 }
 
-void createstars(struct sector *sector)
+#define STELLAR_MUL_MAX 4
+void star_populate_sector(struct sector *sector)
 {
-	struct star *s;
-	int i;
-	int num = star_gennum();
-	for (i = 0; i < num; i++) {
-		s = createstar();
-		ptrlist_push(sector->stars, s);
+	struct star *sol = star_create();
+	MALLOC_DIE(sol->name, strlen(sector->name) + 3);
+	sprintf(sol->name, "%s A", sector->name);
+	ptrlist_push(sector->stars, sol);
+
+	unsigned int mulodds = stellar_clsmul[sol->cls];
+	for (int i = 1; star_generate_more(mulodds) && i < STELLAR_MUL_MAX; i++) {
+		sol = star_create();
+		MALLOC_DIE(sol->name, strlen(sector->name) + 4);
+		sprintf(sol->name, "%s %c", sector->name, i + 65);
+		if (stellar_clsmul[sol->cls] < mulodds)
+			mulodds = stellar_clsmul[sol->cls];
+		ptrlist_push(sector->stars, sol);
 	}
 }
 
-void star_free(void *ptr)
+void star_free(struct star *s)
 {
-	struct star *s = ptr;
+	assert(s != NULL);
 	free(s->name);
 	free(s);
 }

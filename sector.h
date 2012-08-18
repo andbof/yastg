@@ -15,7 +15,7 @@ struct sector {
 	unsigned long r;
 	double phi;
 	int hab;
-	unsigned long hablow, habhigh, snowline;
+	unsigned int hablow, habhigh;
 	struct ptrlist *stars;
 	struct ptrlist *planets;
 	struct ptrlist *bases;

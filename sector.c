@@ -85,39 +85,41 @@ struct sector* sector_load(struct configtree *ctree)
 		}
 		ctree = ctree->next;
 	}
-	ptrlist_for_each_entry(sol, s->stars, lh)
+
+	unsigned int totlum = 0;
+	ptrlist_for_each_entry(sol, s->stars, lh) {
 		s->hab += sol->hab;
+		totlum += sol->lumval;
+	}
 	if (!s->gname)
 		die("%s", "required attribute missing in predefined sector: gname");
 	if (!haspos)
 		die("required attribute missing in predefined sector %s: position", s->name);
-	s->hablow = ((struct star*)ptrlist_get(s->stars, 0))->hablow;
-	s->habhigh = ((struct star*)ptrlist_get(s->stars, 0))->habhigh;
-	s->snowline = ((struct star*)ptrlist_get(s->stars, 0))->snowline;
+
+	s->hablow = star_gethablow(totlum);
+	s->habhigh = star_gethabhigh(totlum);
 	return s;
 }
 
+#define STELLAR_MUL_HAB -50
 struct sector* sector_create(char *name)
 {
 	struct star *sol;
 	struct sector *s = sector_init();
 	struct list_head *lh;
 	s->name = strdup(name);
-	createstars(s);
+	star_populate_sector(s);
 	s->hab = 0;
 
-	int i = 0;
+	unsigned int totlum = 0;
 	ptrlist_for_each_entry(sol, s->stars, lh) {
 		s->hab += sol->hab;
-		MALLOC_DIE(sol->name, strlen(s->name)+4);
-		sprintf(sol->name, "%s %c", s->name, i+65);
+		totlum += sol->lumval;
 	}
+	s->hablow = star_gethablow(totlum);
+	s->habhigh = star_gethabhigh(totlum);
 
-	s->hab -= STELLAR_MUL_HAB*(i-1);
-	s->hablow = ((struct star*)ptrlist_get(s->stars, 0))->hablow;
-	s->habhigh = ((struct star*)ptrlist_get(s->stars, 0))->habhigh;
-	s->snowline = ((struct star*)ptrlist_get(s->stars, 0))->snowline;
-/*	s->planets = createplanets(s); */
+	planet_populate_sector(s);
 	printf("  Number of planets: %lu\n", ptrlist_len(s->planets));
 /*	s->bases = createbases(s); */
 	/* FIXME: bases */

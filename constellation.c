@@ -51,6 +51,8 @@ void addconstellation(char* cname)
 
 	mprintf("addconstellation: will create %lu sectors (universe has %lu so far)\n", nums, ptrlist_len(univ->sectors));
 
+	pthread_rwlock_wrlock(&univ->sectornames->lock);
+
 	fs = NULL;
 	for (numc = 0; numc < nums; numc++) {
 
@@ -100,6 +102,8 @@ void addconstellation(char* cname)
 		mprintf("Created %s (%p) at %ldx%ld\n", s->name, s, s->x, s->y);
 
 	}
+
+	pthread_rwlock_unlock(&univ->sectornames->lock);
 
 	free(string);
 	ptrlist_free(work);

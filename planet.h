@@ -5,27 +5,55 @@
 #include "parseconfig.h"
 #include "list.h"
 
-struct sector;
-
-#define PLANET_TYPE_N 17
-static char planet_types[PLANET_TYPE_N] = {
-	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'N', 'O', 'P', 'S', 'Y'
+enum planet_zone {
+	HOT,
+	ECO,
+	COLD,
+	ZONE_NUM
 };
 
+enum planet_life {
+	TOXIC,
+	BARREN,
+	DEAD,
+	SINGLECELL,
+	BACTERIA,
+	SIMPLE,
+	RESISTANT,
+	COMPLEX,
+	ANIMAL,
+	INTELLIGENT,
+	LIFE_NUM
+};
+
+struct planet_type {
+	char c;
+	char *name;
+	char *desc;
+	char *surface;
+	char *atmo;
+	int zones[ZONE_NUM];
+	unsigned int mindia, maxdia;	/* In hundreds of kilometres */
+	enum planet_life minlife, maxlife;
+};
+	
 struct planet {
 	char *name;
-	int type;
+	char *gname;
+	unsigned int type;
+	unsigned int dia;		/* In hundreds of kilometres */
+	unsigned int dist;		/* In gigametres */
+	unsigned int life;
 	struct ptrlist *bases;
+	struct ptrlist *stations;
 	struct ptrlist *moons;
+	struct sector *sector;
 	struct list_head list;
 };
 
 struct planet* loadplanet(struct configtree *ctree);
-
 void planet_free(struct planet *p);
-
 struct planet* createplanet();
-
-struct ptrlist* createplanets(struct sector *s);
+void planet_populate_sector(struct sector* s);
 
 #endif

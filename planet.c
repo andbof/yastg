@@ -2,14 +2,17 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
-#include "common.h"
-#include "log.h"
-#include "sector.h"
-#include "planet.h"
 #include "base.h"
-#include "ptrlist.h"
-#include "parseconfig.h"
+#include "common.h"
+#include "data.h"
+#include "htable.h"
+#include "log.h"
 #include "mtrandom.h"
+#include "parseconfig.h"
+#include "planet.h"
+#include "ptrlist.h"
+#include "sector.h"
+#include "universe.h"
 
 struct planet* initplanet()
 {
@@ -17,7 +20,9 @@ struct planet* initplanet()
 	MALLOC_DIE(p, sizeof(*p));
 	memset(p, 0, sizeof(*p));
 	p->bases = ptrlist_init();
+	p->stations = ptrlist_init();
 	p->moons = ptrlist_init();
+	INIT_LIST_HEAD(&p->list);
 	return p;
 }
 
@@ -43,29 +48,87 @@ void planet_free(struct planet *p)
 {
 	assert(p != NULL);
 	ptrlist_free(p->bases);
+	ptrlist_free(p->stations);
 	ptrlist_free(p->moons);
-	free(p->name);
+	if (p->name)
+		free(p->name);
+	if (p->gname)
+		free(p->gname);
 	free(p);
 }
 
-#define PLANET_ODDS 7
-#define PLANET_NUM_MAX 11
-
-struct planet* createplanet(struct sector* s)
+#define PLANET_MUL_ODDS 2
+#define PLANET_MUL_MAX 10 
+static int planet_gennum()
 {
-	struct planet *p;
-	MALLOC_DIE(p, sizeof(*p));
-	return p;
+	int num = 1;
+	unsigned int ran;
+	while ((ran = mtrandom_uint(UINT_MAX)) < UINT_MAX/PLANET_MUL_ODDS)
+		num++;
+	if (num > PLANET_MUL_MAX)
+		num = PLANET_MUL_MAX;
+	return num;
 }
 
-struct ptrlist* createplanets(struct sector* s)
+#define PLANET_HOT_ODDS 3
+#define PLANET_ECO_ODDS 5
+#define PLANET_COLD_ODDS 10
+#define PLANET_DIST_MAX (100 * GM_PER_AU)	/* Based on sol system */
+static void planet_genesis(struct planet *planet, struct sector *sector)
 {
-	int num = 0;
-	struct planet *p;
-	struct ptrlist* planets = ptrlist_init();
-	while ((mtrandom_uint(UINT_MAX) < UINT_MAX/PLANET_ODDS) && (num < PLANET_NUM_MAX)) {
-		p = createplanet(s);
-		ptrlist_push(planets, p);
+	planet->sector = sector;
+	unsigned int tmp = mtrandom_uint(PLANET_HOT_ODDS + PLANET_ECO_ODDS + PLANET_COLD_ODDS);
+	enum planet_zone zone;
+	if (tmp <= PLANET_HOT_ODDS)
+		zone = HOT;
+	else if (tmp > PLANET_HOT_ODDS && tmp <= PLANET_HOT_ODDS + PLANET_ECO_ODDS)
+		zone = ECO;
+	else
+		zone = COLD;
+	
+	do {
+		planet->type = mtrandom_uint(PLANET_TYPE_N);
+	} while (planet_types[planet->type].zones[zone] == 0);
+
+	struct planet_type *type = &planet_types[planet->type];
+	
+	planet->dia = mtrandom_uint(type->maxdia - type->mindia) + type->mindia;
+	planet->life = mtrandom_uint(type->maxlife - type->minlife) + type->minlife;
+
+	switch (zone) {
+	case HOT:
+		planet->dist = mtrandom_uint(sector->hablow);
+		break;
+	case ECO:
+		planet->dist = mtrandom_uint(sector->habhigh - sector->hablow) + sector->hablow;
+		break;
+	case COLD:
+		/* FIXME: Some kind of logarithmic function ... ? */
+		planet->dist = mtrandom_uint(PLANET_DIST_MAX - sector->habhigh) + sector->habhigh;
+		break;
+	default:
+		bug("%s", "illegal execution point");
 	}
-	return planets;
+
+}
+
+void planet_populate_sector(struct sector* sector)
+{
+	struct planet *p;
+	int num = planet_gennum();
+
+	pthread_rwlock_wrlock(&univ->planetnames->lock);
+
+	for (int i = 0; i < num; i++) {
+		p = initplanet();
+		planet_genesis(p, sector);
+		MALLOC_DIE(p->name, strlen(sector->name) + ROMAN_LEN + 2);
+		sprintf(p->name, "%s %s", sector->name, roman[i]);	/* FIXME: Wait with naming until all are made, sort on mean distance from sun. */
+		ptrlist_push(sector->planets, p);
+		htable_add(univ->planetnames, p->name, p);
+		if (p->gname)
+			htable_add(univ->planetnames, p->gname, p);
+	}
+
+	pthread_rwlock_unlock(&univ->planetnames->lock);
 }

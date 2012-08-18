@@ -11,6 +11,8 @@ struct base {
 	int docks;
 	void *inventory;
 	void *players;
+	struct planet *planet;
+	struct sector *sector;
 };
 
 struct base* loadbase(struct configtree *ctree);

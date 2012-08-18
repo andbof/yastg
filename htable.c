@@ -29,15 +29,19 @@ void* htable_create()
 	return s;
 }
 
+/* htable_add does not lock the rwlock, this is a feature */
 void htable_add(struct htable *t, char *key, void *data)
 {
 	assert(t != NULL);
 	assert(key != NULL);
 	assert(data != NULL);
 	int i;
+
+	downcase_valid(key);
+
 	unsigned long hash = hash33(key) % HTABLE_SIZE;
 	struct st_elem *prev, *cur, *next;
-	pthread_rwlock_wrlock(&t->lock);
+
 	cur = t->table[hash];
 	if (!cur) {
 		MALLOC_DIE(cur, sizeof(*cur));
@@ -48,15 +52,14 @@ void htable_add(struct htable *t, char *key, void *data)
 		while (cur) {
 			i = strcmp(cur->data, data);
 			if (i == 0) {
-				bug("htable already contains element %s (address %p)", key, data);
+				bug("key %s already exists in htable %p", key, t);
 			} else if (i < 0) {
 				prev = cur;
 				cur = cur->next;
-				if (cur) {
+				if (cur)
 					next = cur->next;
-				} else {
+				else
 					next = NULL;
-				}
 			} else if (i > 0) {
 				prev = cur->prev;
 				next = cur;
@@ -66,29 +69,30 @@ void htable_add(struct htable *t, char *key, void *data)
 		MALLOC_DIE(cur, sizeof(*cur));
 		cur->prev = prev;
 		cur->next = next;
-		if (prev) {
+		if (prev)
 			prev->next = cur;
-		}
-		if (next) {
+		if (next)
 			next->prev = cur;
-		}
 	}
 	cur->key = key;
 	cur->data = data;
 	t->elements++;
-	pthread_rwlock_unlock(&t->lock);
 }
 
+/* htable_get does not lock the rwlock, this is a feature */
 void* htable_get(struct htable *t, char *key)
 {
 	assert(t != NULL);
-	assert(key != NULL);
+	if (key == NULL)
+		return NULL;
+
 	int i;
+
+	downcase_valid(key);
+
 	unsigned long hash = hash33(key) % HTABLE_SIZE;
 	struct st_elem *elem;
 	void *ptr;
-
-	pthread_rwlock_rdlock(&t->lock);
 
 	elem = t->table[hash];
 	while ((elem != NULL) && ((i = strcmp(elem->key, key)) < 0))
@@ -99,19 +103,19 @@ void* htable_get(struct htable *t, char *key)
 	else
 		ptr = NULL;
 
-	pthread_rwlock_unlock(&t->lock);
-
 	return ptr;
 }
 
+/* htable_rm does not lock the rwlock, this is a feature */
 void htable_rm(struct htable *t, char *key)
 {
 	assert(t != NULL);
 	assert(key != NULL);
+
+	downcase_valid(key);
+
 	unsigned long hash = hash33(key) % HTABLE_SIZE;
 	struct st_elem *prev, *cur;
-
-	pthread_rwlock_wrlock(&t->lock);
 
 	cur = htable_get(t, key);
 	if (cur == NULL)
@@ -128,8 +132,6 @@ void htable_rm(struct htable *t, char *key)
 		free(cur);
 	}
 	t->elements--;
-
-	pthread_rwlock_unlock(&t->lock);
 }
 
 void htable_free(struct htable *t)

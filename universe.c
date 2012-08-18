@@ -42,6 +42,8 @@ void universe_free(struct universe *u)
 {
 	ptrlist_free(u->sectors);
 	htable_free(u->sectornames);
+	htable_free(u->planetnames);
+	htable_free(u->basenames);
 	sarray_free(u->srad);
 	free(u->srad);
 	sarray_free(u->sphi);
@@ -120,6 +122,8 @@ struct universe* universe_create()
 	u->numsector = 0;
 	u->sectors = ptrlist_init();
 	u->sectornames = htable_create();
+	u->planetnames = htable_create();
+	u->basenames = htable_create();
 	u->srad = sarray_init(sizeof(struct ulong_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
 	u->sphi = sarray_init(sizeof(struct double_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
 
@@ -146,10 +150,4 @@ void universe_init(struct civ *civs)
 	 * 4. Let civilizations grow and create hyperspace links
 	 */
 	civ_spawncivs(univ, civs);
-}
-
-struct sector* getsectorbyname(struct universe *u, char *name)
-{
-	unsigned long l;
-	return htable_get(univ->sectornames, name);
 }

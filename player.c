@@ -3,22 +3,25 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
+#include "base.h"
+#include "cli.h"
 #include "common.h"
+#include "connection.h"
+#include "data.h"
+#include "htable.h"
+#include "log.h"
+#include "planet.h"
 #include "player.h"
 #include "ptrlist.h"
-#include "connection.h"
 #include "sector.h"
-#include "planet.h"
-#include "base.h"
 #include "star.h"
-#include "log.h"
 #include "universe.h"
-#include "cli.h"
 
 static void player_go(struct player *player, enum postype postype, void *pos);
 
 #define player_talk(PLAYER, ...)	\
-	conn_send(PLAYER->conn, __VA_ARGS__);
+	conn_send(PLAYER->conn, __VA_ARGS__)
 
 void player_free(void *ptr)
 {
@@ -46,18 +49,35 @@ static void player_showsector(struct player *player, struct sector *sector)
 	struct sector *t;
 	struct list_head *lh;
 	struct star *sol;
+	struct planet *planet;
 	player_talk(player,
-		"You are in sector %s (coordinates %ldx%ld), habitability %d\n"
-		"Snow line at %lu Gm\n"
+		"Sector %s (coordinates %ldx%ld), habitability %d\n"
 		"Habitable zone is from %lu to %lu Gm\n",
-		sector->name, sector->x, sector->y, sector->hab, sector->snowline, sector->hablow, sector->habhigh);
+		sector->name, sector->x, sector->y, sector->hab, sector->hablow, sector->habhigh);
+
+	player_talk(player, "Stars:\n");
 	ptrlist_for_each_entry(sol, sector->stars, lh) {
 		char *string = hundreths(sol->lumval);
 		player_talk(player,
-			"%s: Class %c %s\n"
-			"  Surface temperature: %dK, habitability modifier: %d, luminosity: %s\n",
+			"  %s: Class %c %s\n"
+			"    Surface temperature: %dK, habitability modifier: %d, luminosity: %s\n",
 			sol->name, stellar_cls[sol->cls], stellar_lum[sol->lum], sol->temp, sol->hab, string);
 		free(string);
+	}
+
+	if (!list_empty(&sector->planets->list)) {
+		player_talk(player, "Planets:\n");
+		ptrlist_for_each_entry(planet, sector->planets, lh) {
+			struct planet_type *type = &planet_types[planet->type];
+			player_talk(player,
+				"  %s: Class %c (%s)\n"
+				"    Diameter: %u km, distance from main star: %u Gm, atmosphere: %s. %s.\n",
+				planet->name, type->c, type->name,
+				planet->dia*100, planet->dist,
+				type->atmo, planet_life_desc[planet->life]);
+		}
+	} else {
+		player_talk(player, "Sector does not have any planets.\n");
 	}
 
 	player_talk(player, "This sector has hyperspace links to\n");
@@ -84,8 +104,42 @@ static void player_showbase(struct player *player, struct base *base)
 {
 }
 
+static void player_describe_base(struct player *player, struct base *base)
+{
+	player_talk(player, "%s\n", base->name);
+}
+
 static void player_showplanet(struct player *player, struct planet *planet)
 {
+	struct planet_type *ptype = &planet_types[planet->type];
+	struct base *base;
+	struct list_head *lh;
+	if (planet->gname)
+		player_talk(player, "Planet %s (%s) in sector %s",
+			planet->gname, planet->name, planet->sector->name);
+	else
+		player_talk(player, "Planet %s in sector %s",
+			planet->name, planet->sector->name);
+	player_talk(player,
+		", class %c (%s).\n"
+		"  Diameter: %u km, distance from main star: %u Gm, atmosphere: %s. %s.\n",
+		ptype->c, ptype->name,
+		planet->dia*100, planet->dist, ptype->atmo,
+		planet_life_desc[planet->life]);
+
+	if (!list_empty(&planet->bases->list)) {
+		ptrlist_for_each_entry(base, planet->bases, lh)
+			player_describe_base(player, base);
+	} else {
+		player_talk(player, "No bases.\n");
+	}
+
+	if (!list_empty(&planet->stations->list)) {
+		ptrlist_for_each_entry(base, planet->stations, lh)
+			player_describe_base(player, base);
+	} else {
+		player_talk(player, "No orbital stations.\n");
+	}
 }
 
 static int cmd_help(void *ptr, char *param)
@@ -131,46 +185,109 @@ static char cmd_look_help[] = "Look around";
 static int cmd_hyper(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	if (param[0] != '\0') {
-		struct sector *sector = getsectorbyname(univ, param);
-		if (sector != NULL) {
-			player_talk(player, "Entering %s\n", sector->name);
-			player_go(player, SECTOR, sector);
-		} else {
-			player_talk(player, "Sector not found.\n");
-		}
-		return 0;
-	} else {
-		player_talk(player, ERR_SYNTAX);
+	assert(player->postype == SECTOR);
+
+	pthread_rwlock_rdlock(&univ->sectornames->lock);
+	struct sector *sector = htable_get(univ->sectornames, param);
+	pthread_rwlock_unlock(&univ->sectornames->lock);
+
+	if (sector == NULL) {
+		player_talk(player, "Sector not found.\n");
 		return 1;
 	}
+
+	int ok = 0;
+	struct sector *tmp;
+	struct sector *pos = player->pos;
+	struct list_head *lh;
+	ptrlist_for_each_entry(tmp, pos->links, lh) {
+		if (tmp == sector) {
+			ok = 1;
+			break;
+		}
+	}
+
+	if (ok) {
+		player_talk(player, "Entering %s\n", sector->name);
+		player_go(player, SECTOR, sector);
+		return 0;
+	} else {
+		player_talk(player, "No hyperspace link found.\n");
+		return 1;
+	}
+
 }
 static char cmd_hyper_help[] = "Travel by hyperspace to sector";
 
 static int cmd_jump(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	return 0;
+	struct sector *sector = htable_get(univ->sectornames, param);
+	if (sector != NULL) {
+		player_talk(player, "Jumping to %s\n", sector->name);
+		player_go(player, SECTOR, sector);
+		return 0;
+	}
+
+	player_talk(player, "Sector not found.\n");
+	return 1;
 }
 static char cmd_jump_help[] = "Travel by jumpdrive to sector";
 
 static int cmd_dock(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	return 0;
+
+	pthread_rwlock_rdlock(&univ->sectornames->lock);
+	struct base *base = htable_get(univ->basenames, param);
+	pthread_rwlock_unlock(&univ->sectornames->lock);
+
+	if (base && ((player->postype == PLANET && base->planet == player->pos)
+		|| (player->postype == SECTOR && base->sector == player->pos))) {
+			player_talk(player, "Docking at %s\n", base->name);
+			player_go(player, BASE, base);
+			return 0;
+	}
+
+	player_talk(player, "No base or spacedock found by that name.\n");
+	return 1;
 }
 static char cmd_dock_help[] = "Dock at spacedock or base";
 
 static int cmd_orbit(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	return 0;
+	assert(player->postype == SECTOR);
+	struct sector *sector = player->pos;
+	struct list_head *lh;
+
+	pthread_rwlock_rdlock(&univ->planetnames->lock);
+	struct planet *planet = htable_get(univ->planetnames, param);
+	pthread_rwlock_unlock(&univ->planetnames->lock);
+
+	if (planet && planet->sector == sector) {
+		player_talk(player, "Entering orbit around %s\n", planet->name);
+		player_go(player, PLANET, planet);
+		return 0;
+	}
+
+	player_talk(player, "No such planet found in this sector.\n");
+	return 1;
 }
 static char cmd_orbit_help[] = "Enter orbit around planet";
 
 static int cmd_leave_base(void *ptr, char *param)
 {
 	struct player *player = ptr;
+	assert(player->postype == BASE);
+	struct base *base = player->pos;
+	if (base->planet)
+		player_go(player, PLANET, base->planet);
+	else if (base->sector)
+		player_go(player, SECTOR, base->sector);
+	else
+		bug("%s", "base %s does not have any positional information");
+
 	return 0;
 }
 static char cmd_leave_base_help[] = "Leave base and take off";
@@ -178,6 +295,11 @@ static char cmd_leave_base_help[] = "Leave base and take off";
 static int cmd_leave_planet(void *ptr, char *param)
 {
 	struct player *player = ptr;
+	assert(player->postype == PLANET);
+	struct planet *planet = player->pos;
+	assert(planet->sector);
+	player_talk(player, "Leaving orbit around %s\n", planet->name);
+	player_go(player, SECTOR, planet->sector);
 	return 0;
 }
 static char cmd_leave_planet_help[] = "Leave planet orbit";

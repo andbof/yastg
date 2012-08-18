@@ -47,19 +47,28 @@ enum msg {
 #define QUOTE(x) QUOTE_(x)
 #define __VER__ 0.1
 
-/* Greek alpahabet */
+/* Greek alphabet */
 
 #define GREEK_N 24
 #define GREEK_LEN 7
 extern const char* greek[GREEK_N];
 
+/* Roman numerals */
+
+#define ROMAN_N 24
+#define ROMAN_LEN 5
+extern const char* roman[ROMAN_N];
+
 /* Astronomical constants */
 
-#define GM_PER_AU 1496			/* gigameters per astronomical unit */
-#define AU_PER_LY 63239			/* Astronomical units per light year */
+#define GM_PER_AU 150			/* gigameters per astronomical unit */
+#define AU_PER_LY 63241			/* Astronomical units per light year */
+#define GM_PER_LY (GM_PER_AU * AU_PER_LY)
+/* The "real" values here should be habitable zone from 0.95 to 1.37 AU and snow line (i.e. the upper limit
+ * for rocky planetary formation) at 2.7 AU in a sol like system.
+ * For simplicity, we assume habend == snowline and change the values somewhat. */
 #define HAB_ZONE_START 0.95		/* Start of habitable zone in a sol like system, in AU */
-#define HAB_ZONE_END 1.37		/* End of habitable zone in a sol like system, in AU */
-#define SNOW_LINE (2.7*GM_PER_AU)	/* Upper limit of rocky planetary formation in a sol-like system */
+#define HAB_ZONE_END 1.50		/* End of habitable zone in a sol like system, in AU */
 
 /* Global longer helper functions */
 

@@ -5,6 +5,7 @@
 #include "base.h"
 #include "sarray.h"
 #include "parseconfig.h"
+#include "planet.h"
 
 struct base* loadbase(struct configtree *ctree)
 {
@@ -34,4 +35,21 @@ void base_free(void *ptr)
 	if (b->inventory) free(b->inventory);
 	if (b->players) free(b->players);
 	free(b);
+}
+
+static struct base* base_create()
+{
+	struct base *base;
+	MALLOC_DIE(base, sizeof(*base));
+	memset(base, 0, sizeof(*base));
+	return base;
+}
+
+static void base_init(struct base *base)
+{
+}
+
+void base_populate_planet(struct planet* planet)
+{
+	struct base *base;
 }
