@@ -15,7 +15,6 @@ struct conndata {
 	pthread_t thread;
 	fd_set rfds;
 	int peerfd, serverfd, threadfds[2];
-	pthread_mutex_t fd_mutex;
 	struct sockaddr_storage sock;
 	char *peer;
 	struct player *pl;
@@ -23,11 +22,13 @@ struct conndata {
 	char *rbuf;
 	char *sbuf;
 	int paused;
-	struct cli_tree *cli_root;
 };
 
 struct conndata* conn_create();
 void conndata_free(void *ptr);
 void* conn_main(void *dataptr);
+void conn_send(struct conndata *data, char *format, ...);
+void conn_cleanexit(struct conndata *data);
+void conn_error(struct conndata *data, char *format, ...);
 
 #endif

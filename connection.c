@@ -56,16 +56,6 @@ struct conndata* conn_create()
 			conndata_free(data);
 			return NULL;
 		}
-		if (pthread_mutex_init(&data->fd_mutex, NULL) != 0) {
-			log_printfn("connection", "failed initializing mutex for connection %zx", data->id);
-			conndata_free(data);
-			return NULL;
-		}
-		if ((data->cli_root = cli_tree_create()) == NULL) {
-			log_printfn("connection", "failed allocating cli tree for connection %zx", data->id);
-			conndata_free(data);
-			return NULL;
-		}
 	}
 	return data;
 }
@@ -94,8 +84,6 @@ void conndata_free(void *ptr)
 			close(data->threadfds[0]);
 		if (data->threadfds[1])
 			close(data->threadfds[1]);
-		if (&data->fd_mutex != NULL)
-			pthread_mutex_destroy(&data->fd_mutex);
 		if (data->peer)
 			free(data->peer);
 		if (data->rbuf)
@@ -104,12 +92,10 @@ void conndata_free(void *ptr)
 			free(data->sbuf);
 		if (data->pl)
 			player_free(data->pl);
-		if (data->cli_root)
-			cli_tree_destroy(data->cli_root);
 	}
 }
 
-static void conn_cleanexit(struct conndata *data)
+void conn_cleanexit(struct conndata *data)
 {
 	log_printfn("connection", "connection %zx is terminating", data->id);  
 	struct signal msg = {
@@ -120,11 +106,10 @@ static void conn_cleanexit(struct conndata *data)
 	pthread_exit(0);
 }
 
-static void conn_send(struct conndata *data, char *format, ...)
+void conn_send(struct conndata *data, char *format, ...)
 {
 	va_list ap;
 	size_t len, sb = 0;
-	pthread_mutex_lock(&data->fd_mutex);
 
 	va_start(ap, format);
 	vsnprintf(data->sbuf, data->sbufs, format, ap);
@@ -140,10 +125,9 @@ static void conn_send(struct conndata *data, char *format, ...)
 		}
 	} while (sb < len);
 
-	pthread_mutex_unlock(&data->fd_mutex);
 }
 
-static void conn_error(struct conndata *data, char *format, ...)
+void conn_error(struct conndata *data, char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
@@ -152,90 +136,11 @@ static void conn_error(struct conndata *data, char *format, ...)
 	conn_cleanexit(data);
 }
 
-static void conn_sendinfo(struct conndata *data)
-{
-	size_t st;
-	char *string;
-	struct star *sol;
-	struct ptrlist *gurka;
-	struct sector *s = data->pl->position, *t;
-	struct list_head *lh;
-	if (s == NULL) {
-		conn_error(data, "The sector you are in doesn't exist");
-		conn_cleanexit(data);
-	}
-	conn_send(data, "You are in sector %s (coordinates %ldx%ld), habitability %d\n", s->name, s->x, s->y, s->hab);
-	conn_send(data, "Snow line at %lu Gm\n", s->snowline);
-	conn_send(data, "Habitable zone is from %lu to %lu Gm\n", s->hablow, s->habhigh);
-	ptrlist_for_each_entry(sol, s->stars, lh) {
-		conn_send(data, "%s: Class %c %s\n", sol->name, stellar_cls[sol->cls], stellar_lum[sol->lum]);
-		string = hundreths(sol->lumval);
-		conn_send(data, "  Surface temperature: %dK, habitability modifier: %d, luminosity: %s \n", sol->temp, sol->hab, string);
-		free(string);
-	}
-
-	conn_send(data, "This sector has hyperspace links to\n");
-	ptrlist_for_each_entry(t, s->links, lh)
-		conn_send(data, "  %s\n", t->name);
-
-	conn_send(data, "Sectors within 50 lys are:\n");
-	/* FIXME: getneighbours() is awful */
-	gurka = getneighbours(s, 50);
-	ptrlist_for_each_entry(t, gurka, lh) {
-		if (t != s)
-			conn_send(data, "  %s at %lu ly\n", t->name, sector_distance(s, t));
-	}
-	ptrlist_free(gurka);
-
-	if (s->owner != NULL) {
-		conn_send(data, "This sector is owned by civ %s\n", s->owner->name);
-	} else {
-		conn_send(data, "This sector is not part of any civilization\n");
-	}
-}
-
-static int cmd_help(void *ptr, char *param)
-{
-	struct conndata *data = ptr;
-	/* FIXME: This should use conn_send instead of writing directly to the fd */
-	FILE *f = fdopen(dup(data->peerfd), "w");
-	cli_print_help(f, data->cli_root);
-	fclose(f);
-	return 0;
-}
-
-static int cmd_quit(void *ptr, char *param)
-{
-	struct conndata *data = ptr;
-	conn_send(data, "Bye!\n");
-	conn_cleanexit(data);
-	return 0;
-}
-
-static int cmd_go(void *ptr, char *param)
-{
-	struct conndata *data = ptr;
-	if (param[0] != '\0') {
-		struct sector *s = getsectorbyname(univ, param);
-		if (s != NULL) {
-			conn_send(data, "Entering %s\n", s->name);
-			data->pl->position = s;
-			conn_sendinfo(data);
-		} else {
-			conn_send(data, "Sector not found.\n");
-		}
-		return 0;
-	} else {
-		conn_send(data, ERR_SYNTAX);
-		return 1;
-	}
-}
-
 static void conn_act(struct conndata *data)
 {
 	struct sector *s;
-	if (data->rbuf[0] != '\0' && cli_run_cmd(data->cli_root, data->rbuf) < 0)
-		conn_send(data, "Unknown command or syntax error.\n");
+	if (data->rbuf[0] != '\0' && cli_run_cmd(data->pl->cli, data->rbuf) < 0)
+		conn_send(data, "Unknown command or syntax error: \"%s\"\n", data->rbuf);
 }
 
 static void conn_handlesignal(struct conndata *data, struct signal *msg, char *msgdata)
@@ -283,8 +188,6 @@ static void conn_loop(struct conndata *data)
 	int rb, i;
 	char* ptr;
 
-	conn_sendinfo(data);
-
 	while (1) {
 		rb = 0;
 
@@ -311,8 +214,7 @@ static void conn_loop(struct conndata *data)
 
 			if (FD_ISSET(data->peerfd, &data->rfds)) {
 
-				/* We have received something from the peer
-				   FIXME: If peer sends something with a line break, we should interpret it as separate commands */
+				/* We have received something from the peer */
 				rb += recv(data->peerfd, data->rbuf + rb, data->rbufs - rb, 0);
 				if (rb < 1) {
 					log_printfn("connection", "peer %s disconnected, terminating connection %zx", data->peer, data->id);
@@ -355,13 +257,14 @@ void* conn_main(void *dataptr)
 	/* Create player */
 	data->pl = malloc(sizeof(struct player));
 	data->pl->name = strdup("Alfred");
-	data->pl->position = ptrlist_entry(univ->sectors, 0);
-	cli_add_cmd(data->cli_root, "help", cmd_help, data, NULL);
-	cli_add_cmd(data->cli_root, "go", cmd_go, data, NULL);
-	cli_add_cmd(data->cli_root, "quit", cmd_quit, data, NULL);
+	data->pl->conn = data;
 
 	log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
+
+	player_init(data->pl);
+
 	conn_loop(data);
+
 	log_printfn("connection", "peer %s disconnected, cleaning up", data->peer);
 	conn_cleanexit(data);
 	return NULL;

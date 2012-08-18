@@ -41,19 +41,6 @@ void rm_id(unsigned long id)
 	sarray_rmbypos(id_array, id);
 }
 
-char* hundreths(unsigned long l)
-{
-	int mod = l%100;
-	char* result;
-	MALLOC_DIE(result, 10);	/* FIXME: Memory leak */
-	if (mod < 10) {
-		sprintf(result, "%lu.0%lu", l/100, l%100);
-	} else {
-		sprintf(result, "%lu.0%lu", l/100, l%100);
-	}
-	return result;
-}
-
 /*
  * Sorts based on IDs.
  * Will return neg if b is larger than a, 0 if they're equal and pos if

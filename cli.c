@@ -9,7 +9,7 @@ struct char_list {
 	struct list_head list;
 };
 
-static void cli_init_node(struct cli_tree *node)
+static void cli_tree_init(struct cli_tree *node)
 {
 	node->c = 0;
 	node->func  = NULL;
@@ -25,7 +25,7 @@ struct cli_tree* cli_tree_create()
 	struct cli_tree *node = malloc(sizeof(*node));
 	if (node == NULL)
 		return NULL;
-	cli_init_node(node);
+	cli_tree_init(node);
 	return node;
 }
 

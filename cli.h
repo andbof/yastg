@@ -1,6 +1,7 @@
 #ifndef _HAS_CLI_H
 #define _HAS_CLI_H
 
+#include <stdio.h>
 #include "list.h"
 
 /* The cli_tree struct will look somewhat like this for the "echo" command,
