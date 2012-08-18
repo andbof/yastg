@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "player.h"
+#include "server.h"
 
 #define CONN_BUFSIZE 1500
 #define CONN_MAXBUFSIZE 10240
@@ -30,6 +31,6 @@ void conn_cleanexit(struct conndata *data);
 void conn_send(struct conndata *data, char *format, ...);
 void* conn_main(void *dataptr);
 
-void conn_signalserver(struct conndata *data, int signal, size_t param);
+void conn_signalserver(struct conndata *data, struct signal *msg, char *msgdata);
 
 #endif

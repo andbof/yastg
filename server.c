@@ -28,15 +28,18 @@ static pthread_t srvthread;
 static fd_set fdset;
 static int sockfd, signfdw, signfdr, maxfd;
 
-void server_cleanexit()
+static void server_cleanexit()
 {
 	int i, *j;
-	enum msg m = MSG_TERM;
+	struct signal msg = {
+		.cnt = 0,
+		.type = MSG_TERM
+	};
 	struct conndata *cd;
 	log_printfn("server", "sending terminate to all player threads");
 	for (i = 0; i < std->elements; i++) {
 		cd = sarray_getbypos(std, i);
-		if (write(cd->threadfds[1], &m, sizeof(m)) < 1)
+		if (write(cd->threadfds[1], &msg, sizeof(msg)) < 1)
 			bug("thread %zx's signalling fd seems closed", cd->id);
 	}
 	log_printfn("server", "waiting for all player threads to terminate");
@@ -53,64 +56,65 @@ void server_cleanexit()
 	pthread_exit(0);
 }
 
-void server_signthread(int fd, void *msg, size_t size)
+static void server_write_msg(int fd, struct signal *msg, char *msgdata)
 {
 	/* FIXME: This should be handled more gracefully */
-	if (write(fd, msg, size) < 1)
+	if (write(fd, msg, sizeof(*msg)) < 1)
 		bug("%s", "a thread's signalling fd seems closed");
+	if (msg->cnt > 0)
+		if (write(fd, msgdata, msg->cnt) < 1)
+			bug("%s", "a thread's signalling fd seems closed");
 }
 
-void server_signallthreads(void *msg, size_t size)
+static void server_signallthreads(struct signal *msg, char *msgdata)
 {
-	int i;
 	struct conndata *cd;
 	/* FIXME: This isn't thread safe, it assumes that std is not modified during the whole sending process */
-	for (i = 0; i < std->elements; i++) {
+	for (int i = 0; i < std->elements; i++) {
 		cd = sarray_getbypos(std, i);
-		server_signthread(cd->threadfds[1], msg, size);
+		server_write_msg(cd->threadfds[1], msg, msgdata);
 	}
 }
 
-void server_handlesignal(enum msg signal, size_t param)
+static void server_handlesignal(struct signal *msg, char *data)
 {
 	struct conndata *cd;
 	int i, j;
-	log_printfn("server", "received signal %d", signal);
-	switch (signal) {
-		case MSG_TERM:
-			server_cleanexit();
-			break;
-		case MSG_RM:
-			log_printfn("server", "thread %zx is terminating, cleaning up", param);
-			cd = sarray_getbyid(std, &param);
-			if (cd != NULL) {
-				pthread_join(cd->thread, NULL);
-				sarray_freebyid(std, &param);
-			} else {
-				bug("unknown thread id %zx is terminating", param);
-			}
-			break;
-		case MSG_WALL:
-			/* FIXME: This assumes that the string at &param is valid for as long as there are threads to
-			   send it to; it should be duplicated. */
-			log_printfn("server", "walling all users");
-			server_signallthreads(&signal, sizeof(int));
-			server_signallthreads(&param, sizeof(void*));
-			break;
-		case MSG_PAUSE:
-			log_printfn("server", "pausing the entire universe");
-			server_signallthreads(&signal, sizeof(int));
-			break;
-		case MSG_CONT:
-			log_printfn("server", "universe continuing");
-			server_signallthreads(&signal, sizeof(int));
-			break;
-		default:
-			log_printfn("server", "unknown message received: %d", signal);
+	size_t st;
+	log_printfn("server", "received signal %d", msg->type);
+	switch (msg->type) {
+	case MSG_TERM:
+		server_cleanexit();
+		break;
+	case MSG_RM:
+		st = *(size_t*)data;
+		log_printfn("server", "thread %zx is terminating, cleaning up", st);
+		cd = sarray_getbyid(std, &st);
+		if (cd != NULL) {
+			pthread_join(cd->thread, NULL);
+			sarray_freebyid(std, &st);
+		} else {
+			bug("unknown thread id %zx is terminating", st);
+		}
+		break;
+	case MSG_WALL:
+		log_printfn("server", "walling all users: %s", data);
+		server_signallthreads(msg, data);
+		break;
+	case MSG_PAUSE:
+		log_printfn("server", "pausing the entire universe");
+		server_signallthreads(msg, NULL);
+		break;
+	case MSG_CONT:
+		log_printfn("server", "universe continuing");
+		server_signallthreads(msg, NULL);
+		break;
+	default:
+		log_printfn("server", "unknown message received: %d", msg->type);
 	}
 }
 
-void server_preparesocket(struct addrinfo **servinfo)
+static void server_preparesocket(struct addrinfo **servinfo)
 {
 	int i;
 	struct addrinfo hints;
@@ -123,7 +127,7 @@ void server_preparesocket(struct addrinfo **servinfo)
 }
 
 /* get sockaddr, IPv4 or IPv6: */
-void* server_get_in_addr(struct sockaddr *sa)
+static void* server_get_in_addr(struct sockaddr *sa)
 {
 	if (sa->sa_family == AF_INET) {
 		return &(((struct sockaddr_in*)sa)->sin_addr);
@@ -132,7 +136,7 @@ void* server_get_in_addr(struct sockaddr *sa)
 	}
 }
 
-int server_setupsocket()
+static int server_setupsocket()
 {
 	struct addrinfo *servinfo, *p;
 	server_preparesocket(&servinfo);
@@ -182,6 +186,20 @@ static char* getpeer(struct sockaddr_storage sock)
 	return result;
 }
 
+static void server_receivemsg(int fd)
+{
+	struct signal msg;
+	char *data;
+	int r = read(fd, &msg, sizeof(msg));
+	if (msg.cnt > 0) {
+		data = alloca(msg.cnt);
+		read(fd, data, msg.cnt);	/* FIXME: Validate the number of bytes */
+	} else {
+		data = NULL;
+	}
+	server_handlesignal(&msg, data);
+}
+
 void* server_main(void* p)
 {
 	int i, j;
@@ -210,9 +228,7 @@ void* server_main(void* p)
 			die("select() failed in server, error %s", strerror(errno));
 		if (FD_ISSET(signfdr, &fdset)) {
 			/* We have received a message on the signalling file handle */
-			read(signfdr, &i, sizeof(i));
-			read(signfdr, &st, sizeof(st));
-			server_handlesignal(i, st);
+			server_receivemsg(signfdr);
 		} else {
 			/* We have received a new connection, accept it */
 			cd = conn_create();

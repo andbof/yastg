@@ -75,10 +75,14 @@ static int cmd_help(void *ptr, char *param)
 static int cmd_wall(void *ptr, char *param)
 {
 	if (param) {
-		int i = MSG_WALL;
-		size_t st = (size_t)param;
-		write(srvfd[1], &i, sizeof(i));
-		write(srvfd[1], &st, sizeof(st));
+		struct signal msg = {
+			.cnt = strlen(param) + 1,
+			.type = MSG_WALL
+		};
+		if (write(srvfd[1], &msg, sizeof(msg)) < 1)
+			bug("%s", "server signalling fd is closed");
+		if (write(srvfd[1], param, msg.cnt) < 1)
+			bug("%s", "server signalling fd is closed");
 	} else {
 		mprintf("usage: wall <message>\n");
 	}
@@ -87,19 +91,21 @@ static int cmd_wall(void *ptr, char *param)
 
 static int cmd_pause(void *ptr, char *param)
 {
-	int i = MSG_PAUSE;
-	size_t st = 0;
-	write(srvfd[1], &i, sizeof(i));
-	write(srvfd[1], &st, sizeof(st));
+	struct signal s = {
+		.cnt = 0,
+		.type = MSG_PAUSE
+	};
+	write(srvfd[1], &s, sizeof(s));
 	return 0;
 }
 
 static int cmd_resume(void *ptr, char *param)
 {
-	int i = MSG_CONT;
-	size_t st = 0;
-	write(srvfd[1], &i, sizeof(i));
-	write(srvfd[1], &st, sizeof(st));
+	struct signal s = {
+		.cnt = 0,
+		.type = MSG_CONT
+	};
+	write(srvfd[1], &s, sizeof(s));
 	return 0;
 }
 
@@ -203,17 +209,17 @@ int main(int argc, char **argv)
 		fgets(line, 256, stdin); /* FIXME */
 		chomp(line);
 
-		if (cli_run_cmd(cli_root, line) < 0)
+		if (strlen(line) > 0 && cli_run_cmd(cli_root, line) < 0)
 			mprintf("Unknown command or syntax error.\n");
 	}
 
 	/* Kill server thread, this will also kill all player threads */
-	enum msg m = MSG_TERM;
-	st = 0;
-	if (write(srvfd[1], &m, sizeof(m)) < 1)
+	struct signal signal = {
+		.cnt = 0,
+		.type = MSG_TERM
+	};
+	if (write(srvfd[1], &signal, sizeof(signal)) < 1)
 		bug("%s", "server signalling fd seems closed when sending signal");
-	if (write(srvfd[1], &st, sizeof(st)) < 1)
-		bug("%s", "server signalling fd seems closed when sending parameter");
 	log_printfn("main", "waiting for server to terminate");
 	pthread_join(srvthread, NULL);
 

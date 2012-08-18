@@ -17,6 +17,7 @@
 #include "defines.h"
 #include "log.h"
 #include "connection.h"
+#include "server.h"
 #include "sarray.h"
 #include "ptrlist.h"
 #include "id.h"
@@ -64,12 +65,14 @@ struct conndata* conn_create()
 	return data;
 }
 
-void conn_signalserver(struct conndata *data, int signal, size_t param)
+void conn_signalserver(struct conndata *data, struct signal *msg, char *msgdata)
 {
-	if ((write(data->serverfd, &signal, sizeof(signal))) < 1)
-		bug("server signalling fd seems closed when sending signal to remove me %d, %s", errno, strerror(errno));
-	if (write(data->serverfd, &param, sizeof(param)) < 1)
-		bug("%s", "server signalling fd seems closed when sending my id");
+	if (write(data->serverfd, msg, sizeof(msg)) < 1)
+		bug("server signalling fd seems closed when sending signal: error %d (%s)", errno, strerror(errno));
+	if (msgdata) {
+		if (write(data->serverfd, msgdata, msg->cnt) < 1)
+			bug("server signalling fd seems closed when seems closed when sending data: error %d (%s)", errno, strerror(errno));
+	}
 }
 
 /*
@@ -102,7 +105,11 @@ void conndata_free(void *ptr)
 void conn_cleanexit(struct conndata *data)
 {
 	log_printfn("connection", "connection %zx is terminating", data->id);  
-	conn_signalserver(data, MSG_RM, data->id);
+	struct signal msg = {
+		.cnt = sizeof(data->id),
+		.type = MSG_RM
+	};
+	conn_signalserver(data, &msg, (char*)&data->id);
 	pthread_exit(0);
 }
 
@@ -204,32 +211,44 @@ void conn_act(struct conndata *data)
 	}
 }
 
-void conn_handlesignal(struct conndata *data, enum msg signal)
+void conn_handlesignal(struct conndata *data, struct signal *msg, char *msgdata)
 {
-	char *str;
-	switch (signal) {
-		case MSG_TERM:
-			conn_send(data, "\nServer is shutting down, you are being disconnected.\n");
-			conn_cleanexit(data);
-			break;
-		case MSG_PAUSE:
-			conn_send(data, "\nYou have been paused by God. This might mean the whole universe is currently on hold\n");
-			conn_send(data, "or just you. Anything you enter at the prompt will queue up until you are resumed.\n");
-			data->paused = 1;
-			break;
-		case MSG_CONT:
-			conn_send(data, "\nYou have been resumed, feel free to play away!\n");
-			data->paused = 0;
-			break;
-		case MSG_WALL:
-			conn_send(data, "\nMessage to all connected users:\n");
-			read(data->threadfds[0], &str, sizeof(char*));
-			conn_send(data, str);
-			conn_send(data, "\nEnd of message.\n");
-			break;
-		default:
-			log_printfn("connection", "received unknown signal: %d", signal);
+	switch (msg->type) {
+	case MSG_TERM:
+		conn_send(data, "\nServer is shutting down, you are being disconnected.\n");
+		conn_cleanexit(data);
+		break;
+	case MSG_PAUSE:
+		conn_send(data, "\nYou have been paused by God. This might mean the whole universe is currently on hold\n"
+				"or just you. Anything you enter at the prompt will queue up until you are resumed.\n");
+		data->paused = 1;
+		break;
+	case MSG_CONT:
+		conn_send(data, "\nYou have been resumed, feel free to play away!\n");
+		data->paused = 0;
+		break;
+	case MSG_WALL:
+		conn_send(data, "\nMessage to all connected users:\n"
+				"%s"
+				"\nEnd of message.\n", msgdata);
+		break;
+	default:
+		log_printfn("connection", "received unknown signal: %d", msg->type);
 	}
+}
+
+static void conn_receivemsg(struct conndata *data, int fd)
+{
+	struct signal msg;
+	char *msgdata;
+	read(fd, &msg, sizeof(msg));
+	if (msg.cnt > 0) {
+		msgdata = alloca(msg.cnt);
+		read(fd, msgdata, msg.cnt);
+	} else {
+		msgdata = NULL;
+	}
+	conn_handlesignal(data, &msg, msgdata);
 }
 
 void conn_loop(struct conndata *data)
@@ -259,8 +278,7 @@ void conn_loop(struct conndata *data)
 			if (FD_ISSET(data->threadfds[0], &data->rfds)) {
 				/* We have received a message on the signalling fd */
 				do {
-					read(data->threadfds[0], &i, sizeof(i));
-					conn_handlesignal(data, i);
+					conn_receivemsg(data, data->threadfds[0]);
 				} while (data->paused);
 			}
 
