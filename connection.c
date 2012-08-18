@@ -139,7 +139,9 @@ static void conn_send(struct conndata *data, char *format, ...)
 static void conn_error(struct conndata *data, char *format, ...)
 {
 	va_list ap;
-	conn_send(data, "Oops! An internal error occured.\nYour current state is NOT saved and you are being forcibly disconnected.\nSorry!");
+	va_start(ap, format);
+	conn_send(data, "Oops! An internal error occured: %s.\nYour current state is NOT saved and you are being forcibly disconnected.\nSorry!", format, ap);
+	va_end(ap);
 	conn_cleanexit(data);
 }
 
