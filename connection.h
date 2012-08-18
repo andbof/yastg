@@ -23,6 +23,7 @@ struct conndata {
 	char *rbuf;
 	char *sbuf;
 	int paused;
+	struct cli_tree *cli_root;
 };
 
 struct conndata* conn_create();

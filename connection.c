@@ -21,6 +21,7 @@
 #include "sarray.h"
 #include "ptrlist.h"
 #include "id.h"
+#include "cli.h"
 #include "universe.h"
 #include "sector.h"
 #include "star.h"
@@ -35,7 +36,6 @@ struct conndata* conn_create()
 	struct conndata *data;
 	int r = 1;
 	data = malloc(sizeof(*data));
-	data->paused = 0;
 	if (data != NULL) {
 		memset(data, 0, sizeof(*data));
 		data->id = gen_id();
@@ -58,6 +58,11 @@ struct conndata* conn_create()
 		}
 		if (pthread_mutex_init(&data->fd_mutex, NULL) != 0) {
 			log_printfn("connection", "failed initializing mutex for connection %zx", data->id);
+			conndata_free(data);
+			return NULL;
+		}
+		if ((data->cli_root = cli_tree_create()) == NULL) {
+			log_printfn("connection", "failed allocating cli tree for connection %zx", data->id);
 			conndata_free(data);
 			return NULL;
 		}
@@ -99,6 +104,8 @@ void conndata_free(void *ptr)
 			free(data->sbuf);
 		if (data->pl)
 			player_free(data->pl);
+		if (data->cli_root)
+			cli_tree_destroy(data->cli_root);
 	}
 }
 
@@ -187,32 +194,48 @@ static void conn_sendinfo(struct conndata *data)
 	}
 }
 
+static int cmd_help(void *ptr, char *param)
+{
+	struct conndata *data = ptr;
+	/* FIXME: This should use conn_send instead of writing directly to the fd */
+	FILE *f = fdopen(dup(data->peerfd), "w");
+	cli_print_help(f, data->cli_root);
+	fclose(f);
+	return 0;
+}
+
+static int cmd_quit(void *ptr, char *param)
+{
+	struct conndata *data = ptr;
+	conn_send(data, "Bye!\n");
+	conn_cleanexit(data);
+	return 0;
+}
+
+static int cmd_go(void *ptr, char *param)
+{
+	struct conndata *data = ptr;
+	if (param[0] != '\0') {
+		struct sector *s = getsectorbyname(univ, param);
+		if (s != NULL) {
+			conn_send(data, "Entering %s\n", s->name);
+			data->pl->position = s;
+			conn_sendinfo(data);
+		} else {
+			conn_send(data, "Sector not found.\n");
+		}
+		return 0;
+	} else {
+		conn_send(data, ERR_SYNTAX);
+		return 1;
+	}
+}
+
 static void conn_act(struct conndata *data)
 {
 	struct sector *s;
-	if (data->rbuf[0] == '\0') {
-		return;
-	} else if (!strcmp(data->rbuf, "help")) {
-		conn_send(data, "go <sector>	Move to sector <name>\n");
-	} else if (!strcmp(data->rbuf, "quit")) {
-		conn_send(data, "Bye!\n");
-		conn_cleanexit(data);
-	} else if (!strncmp(data->rbuf, "go ", 3)) {
-		if (strlen(data->rbuf) > 3) {
-			s = getsectorbyname(univ, data->rbuf+3);
-			if (s != NULL) {
-				conn_send(data, "Entering %s\n", s->name);
-				data->pl->position = s;
-				conn_sendinfo(data);
-			} else {
-				conn_send(data, "Sector not found.\n");
-			}
-		} else {
-			conn_send(data, ERR_SYNTAX);
-		}
-	} else {
-		conn_send(data, "Sorry, I don't understand.\n");
-	}
+	if (data->rbuf[0] != '\0' && cli_run_cmd(data->cli_root, data->rbuf) < 0)
+		conn_send(data, "Unknown command or syntax error.\n");
 }
 
 static void conn_handlesignal(struct conndata *data, struct signal *msg, char *msgdata)
@@ -318,7 +341,7 @@ static void conn_loop(struct conndata *data)
 		data->rbuf[rb - 1] = '\0';
 		chomp(data->rbuf);
 
-		mprintf("received \"%s\" on socket\n", data->rbuf);
+		mprintf("debug: received \"%s\" on socket\n", data->rbuf);
 
 		conn_act(data);
 
@@ -333,6 +356,9 @@ void* conn_main(void *dataptr)
 	data->pl = malloc(sizeof(struct player));
 	data->pl->name = strdup("Alfred");
 	data->pl->position = ptrlist_entry(univ->sectors, 0);
+	cli_add_cmd(data->cli_root, "help", cmd_help, data, NULL);
+	cli_add_cmd(data->cli_root, "go", cmd_go, data, NULL);
+	cli_add_cmd(data->cli_root, "quit", cmd_quit, data, NULL);
 
 	log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
 	conn_loop(data);
