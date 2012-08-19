@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "common.h"
-#include "stable.h"
+#include "htable.h"
 #include "log.h"
 
 /*
@@ -11,8 +12,7 @@
 static unsigned long hash33(char *key)
 {
 	unsigned long hash = 5381;
-	if (key == NULL)
-		bug("%s", "trying to hash a null pointer");
+	assert(key != NULL);
 	while (*key) {
 		hash += (hash << 5) + *key;
 		key++;
@@ -20,21 +20,24 @@ static unsigned long hash33(char *key)
 	return hash;
 }
 
-void* stable_create()
+void* htable_create()
 {
-	struct stable *s;
+	struct htable *s;
 	MALLOC_DIE(s, sizeof(*s));
 	memset(s, '\0', sizeof(*s));
-	pthread_mutex_init(&s->mutex, NULL);
+	pthread_rwlock_init(&s->lock, NULL);
 	return s;
 }
 
-void stable_add(struct stable *t, char *key, void *data)
+void htable_add(struct htable *t, char *key, void *data)
 {
+	assert(t != NULL);
+	assert(key != NULL);
+	assert(data != NULL);
 	int i;
-	unsigned long hash = hash33(key) % STABLE_SIZE;
+	unsigned long hash = hash33(key) % HTABLE_SIZE;
 	struct st_elem *prev, *cur, *next;
-	pthread_mutex_lock(&t->mutex);
+	pthread_rwlock_wrlock(&t->lock);
 	cur = t->table[hash];
 	if (!cur) {
 		MALLOC_DIE(cur, sizeof(*cur));
@@ -45,7 +48,7 @@ void stable_add(struct stable *t, char *key, void *data)
 		while (cur) {
 			i = strcmp(cur->data, data);
 			if (i == 0) {
-				bug("stable already contains element %s (address %p)", key, data);
+				bug("htable already contains element %s (address %p)", key, data);
 			} else if (i < 0) {
 				prev = cur;
 				cur = cur->next;
@@ -73,17 +76,19 @@ void stable_add(struct stable *t, char *key, void *data)
 	cur->key = key;
 	cur->data = data;
 	t->elements++;
-	pthread_mutex_unlock(&t->mutex);
+	pthread_rwlock_unlock(&t->lock);
 }
 
-void* stable_get(struct stable *t, char *key)
+void* htable_get(struct htable *t, char *key)
 {
+	assert(t != NULL);
+	assert(key != NULL);
 	int i;
-	unsigned long hash = hash33(key) % STABLE_SIZE;
+	unsigned long hash = hash33(key) % HTABLE_SIZE;
 	struct st_elem *elem;
 	void *ptr;
 
-	pthread_mutex_lock(&t->mutex);
+	pthread_rwlock_rdlock(&t->lock);
 
 	elem = t->table[hash];
 	while ((elem != NULL) && ((i = strcmp(elem->key, key)) < 0))
@@ -94,21 +99,23 @@ void* stable_get(struct stable *t, char *key)
 	else
 		ptr = NULL;
 
-	pthread_mutex_unlock(&t->mutex);
+	pthread_rwlock_unlock(&t->lock);
 
 	return ptr;
 }
 
-void stable_rm(struct stable *t, char *key)
+void htable_rm(struct htable *t, char *key)
 {
-	unsigned long hash = hash33(key) % STABLE_SIZE;
+	assert(t != NULL);
+	assert(key != NULL);
+	unsigned long hash = hash33(key) % HTABLE_SIZE;
 	struct st_elem *prev, *cur;
 
-	pthread_mutex_lock(&t->mutex);
+	pthread_rwlock_wrlock(&t->lock);
 
-	cur = stable_get(t, key);
+	cur = htable_get(t, key);
 	if (cur == NULL)
-		bug("string %s does not exist in stable", key);
+		bug("string %s does not exist in htable", key);
 
 	prev = cur->prev;
 	if (prev == NULL) {
@@ -122,18 +129,19 @@ void stable_rm(struct stable *t, char *key)
 	}
 	t->elements--;
 
-	pthread_mutex_unlock(&t->mutex);
+	pthread_rwlock_unlock(&t->lock);
 }
 
-void stable_free(struct stable *t)
+void htable_free(struct htable *t)
 {
+	assert(t != NULL);
 	unsigned long l;
 	struct st_elem *cur;
 	struct st_elem *next;
 
-	pthread_mutex_lock(&t->mutex);
+	pthread_rwlock_wrlock(&t->lock);
 
-	for (l = 0; l < STABLE_SIZE; l++) {
+	for (l = 0; l < HTABLE_SIZE; l++) {
 		cur = t->table[l];
 		while (cur) {
 			next = cur->next;
@@ -142,8 +150,7 @@ void stable_free(struct stable *t)
 		}
 	}
 
-	pthread_mutex_unlock(&t->mutex);
-	pthread_mutex_destroy(&t->mutex);	/* FIXME: race condition if another thread is waiting to use t->mutex ... can we destroy a locked mutex? */
+	pthread_rwlock_destroy(&t->lock);
 
 	free(t);
 }

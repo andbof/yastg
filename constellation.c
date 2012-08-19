@@ -13,7 +13,7 @@
 #include "star.h"
 #include "sarray.h"
 #include "ptrlist.h"
-#include "stable.h"
+#include "htable.h"
 
 void loadconstellations()
 {
@@ -58,7 +58,7 @@ void addconstellation(char* cname)
 		sprintf(string, "%s %s", greek[numc], cname);
 		s = sector_create(string);
 		ptrlist_push(univ->sectors, s);
-		stable_add(univ->sectornames, s->name, s);
+		htable_add(univ->sectornames, s->name, s);
 
 		if (fs == NULL) {
 			/* This was the first sector generated for this constellation
