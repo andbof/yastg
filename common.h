@@ -1,6 +1,7 @@
 #ifndef HAS_DEFINES_H
 #define HAS_DEFINES_H
 
+#include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -125,8 +126,28 @@ extern const char* greek[GREEK_N];
 		funlockfile(stdout);	\
 	} while(0)
 
+/* Misc global variables */
+
+extern const char capital_to_lower[256];
+
 /* Misc functions */
 
-void chomp(char *s);
+static inline void downcase_valid(char *c)
+{
+	unsigned char *s = (unsigned char*)c;
+	unsigned int i;
+	for (i = 0; s[i] != '\0'; i++)
+		s[i] = capital_to_lower[s[i]];
+}
+
+/*
+ * Removes trailing newlines from a string, if any exists.
+ */
+static inline void chomp(char* s)
+{
+	for (unsigned int len = strlen(s);
+			len > 0 && (s[len - 1] == '\n' || s[len - 1] == '\r');
+			s[len - 1] = '\0', len--);
+}
 
 #endif
