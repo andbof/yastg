@@ -71,4 +71,10 @@ extern const char* greek[GREEK_N];
 #define POLTOY(phi, rad)		\
   (unsigned long)(rad*sin(phi))
 
+#define MAX(x, y)			\
+  ((x > y) ? x : y)
+
+#define MIN(x, y)			\
+  ((x < y) ? x : y)
+
 #endif
