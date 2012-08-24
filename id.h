@@ -10,4 +10,6 @@ int sort_ulong(void *a, void *b);
 int sort_dlong(void *a, void *b);
 int sort_double(void *a, void *b);
 
+char* hundreths(unsigned long l);
+
 #endif
