@@ -6,7 +6,7 @@ CFLAGS=-g -O0 -Wall -D__COMMIT__=$(COMMIT) -Wformat -Wformat-security -Wformat-n
 objects := $(patsubst %.c,%.o,$(wildcard *.c util/*.c civs/*.c))
 
 yastg: $(objects)
-	cc -o yastg $(objects) -lm
+	cc -o yastg $(objects) -lm -pthread
 
 clean:
 	find . -name \*.o | xargs rm -f
