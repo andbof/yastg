@@ -2,11 +2,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <time.h>
@@ -17,6 +12,7 @@
 #include "sarray.h"
 #include "array.h"
 #include "test.h"
+#include "server.h"
 #include "sector.h"
 #include "planet.h"
 #include "base.h"
@@ -45,48 +41,18 @@ void parseopts(int argc, char **argv) {
   }
 }
 
-void preparesocket(struct addrinfo **servinfo) {
-  int i;
-  struct addrinfo hints;
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
-  if ((i = getaddrinfo(NULL, PORT, &hints, servinfo)) != 0) {
-    die("getaddrinfo: %s\n", gai_strerror(i));
-  }
-}
-
-void sigchild_handler(int s) {
-  while(waitpid(-1, NULL, WNOHANG) > 0);
-}
-
 /*
  * Removes a trailing newline from a string, if it exists.
  */
 void chomp(char* s) {
-  if (s[strlen(s)-1] == '\n') {
-    s[strlen(s)-1] = '\0';
-  }
-}
-
-// get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa) {
-  if (sa->sa_family == AF_INET) {
-    return &(((struct sockaddr_in*)sa)->sin_addr);
-  }
-  return &(((struct sockaddr_in6*)sa)->sin6_addr);
+  size_t predlen = strlen(s) -1;
+  if (s[predlen] == '\n')
+    s[predlen] = '\0';
 }
 
 int main(int argc, char **argv) {
-  struct addrinfo *servinfo, *p;
   int i;
-  socklen_t sin_size;
-  struct sockaddr_storage peer_addr;
-  char peer[INET6_ADDRSTRLEN];
-  int sockfd, newfd;
   int yes = 1;
-  struct sigaction sa;
   char *line = malloc(256); // FIXME
   struct universe *u;
   struct configtree *ctree;
@@ -99,6 +65,7 @@ int main(int argc, char **argv) {
   struct sarray *gurka;
   unsigned int tomat;
   struct sarray *civs;
+  pthread_t srvthread;
 
   // Initialize
   srand(time(NULL));
@@ -130,9 +97,25 @@ int main(int argc, char **argv) {
   alfred->position = GET_ID(u->sectors->array);
 
   // Now GO!
+  printf("Starting server ...\n");
+  if ((i = pthread_create(&srvthread, NULL, server_main, NULL)))
+    die("Could not launch server thread, error %d\n", i);
+
   printf("Welcome to YASTG v%s (commit %s), built %s %s.\n\n", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
 
   printf("Universe has %zu sectors in total\n", u->sectors->elements);
+  while (1) {
+    printf("console> ");
+    fgets(line, 256, stdin);
+    chomp(line);
+    if (!strcmp(line,"help")) {
+      printf("No help available.\n");
+    } else if (!strcmp(line, "quit")) {
+      printf("Bye!\n");
+      exit(0);
+    }
+  }
+
   while (1) {
     s = sarray_getbyid(u->sectors, &alfred->position);
     printf("You are in sector %s (id %zx, coordinates %ldx%ld), habitability %d\n", s->name, s->id, s->x, s->y, s->hab);
@@ -182,79 +165,7 @@ int main(int argc, char **argv) {
 
   exit(0);
 
-  preparesocket(&servinfo);
-  for (p = servinfo; p != NULL; p = p->ai_next) {
-    if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-      printf("%s", "socket error");
-      continue;
-    }
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == 1) {
-      die("%s", "setsockopt error");
-    }
-    if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-      close(sockfd);
-      printf("%s", "bind error");
-      continue;
-    }
-    break;
-  }
-  if (p == NULL) {
-    die("%s", "server failed to bind");
-  }
-  freeaddrinfo(servinfo); // No longer needed
-  if (listen(sockfd, BACKLOG) == -1) {
-    die("%s", "listen error");
-  }
-  sa.sa_handler = sigchild_handler;	// Reap all dead processes
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags =	SA_RESTART;
-  if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-    die("%s", "sigaction error");
-  }
-  printf("Server is waiting for connections\n");
-
-  while (1) {
-    sin_size = sizeof(peer_addr);
-    newfd = accept(sockfd, (struct sockaddr*)&peer_addr, &sin_size);
-    if (newfd == -1) {
-      die("%s", "socket accept error");
-    }
-    inet_ntop(peer_addr.ss_family, get_in_addr((struct sockaddr*)&peer_addr), peer, sizeof(peer));
-    printf("Client %s connected\n", peer);
-    if (!fork()) {
-      // Child process
-      close(sockfd);	// Not needed in child
-      if (send(newfd, "Hello world!", 13, 0) == -1) {
-	die("%s", "sending error");
-      }
-      close(newfd);
-      exit(0);
-    } else {
-      // Parent process
-      close(newfd);	// Not needed in parent
-    }
-  }
-
   return 0;
 
 }
 
-/*
-struct addrinfo hints;
-struct addrinfo *servinfo;
-int status;
-
-memset(&hints, 0, sizeof(hints));
-hints.ai_family = AF_UNSPEC;		// Don't care if IPv4 or IPv6
-
-int main() {
-
-  if (!(status = getaddrinfo(NULL, "2049", &hints, &servinfo))) {
-    fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
-    exit(1);
-  }
-
-  return 0;
-}
-
-*/
