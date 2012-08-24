@@ -2,6 +2,7 @@
 #include <time.h>
 #include <assert.h>
 #include <math.h>
+#include <limits.h>
 #include "mtrandom.h"
 #include "mt19937ar-cok.h"
 
@@ -47,3 +48,10 @@ inline size_t mtrandom_sizet(size_t range) {
   return (size_t)r;
 }
 
+inline int mtrandom_bool() {
+  if (mt_genrand_int32() <= (ULONG_MAX >> 1)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
