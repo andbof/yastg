@@ -1,7 +1,7 @@
 #ifndef HAS_CIV_H
 #define HAS_CIV_H
 
-#include "universe.h"
+struct universe;
 
 struct civ {
   size_t id;
