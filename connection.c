@@ -122,8 +122,7 @@ void conn_send(struct conndata *data, char *format, ...)
 		sb += send(data->peerfd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
 		if (sb < 1) {
 			log_printfn("connection", "send error (connection id %zx), terminating connection", data->id);
-			pthread_mutex_unlock(&data->fd_mutex);
-			conn_cleanexit(data); /* FIXME: What happens if another read is waiting to send data? It will try to access a destroyed mutex ... */
+			conn_cleanexit(data);
 		}
 	} while (sb < len);
 
@@ -182,7 +181,7 @@ void conn_act(struct conndata *data)
 {
 	struct sector *s;
 	if (!strcmp(data->rbuf, "help")) {
-		conn_send(data, "go <sector>	Move to sector <name>");
+		conn_send(data, "go <sector>	Move to sector <name>\n");
 	} else if (!strcmp(data->rbuf, "quit")) {
 		conn_send(data, "Bye!\n");
 		conn_cleanexit(data);
