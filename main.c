@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
 
 #ifdef TEST
   run_tests();
+  exit(0);
 #endif
 
   // Parse command line options
