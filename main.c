@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <math.h>
+#include <pthread.h>
 
 #include "defines.h"
 #include "mtrandom.h"
@@ -96,22 +97,25 @@ int main(int argc, char **argv) {
   alfred->name = "Alfred";
   alfred->position = GET_ID(u->sectors->array);
 
+  // Initialize screen (this fixes the screen/console mutex)
+  pthread_mutex_init(&stdout_mutex, NULL);
+
   // Now GO!
-  printf("Starting server ...\n");
+  mprintf("Starting server ...\n");
   if ((i = pthread_create(&srvthread, NULL, server_main, NULL)))
     die("Could not launch server thread, error %d\n", i);
 
-  printf("Welcome to YASTG v%s (commit %s), built %s %s.\n\n", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
+  mprintf("Welcome to YASTG v%s (commit %s), built %s %s.\n\n", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
 
-  printf("Universe has %zu sectors in total\n", u->sectors->elements);
+  mprintf("Universe has %zu sectors in total\n", u->sectors->elements);
   while (1) {
-    printf("console> ");
+    mprintf("console> ");
     fgets(line, 256, stdin);
     chomp(line);
     if (!strcmp(line,"help")) {
-      printf("No help available.\n");
+      mprintf("No help available.\n");
     } else if (!strcmp(line, "quit")) {
-      printf("Bye!\n");
+      mprintf("Bye!\n");
       exit(0);
     }
   }

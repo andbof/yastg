@@ -11,8 +11,8 @@
 #include <signal.h>
 #include <pthread.h>
 
-#include "serverthread.h"
 #include "defines.h"
+#include "serverthread.h"
 
 void serverthread_cleanup(struct serverthreaddata *data) {
   close(data->fd);
@@ -20,16 +20,18 @@ void serverthread_cleanup(struct serverthreaddata *data) {
 }
 
 void serverthread_loop(struct serverthreaddata *data) {
-  int running = 1;
-  while (running) {
-    if (send(data->fd, "Hello world!\n", 13, 0) == -1)
-      running = 0;
+  while (1) {
+    if (send(data->fd, "Hello world!\n", 13, MSG_NOSIGNAL) == -1)
+      break;
   }
 }
 
 void* serverthread_main(void *dataptr) {
   struct serverthreaddata *data = dataptr;
+  mprintf("Thread for peer %s started\n", data->peer);
   serverthread_loop(data);
+  mprintf("Thread for peer %s closing down\n", data->peer);
   serverthread_cleanup(data);
+  mprintf("Thread for peer %s finished\n", data->peer);
   return 0;
 }

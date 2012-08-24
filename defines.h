@@ -1,7 +1,13 @@
 #ifndef HAS_DEFINES_H
 #define HAS_DEFINES_H
 
-#include <stdlib.h>
+#include <pthread.h>
+
+/* Global compiler directives */
+
+#define _GNU_SOURCE
+
+/* Global struct definitions */
 
 struct ulong_id {
   unsigned long i;
@@ -18,7 +24,12 @@ struct ptr_num {
   size_t num;
 };
 
-#define _GNU_SOURCE
+/* Global variables */
+
+pthread_mutex_t stdout_mutex;
+
+/* Global short helper functions */
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 #define GET_ID(x) *((size_t*)(x))
 #define GET_ULONG(x) *((unsigned long*)(x))
@@ -28,17 +39,22 @@ struct ptr_num {
 #define QUOTE(x) QUOTE_(x)
 #define __VER__ 0.1
 
-// Greek alpahabet
+/* Greek alpahabet */
+
 #define GREEK_N 24
 #define GREEK_LEN 7
 extern const char* greek[GREEK_N];
 
-// Astronomical constants
+/* Astronomical constants */
+
 #define GM_PER_AU 1496			// gigameters per astronomical unit
 #define AU_PER_LY 63239			// Astronomical units per light year
 #define HAB_ZONE_START 0.95		// Start of habitable zone in a sol like system, in AU
 #define HAB_ZONE_END 1.37		// End of habitable zone in a sol like system, in AU
 #define SNOW_LINE (2.7*GM_PER_AU)	// Upper limit of rocky planetary formation in a sol-like system
+
+/* Global longer helper functions */
+
 #define die(FMT, ...)				\
   do {						\
     printf("in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
@@ -76,5 +92,10 @@ extern const char* greek[GREEK_N];
 
 #define MIN(x, y)			\
   ((x < y) ? x : y)
+
+#define mprintf(...)                    \
+  pthread_mutex_lock(&stdout_mutex);    \
+  printf(__VA_ARGS__);                  \
+  pthread_mutex_unlock(&stdout_mutex);
 
 #endif

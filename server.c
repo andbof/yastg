@@ -49,7 +49,7 @@ int server_setupsocket() {
   // We loop trough each ai structure to get the first one that actually works
   for (p = servinfo; p != NULL; p = p->ai_next) {
     if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-      printf("%s", "socket error");
+      mprintf("%s", "socket error");
       continue;
     }
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == 1) {
@@ -57,7 +57,7 @@ int server_setupsocket() {
     }
     if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
       close(sockfd);
-      printf("%s", "bind error");
+      mprintf("%s", "bind error");
       continue;
     }
     break;
@@ -85,21 +85,21 @@ void* server_main(void* p) {
 
   sockfd = server_setupsocket();
 
-  printf("YASTG server is waiting for connections\n");
+  mprintf("YASTG server is waiting for connections\n");
 
   j = 0;
   while (1) {
     sin_size = sizeof(peer_addr);
     std[j].fd = accept(sockfd, (struct sockaddr*)&peer_addr, &sin_size);
     if (std[j].fd == -1) {
-      printf("Could not accept socket connection\n");
+      mprintf("Could not accept socket connection\n");
     } else {
       inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[j].peer, sizeof(std[j].peer));
-      printf("Client %s connected\n", std[j].peer);
+      mprintf("Client %s connected\n", std[j].peer);
       if ((i = pthread_create(&std[j].thread, NULL, serverthread_main, &std[j]))) {
-	printf("Could not create new thread for peer %s: %d\n", std[j].peer, i);
+	mprintf("Could not create new thread for peer %s: %d\n", std[j].peer, i);
       } else {
-	printf("New thread for peer %s successfully created\n", std[j].peer);
+	mprintf("New thread for peer %s successfully created\n", std[j].peer);
       }
       j++;
     }
