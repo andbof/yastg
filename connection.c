@@ -190,7 +190,9 @@ static void conn_sendinfo(struct conndata *data)
 static void conn_act(struct conndata *data)
 {
 	struct sector *s;
-	if (!strcmp(data->rbuf, "help")) {
+	if (data->rbuf[0] == '\0') {
+		return;
+	} else if (!strcmp(data->rbuf, "help")) {
 		conn_send(data, "go <sector>	Move to sector <name>\n");
 	} else if (!strcmp(data->rbuf, "quit")) {
 		conn_send(data, "Bye!\n");
