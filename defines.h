@@ -18,9 +18,6 @@ struct ptr_num {
   size_t num;
 };
 
-#define likely(x)       __builtin_expect((x),1)
-#define unlikely(x)     __builtin_expect((x),0)
-
 #define _GNU_SOURCE
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 #define GET_ID(x) *((size_t*)(x))
