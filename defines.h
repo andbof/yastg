@@ -32,6 +32,8 @@ pthread_mutex_t stdout_mutex;
 
 #define MSG_TERM (int)6
 
+#define ERR_SYNTAX "Syntax error, see help"
+
 /* Global short helper functions */
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
