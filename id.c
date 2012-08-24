@@ -4,6 +4,7 @@
 #include "id.h"
 #include "sarray.h"
 #include "limits.h"
+#include "mtrandom.h"
 
 struct sarray *id_array;
 
