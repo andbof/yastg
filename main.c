@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 
   /* Destroy all structures and free all memory */
 
-  array_free(civs);
+  sarray_free(civs);
   free(civs);
   printf("Done!\n");
   free(line);
