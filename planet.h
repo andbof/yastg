@@ -1,42 +1,11 @@
-#ifndef HAS_PLANET_H
-#define HAS_PLANET_H
+#ifndef _HAS_PLANET_H
+#define _HAS_PLANET_H
 
 #include "sector.h"
 #include "parseconfig.h"
 #include "list.h"
+#include "data.h"
 
-enum planet_zone {
-	HOT,
-	ECO,
-	COLD,
-	PLANET_ZONE_NUM
-};
-
-enum planet_life {
-	TOXIC,
-	BARREN,
-	DEAD,
-	SINGLECELL,
-	BACTERIA,
-	SIMPLE,
-	RESISTANT,
-	COMPLEX,
-	ANIMAL,
-	INTELLIGENT,
-	LIFE_NUM
-};
-
-struct planet_type {
-	char c;
-	char *name;
-	char *desc;
-	char *surface;
-	char *atmo;
-	int zones[PLANET_ZONE_NUM];
-	unsigned int mindia, maxdia;	/* In hundreds of kilometres */
-	enum planet_life minlife, maxlife;
-};
-	
 struct planet {
 	char *name;
 	char *gname;
@@ -47,6 +16,7 @@ struct planet {
 	struct ptrlist *bases;
 	struct ptrlist *stations;
 	struct ptrlist *moons;
+	struct ptrlist *players;
 	struct sector *sector;
 	struct list_head list;
 };

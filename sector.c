@@ -121,8 +121,6 @@ struct sector* sector_create(char *name)
 
 	planet_populate_sector(s);
 	printf("  Number of planets: %lu\n", ptrlist_len(s->planets));
-/*	s->bases = createbases(s); */
-	/* FIXME: bases */
 
 	return s;
 }

@@ -34,6 +34,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 100,
 		.minlife = TOXIC,
 		.maxlife = TOXIC,
+		.bases   = {0},
 	},
 	{
 		.c       = 'B',
@@ -46,6 +47,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 100,
 		.minlife = TOXIC,
 		.maxlife = TOXIC,
+		.bases   = {0},
 	},
 	{
 		.c       = 'C',
@@ -58,6 +60,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 100,
 		.minlife = BARREN,
 		.maxlife = BARREN,
+		.bases   = {1},
 	},
 	{
 		.c       = 'D',
@@ -70,6 +73,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 40,
 		.minlife = DEAD,
 		.maxlife = DEAD,
+		.bases   = {1},
 	},
 	{
 		.c       = 'E',
@@ -82,6 +86,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 150,
 		.minlife = DEAD,
 		.maxlife = SINGLECELL,
+		.bases   = {0},
 	},
 	{
 		.c       = 'F',
@@ -94,6 +99,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 150,
 		.minlife = SINGLECELL,
 		.maxlife = BACTERIA,
+		.bases   = {0},
 	},
 	{
 		.c       = 'G',
@@ -106,6 +112,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 150,
 		.minlife = BACTERIA,
 		.maxlife = SIMPLE,
+		.bases   = {1},
 	},
 	{
 		.c       = 'H',
@@ -117,7 +124,8 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.mindia  = 80,
 		.maxdia  = 150,
 		.minlife = BACTERIA,
-		.maxlife = RESISTANT
+		.maxlife = RESISTANT,
+		.bases   = {0},
 	},
 	{
 		.c       = 'I',
@@ -130,6 +138,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 1000,
 		.minlife = TOXIC,
 		.maxlife = TOXIC,
+		.bases   = {0},
 	},
 	{
 		.c       = 'J',
@@ -141,7 +150,8 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.mindia  = 500,
 		.maxdia  = 5000,
 		.minlife = TOXIC,
-		.maxlife = TOXIC
+		.maxlife = TOXIC,
+		.bases   = {0},
 	},
 	{
 		.c       = 'K',
@@ -153,7 +163,8 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.mindia  = 50,
 		.maxdia  = 100,
 		.minlife = DEAD,
-		.maxlife = SIMPLE
+		.maxlife = SIMPLE,
+		.bases   = {1},
 	},
 	{
 		.c       = 'L',
@@ -165,7 +176,8 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.mindia  = 100,
 		.maxdia  = 150,
 		.minlife = RESISTANT,
-		.maxlife = COMPLEX
+		.maxlife = COMPLEX,
+		.bases   = {1},
 	},
 	{
 		.c       = 'M',
@@ -177,7 +189,8 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.mindia  = 100,
 		.maxdia  = 150,
 		.minlife = COMPLEX,
-		.maxlife = INTELLIGENT
+		.maxlife = INTELLIGENT,
+		.bases   = {1},
 	},
 	{
 		.c       = 'N',
@@ -188,7 +201,8 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.mindia  = 100,
 		.maxdia  = 150,
 		.minlife = TOXIC,
-		.maxlife = BACTERIA
+		.maxlife = BACTERIA,
+		.bases   = {0},
 	},
 	{
 		.c       = 'O',
@@ -200,7 +214,8 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.mindia  = 100,
 		.maxdia  = 150,
 		.minlife = COMPLEX,
-		.maxlife = INTELLIGENT
+		.maxlife = INTELLIGENT,
+		.bases   = {0},
 	},
 	{
 		.c       = 'P',
@@ -212,7 +227,8 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.mindia  = 100,
 		.maxdia  = 150,
 		.minlife = RESISTANT,
-		.maxlife = ANIMAL
+		.maxlife = ANIMAL,
+		.bases   = {0},
 	},
 	{
 		.c       = 'S',
@@ -225,6 +241,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 1000000,
 		.minlife = TOXIC,
 		.maxlife = TOXIC,
+		.bases   = {0},
 	},
 	{
 		.c       = 'T',
@@ -237,6 +254,7 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 2000000,
 		.minlife = TOXIC,
 		.maxlife = TOXIC,
+		.bases   = {0},
 	},
 	{
 		.c       = 'Y',
@@ -249,5 +267,19 @@ struct planet_type planet_types[PLANET_TYPE_N] = {
 		.maxdia  = 150,
 		.minlife = TOXIC,
 		.maxlife = TOXIC,
+		.bases   = {0},
 	},
 };
+
+struct base_type base_types[BASE_TYPE_N] = {
+	{
+		.name    = "Mining colony",
+		.desc    = "Long description",
+		.zones   = {0, 1, 0, 0},
+	},
+};
+/*
+ * Other base types:
+ * Settlement, Oceanic city, City, Religious reprieve(?), Military installation,
+ * Trading post, Shipyard, 
+ */

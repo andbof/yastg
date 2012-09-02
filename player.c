@@ -35,7 +35,7 @@ static char* hundreths(unsigned long l)
 {
 	int mod = l%100;
 	char* result;
-	MALLOC_DIE(result, 10);
+	MALLOC_DIE(result, (size_t)10);
 	if (mod < 10) {
 		sprintf(result, "%lu.0%lu", l/100, l%100);
 	} else {

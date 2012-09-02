@@ -110,6 +110,7 @@ static void planet_genesis(struct planet *planet, struct sector *sector)
 		bug("%s", "illegal execution point");
 	}
 
+	base_populate_planet(planet);
 }
 
 void planet_populate_sector(struct sector* sector)

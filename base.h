@@ -1,22 +1,22 @@
-#ifndef HAS_BASE_H
-#define HAS_BASE_H
+#ifndef _HAS_BASE_H
+#define _HAS_BASE_H
 
-#include "inventory.h"
-#include "player.h"
+#include "ptrlist.h"
 #include "parseconfig.h"
 
 struct base {
 	char *name;
-	char type;
+	unsigned int type;
 	int docks;
-	void *inventory;
-	void *players;
 	struct planet *planet;
 	struct sector *sector;
+	struct ptrlist *inventory;
+	struct ptrlist *players;
 };
 
 struct base* loadbase(struct configtree *ctree);
+void base_populate_planet(struct planet* planet);
 
-void base_free(void *ptr);
+void base_free(struct base *b);
 
 #endif
