@@ -9,7 +9,7 @@ enum planet_zone {
 	HOT,
 	ECO,
 	COLD,
-	ZONE_NUM
+	PLANET_ZONE_NUM
 };
 
 enum planet_life {
@@ -32,7 +32,7 @@ struct planet_type {
 	char *desc;
 	char *surface;
 	char *atmo;
-	int zones[ZONE_NUM];
+	int zones[PLANET_ZONE_NUM];
 	unsigned int mindia, maxdia;	/* In hundreds of kilometres */
 	enum planet_life minlife, maxlife;
 };
