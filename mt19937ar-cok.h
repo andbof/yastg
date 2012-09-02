@@ -1,5 +1,5 @@
-#ifndef MT19937AR_COK_H
-#define MT19937AR_COK_H
+#ifndef _MT19937AR_COK_H
+#define _MT19937AR_COK_H
 
 #include <stdint.h>
 

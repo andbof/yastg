@@ -1,5 +1,5 @@
-#ifndef HAS_LOG_H
-#define HAS_LOG_H
+#ifndef _HAS_LOG_H
+#define _HAS_LOG_H
 
 #define LOG_NAME "yastg.log"
 

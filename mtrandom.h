@@ -1,5 +1,5 @@
-#ifndef HAS_MTRANDOM_H
-#define HAS_MTRANDOM_H
+#ifndef _HAS_MTRANDOM_H
+#define _HAS_MTRANDOM_H
 
 void mtrandom_init();
 

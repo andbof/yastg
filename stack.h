@@ -1,5 +1,5 @@
-#ifndef HAS_STACK_H
-#define HAS_STACK_H
+#ifndef _HAS_STACK_H
+#define _HAS_STACK_H
 
 #include <pthread.h>
 

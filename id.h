@@ -1,5 +1,5 @@
-#ifndef HAS_ID_H
-#define HAS_ID_H
+#ifndef _HAS_ID_H
+#define _HAS_ID_H
 
 void init_id();
 void id_destroy();

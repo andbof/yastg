@@ -1,5 +1,5 @@
-#ifndef HAS_STAR_H
-#define HAS_STAR_H
+#ifndef _HAS_STAR_H
+#define _HAS_STAR_H
 
 #include "sector.h"
 #include "parseconfig.h"

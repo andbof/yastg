@@ -1,5 +1,5 @@
-#ifndef HAS_INVENTORY_H
-#define HAS_INVENTORY_H
+#ifndef _HAS_INVENTORY_H
+#define _HAS_INVENTORY_H
 
 struct inventory {
 	unsigned int placeholder;

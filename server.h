@@ -1,5 +1,5 @@
-#ifndef HAS_SERVER_H
-#define HAS_SERVER_H
+#ifndef _HAS_SERVER_H
+#define _HAS_SERVER_H
 
 struct signal {
 	uint16_t cnt;

@@ -1,5 +1,5 @@
-#ifndef HAS_HTABLE_H
-#define HAS_HTABLE_H
+#ifndef _HAS_HTABLE_H
+#define _HAS_HTABLE_H
 
 #include <pthread.h>
 #include "list.h"

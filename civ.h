@@ -1,5 +1,5 @@
-#ifndef HAS_CIV_H
-#define HAS_CIV_H
+#ifndef _HAS_CIV_H
+#define _HAS_CIV_H
 
 #include "list.h"
 

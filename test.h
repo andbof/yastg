@@ -1,5 +1,5 @@
-#ifndef HAS_TEST_H
-#define HAS_TEST_H
+#ifndef _HAS_TEST_H
+#define _HAS_TEST_H
 
 void run_tests();
 

@@ -1,5 +1,5 @@
-#ifndef HAS_DEFINES_H
-#define HAS_DEFINES_H
+#ifndef _HAS_COMMON_H
+#define _HAS_COMMON_H
 
 #include <string.h>
 #include <stdlib.h>

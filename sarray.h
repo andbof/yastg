@@ -1,5 +1,5 @@
-#ifndef HAS_SARRAY_H
-#define HAS_SARRAY_H
+#ifndef _HAS_SARRAY_H
+#define _HAS_SARRAY_H
 
 #define SARRAY_ALLOW_MULTIPLE 0
 #define SARRAY_ENFORCE_UNIQUE 1

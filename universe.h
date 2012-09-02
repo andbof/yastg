@@ -1,5 +1,5 @@
-#ifndef HAS_UNIVERSE_H
-#define HAS_UNIVERSE_H
+#ifndef _HAS_UNIVERSE_H
+#define _HAS_UNIVERSE_H
 
 #include "list.h"
 #include "civ.h"

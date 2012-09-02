@@ -1,5 +1,5 @@
-#ifndef HAS_PARSECONFIG_H
-#define HAS_PARSECONFIG_H
+#ifndef _HAS_PARSECONFIG_H
+#define _HAS_PARSECONFIG_H
 
 #include <stdio.h>
 

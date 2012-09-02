@@ -1,5 +1,5 @@
-#ifndef HAS_SECTOR_H
-#define HAS_SECTOR_H
+#ifndef _HAS_SECTOR_H
+#define _HAS_SECTOR_H
 
 #include "list.h"
 

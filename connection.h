@@ -1,5 +1,5 @@
-#ifndef HAS_CONNETION_H
-#define HAS_CONNETION_H
+#ifndef _HAS_CONNECTION_H
+#define _HAS_CONNECTION_H
 
 #include <pthread.h>
 #include <sys/socket.h>

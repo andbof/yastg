@@ -1,5 +1,5 @@
-#ifndef HAS_PLAYER_H
-#define HAS_PLAYER_H
+#ifndef _HAS_PLAYER_H
+#define _HAS_PLAYER_H
 
 #include "cli.h"
 #include "list.h"
