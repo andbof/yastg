@@ -102,6 +102,18 @@ static void player_showsector(struct player *player, struct sector *sector)
 
 static void player_showbase(struct player *player, struct base *base)
 {
+	char *o;
+	if (base->planet)
+		o = base->planet->name;
+	else
+		o = base->sector->name;
+	struct base_type *type = &base_types[base->type];
+
+	player_talk(player,
+		"Station %s, orbiting %s. %s\n"
+		"%s\n",
+		base->name, o, type->name,
+		type->desc);
 }
 
 static void player_describe_base(struct player *player, struct base *base)
@@ -316,6 +328,7 @@ static void player_go(struct player *player, enum postype postype, void *pos)
 		cli_rm_cmd(player->cli, "leave");
 		break;
 	case PLANET:
+		cli_rm_cmd(player->cli, "dock");
 		cli_rm_cmd(player->cli, "leave");
 		break;
 	case NONE:
@@ -338,6 +351,7 @@ static void player_go(struct player *player, enum postype postype, void *pos)
 		cli_add_cmd(player->cli, "leave", cmd_leave_base, player, cmd_leave_base_help);
 		break;
 	case PLANET:
+		cli_add_cmd(player->cli, "dock", cmd_dock, player, cmd_dock_help);
 		cli_add_cmd(player->cli, "leave", cmd_leave_planet, player, cmd_leave_planet_help);
 		break;
 	case NONE:

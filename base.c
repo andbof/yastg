@@ -57,6 +57,8 @@ static void base_genesis(struct base *base, struct planet *planet)
 
 	struct base_type *type = &base_types[base->type];
 	base->docks = 1; /* FIXME */
+
+	base->name = strdup("GURKA!");	/* FIXME! */
 }
 
 void base_populate_planet(struct planet* planet)
