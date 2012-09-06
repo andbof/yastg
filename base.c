@@ -58,13 +58,18 @@ static void base_genesis(struct base *base, struct planet *planet)
 	struct base_type *type = &base_types[base->type];
 	base->docks = 1; /* FIXME */
 
-	base->name = strdup("GURKA!");	/* FIXME! */
+	/* FIXME: limit loop */
+	do {
+		if (base->name)
+			free(base->name);
+		base->name = names_generate(&univ->avail_base_names);
+	} while (htable_get(univ->basenames, base->name));
 }
 
 void base_populate_planet(struct planet* planet)
 {
 	struct base *b;
-	int num = 0; /* FIXME */
+	int num = 10; /* FIXME */
 
 	pthread_rwlock_wrlock(&univ->basenames->lock);
 

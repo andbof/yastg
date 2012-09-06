@@ -27,6 +27,7 @@
 #include "parseconfig.h"
 #include "civ.h"
 #include "id.h"
+#include "names.h"
 
 #define PORT "2049"
 #define BACKLOG 16
@@ -192,6 +193,12 @@ int main(int argc, char **argv)
 	/* Create universe */
 	printf("Creating universe\n");
 	univ = universe_create();
+	printf("Loading names ... ");
+	names_init(&univ->avail_base_names);
+	names_init(&univ->avail_player_names);
+	names_load(&univ->avail_base_names, "data/placeprefix", "data/placenames", NULL, "data/placesuffix");
+	names_load(&univ->avail_player_names, NULL, "data/firstnames", "data/surnames", NULL);
+	printf("done.\n");
 
 	universe_init(civs);
 
@@ -237,6 +244,9 @@ int main(int argc, char **argv)
 		civ_free(cv);
 	}
 	civ_free(civs);
+
+	names_free(&univ->avail_base_names);
+	names_free(&univ->avail_player_names);
 
 	id_destroy();
 	universe_free(univ);

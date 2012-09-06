@@ -5,6 +5,7 @@
 #include "civ.h"
 #include "sarray.h"
 #include "sector.h"
+#include "names.h"
 
 struct universe {
 	size_t id;			/* ID of the universe (or the game?) */
@@ -18,6 +19,8 @@ struct universe {
 	struct sarray *srad;		/* Sector IDs sorted by radial position from (0,0) */
 	struct sarray *sphi;		/* Sector IDs sorted by angle from (0,0) */
 	struct list_head list;
+	struct name_list avail_base_names;
+	struct name_list avail_player_names;
 };
 
 struct universe *univ;
