@@ -47,13 +47,26 @@ struct planet* loadplanet(struct configtree *ctree)
 void planet_free(struct planet *p)
 {
 	assert(p != NULL);
+	struct base *b;
+	struct planet *m;
+	struct list_head *lh;
+	ptrlist_for_each_entry(b, p->bases, lh)
+		base_free(b);
 	ptrlist_free(p->bases);
+	ptrlist_for_each_entry(b, p->stations, lh)
+		base_free(b);
 	ptrlist_free(p->stations);
+	ptrlist_for_each_entry(m, p->moons, lh)
+		planet_free(m);
 	ptrlist_free(p->moons);
-	if (p->name)
+	if (p->name) {
+		htable_rm(univ->planetnames, p->name);
 		free(p->name);
-	if (p->gname)
+	}
+	if (p->gname) {
+		htable_rm(univ->planetnames, p->gname);
 		free(p->gname);
+	}
 	free(p);
 }
 
