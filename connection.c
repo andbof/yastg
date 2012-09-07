@@ -109,7 +109,9 @@ void conn_cleanexit(struct conndata *data)
 void conn_send(struct conndata *data, char *format, ...)
 {
 	va_list ap;
-	size_t len, sb = 0;
+	size_t len;
+	size_t sb = 0;
+	int i;
 
 	va_start(ap, format);
 	vsnprintf(data->sbuf, data->sbufs, format, ap);
@@ -118,11 +120,12 @@ void conn_send(struct conndata *data, char *format, ...)
 	if (len == data->sbufs)
 		log_printfn("connection", "warning: sending maximum amount allowable (%d bytes) on connection %zx, this probably indicates overflow", data->sbufs, data->id);
 	do {
-		sb += send(data->peerfd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
-		if (sb < 1) {
+		i = send(data->peerfd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
+		if (i < 1) {
 			log_printfn("connection", "send error (connection id %zx), terminating connection", data->id);
 			conn_cleanexit(data);
 		}
+		sb += i;
 	} while (sb < len);
 
 }
