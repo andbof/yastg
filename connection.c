@@ -258,13 +258,13 @@ void* conn_main(void *dataptr)
 	struct conndata *data = dataptr;
 	/* temporary solution */
 	/* Create player */
-	data->pl = malloc(sizeof(struct player));
-	data->pl->name = strdup("Alfred");
-	data->pl->conn = data;
+	MALLOC_DIE(data->pl, sizeof(*data->pl));
+	player_init(data->pl);
 
 	log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
 
-	player_init(data->pl);
+	data->pl->conn = data;
+	player_go(data->pl, SECTOR, ptrlist_entry(univ->sectors, 0));
 
 	conn_loop(data);
 

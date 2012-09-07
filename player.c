@@ -17,8 +17,7 @@
 #include "sector.h"
 #include "star.h"
 #include "universe.h"
-
-static void player_go(struct player *player, enum postype postype, void *pos);
+#include "names.h"
 
 #define player_talk(PLAYER, ...)	\
 	conn_send(PLAYER->conn, __VA_ARGS__)
@@ -316,7 +315,7 @@ static int cmd_leave_planet(void *ptr, char *param)
 }
 static char cmd_leave_planet_help[] = "Leave planet orbit";
 
-static void player_go(struct player *player, enum postype postype, void *pos)
+void player_go(struct player *player, enum postype postype, void *pos)
 {
 	switch (player->postype) {
 	case SECTOR:
@@ -363,8 +362,8 @@ static void player_go(struct player *player, enum postype postype, void *pos)
 
 void player_init(struct player *player)
 {
-	/* FIXME: We should probably do a memset(0) here, but that will destroy
-	 * whatever info is put in here by conn_main(). */
+	memset(player, 0, sizeof(*player));
+	player->name = names_generate(&univ->avail_player_names);
 	INIT_LIST_HEAD(&player->list);
 	player->cli = cli_tree_create();
 	player->postype = NONE;
@@ -373,6 +372,4 @@ void player_init(struct player *player)
 	cli_add_cmd(player->cli, "go", cmd_hyper, player, cmd_hyper_help);
 	cli_add_cmd(player->cli, "quit", cmd_quit, player, cmd_quit_help);
 	cli_add_cmd(player->cli, "look", cmd_look, player, cmd_look_help);
-
-	player_go(player, SECTOR, ptrlist_entry(univ->sectors, 0));
 }

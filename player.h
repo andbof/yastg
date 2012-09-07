@@ -23,7 +23,6 @@ struct player {
 void player_init(struct player *player);
 void player_free();
 void player_talk(struct player *player, char *format, ...);
-
-static struct player *alfred;
+void player_go(struct player *player, enum postype postype, void *pos);
 
 #endif
