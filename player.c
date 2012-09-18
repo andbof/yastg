@@ -79,16 +79,24 @@ static void player_showsector(struct player *player, struct sector *sector)
 		player_talk(player, "Sector does not have any planets.\n");
 	}
 
-	player_talk(player, "This sector has hyperspace links to\n");
-	ptrlist_for_each_entry(t, sector->links, lh)
-		player_talk(player, "  %s\n", t->name);
+	if (!list_empty(&sector->links->list)) {
+		player_talk(player, "This sector has hyperspace links to\n");
+		ptrlist_for_each_entry(t, sector->links, lh)
+			player_talk(player, "  %s\n", t->name);
+	} else {
+		player_talk(player, "This sector does not have any hyperspace links.\n");
+	}
 
 	player_talk(player, "Sectors within 50 lys are:\n");
 	/* FIXME: getneighbours() is awful */
 	struct ptrlist *neigh = getneighbours(sector, 50);
-	ptrlist_for_each_entry(t, neigh, lh) {
-		if (t != sector)
-			player_talk(player, "  %s at %lu ly\n", t->name, sector_distance(sector, t));
+	if (!list_empty(&neigh->list)) {
+		ptrlist_for_each_entry(t, neigh, lh) {
+			if (t != sector)
+				player_talk(player, "  %s at %lu ly\n", t->name, sector_distance(sector, t));
+		}
+	} else {
+		player_talk(player, "No sectors within 50 lys.\n");
 	}
 	ptrlist_free(neigh);
 
@@ -139,15 +147,21 @@ static void player_showplanet(struct player *player, struct planet *planet)
 		planet_life_desc[planet->life]);
 
 	if (!list_empty(&planet->bases->list)) {
-		ptrlist_for_each_entry(base, planet->bases, lh)
+		player_talk(player, "Bases:\n");
+		ptrlist_for_each_entry(base, planet->bases, lh) {
+			player_talk(player, "  ");
 			player_describe_base(player, base);
+		}
 	} else {
 		player_talk(player, "No bases.\n");
 	}
 
 	if (!list_empty(&planet->stations->list)) {
-		ptrlist_for_each_entry(base, planet->stations, lh)
+		player_talk(player, "Orbital stations:\n");
+		ptrlist_for_each_entry(base, planet->stations, lh) {
+			player_talk(player, "  ");
 			player_describe_base(player, base);
+		}
 	} else {
 		player_talk(player, "No orbital stations.\n");
 	}
