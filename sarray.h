@@ -41,8 +41,4 @@ void sarray_print(struct sarray *a);
 
 void sarray_free(struct sarray *a);
 
-#ifdef TEST
-int sarray_test();
-#endif
-
 #endif

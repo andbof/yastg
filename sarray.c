@@ -6,7 +6,6 @@
 #include "common.h"
 #include "log.h"
 #include "sarray.h"
-#include "shuffle.h"
 #include "id.h"
 
 
@@ -57,8 +56,6 @@ void* sarray_getbyid(struct sarray *a, void *key)
 {
 	void *ptr;
 	if (!a->elements) {
-		/* Array has zero elements
-		   printf("GETTING ELEMENT IN NULL ARRAY @%p (a->elements is %zu)\n", a, a->elements); */
 		return NULL;
 	} else {
 		ptr = sarray_recgetbyid(a, key, 0, a->elements-1);
@@ -200,8 +197,10 @@ void* sarray_getbypos(struct sarray *a, unsigned long n)
 int sarray_add(struct sarray *a, void *e)
 {
 	void *ptr;
-	if (SIZE_MAX - a->elements < 2) /* We reserve an element at the end to be able to loop through the array using a unsigned long */
+	if (SIZE_MAX - a->elements < 2)
+		/* We reserve an element at the end to be able to loop through the array using a unsigned long */
 		die("sarray at %p is full", a);
+
 	if (a->elements == a->allocated) {
 		/* The last element of the array is used. This means we have to increase the allocated size
 		   for the array. */
@@ -212,6 +211,7 @@ int sarray_add(struct sarray *a, void *e)
 	} else if (a->elements > a->allocated) {
 		bug("sarray has more elements than memory allocated: elements = %zu, allocated = %zu", a->elements, a->allocated);
 	}
+
 	/* We now know there is room in the array for at least one more element.
 	   Find where this element fits in */
 	if ((a->maxkey == SARRAY_ENFORCE_UNIQUE) && ((ptr = sarray_getbyid(a, e))))
@@ -221,6 +221,7 @@ int sarray_add(struct sarray *a, void *e)
 
 	ptr += a->element_size;	/* ptr now points to the first element to be moved */
 	MEMMOVE_DIE(ptr+a->element_size, ptr, a->elements*a->element_size-(ptr-a->array));
+
 	/* We will now insert the element at the position specified by ptr, since the other
 	   data has been moved out of the way */
 	a->elements++;
@@ -278,117 +279,3 @@ void sarray_free(struct sarray *a) {
 	}
 	free(a->array);
 }
-
-#ifdef TEST
-#define SORTEDARRAY_N 128
-/*
- * This function tests the sorted array routines by generating a sorted array,
- * inserting elements into it in a random order making sure the array stays
- * uncorrupted. They are then deleted in another random order, checking for
- * each deletion that the array is uncorrupted.
- */
-int sarray_test()
-{
-	struct foo {
-		unsigned long id;
-		int gurka;
-	} *u[SORTEDARRAY_N];
-	void *ptr, *lptr;
-	int i, j, k, l;
-	/* *a will be our test array, allocate memory for it and all its elements. */
-	/* FIXME: Write and use initialization routines for sorted arrays. */
-	struct sarray *a;
-	MALLOC_DIE(a, sizeof(*a));
-	a->allocated=0;
-	a->elements=0;
-	a->element_size=sizeof(struct foo);
-	MALLOC_DIE(a->array, sizeof(struct foo)*SORTEDARRAY_N);
-	a->allocated=SORTEDARRAY_N;
-	memset(a->array, 0, sizeof(struct foo)*SORTEDARRAY_N);
-	a->maxkey = SARRAY_ENFORCE_UNIQUE;
-	a->sortfnc = &sort_id;
-	a->freefnc = NULL;
-	/* u[] is our array with test elements to add and remove */
-	for (i = 0; i < SORTEDARRAY_N; i++) {
-		MALLOC_DIE(u[i], sizeof(struct foo));
-		u[i]->id = i;
-	}
-
-	/* Randomize u[] to add elements in a random order */
-	shuffleptr((void**)u, SORTEDARRAY_N);
-
-	/* Add all elements in u[] to array a */
-	for (i = 0; i < SORTEDARRAY_N; i++) {
-		sarray_add(a, u[i]);
-		lptr = NULL;
-		/* For each insertion, make sure the array stays sorted */
-		for (j = 0; j < i; j++) {
-			if ((ptr = sarray_getbyid(a, &j))) {
-				if ((lptr == NULL) || (ptr == lptr+sizeof(struct foo)))
-					lptr = ptr;
-				else
-					bug("element %d found out of order at address %p after adding %d elements. lptr is %p\n", j, ptr, i, lptr);
-			}
-			/*      for (!(ptr = sarray_getbyid(a, *((unsigned long*)u[j])))) {
-				printf("element %d not found after adding %d elements.\n", j, i);
-				bug("sarray test failed");
-				}*/ /* FIXME: Add this type of test */
-		}
-		/* printf("insertion test %d passed\n", i); */
-	}
-
-	/* Randomize u[] again before deleting elements */
-	shuffleptr((void**)u, sizeof(struct foo));
-
-	/* Now we delete elements from a in the order they are found in u[].
-	   For each deletion, we run through the array to make sure it is uncorrupted
-	   and stays sorted. */
-	for (j = 0; j < SORTEDARRAY_N; j++) {
-		lptr = NULL;
-		for (i = 0; i < SORTEDARRAY_N; i++) {
-			if ((ptr = sarray_getbyid(a, &i))) {
-				if ((lptr == NULL) || (ptr == lptr+sizeof(struct foo))) {
-					/* Element was found in the correct position. Remember this element. */
-					lptr = ptr;
-				} else {
-					bug("element %d found out of order at address %p after removing %d elements. lptr is %p\n", i, ptr, j, lptr);
-				}
-			} else {
-				/* Element was not found. We need to check if this element was removed prior to this, otherwise this is an error.
-				 We do this by running through u[] up til j */
-				k = 0;
-				for (l = 0; l < j; l++) {
-					if (*((unsigned long*)u[l]) == i) {
-						k = 1;
-						break;
-					}
-				}
-				if (!k) {
-					/* The element was not found in u[0->j], this means the array
-					   has been corrupted. */
-					bug("element %d not found after removing %d elements\n", i, j);
-				}
-			}
-		}
-		/*  Now make sure the next element to be removed really is found in the array,
-		    then remove it. */
-		ptr = sarray_getbyid(a, ((unsigned long*)u[j]));
-		if (!ptr)
-			bug("element %d was about to be removed but it is already gone!\n", j);
-		sarray_rmbyid(a, ((unsigned long*)u[j]));
-	}
-
-	if (a->elements) {
-		/* This means that a->elements was not successfully updated, it should be zero by now. */
-		bug("%zu elements left in array after all were removed", a->elements);
-	}
-
-	/* Everything seems to check out. Clean up. */
-	for (i = 0; i < SORTEDARRAY_N; i++)
-		free(u[i]);
-	free(a->array);
-	free(a);
-
-	return 1;
-}
-#endif

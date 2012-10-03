@@ -11,13 +11,13 @@
 #include <sys/socket.h>
 #include <malloc.h>
 
+#include "config.h"
 #include "common.h"
 #include "log.h"
 #include "mtrandom.h"
 #include "cli.h"
 #include "sarray.h"
 #include "ptrlist.h"
-#include "test.h"
 #include "server.h"
 #include "sector.h"
 #include "base.h"
@@ -157,17 +157,13 @@ int main(int argc, char **argv)
 	/* Open log file */
 	log_init();
 	log_printfn("main", "YASTG initializing");
-	log_printfn("main", "v%s (commit %s), built %s %s", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
+	log_printfn("main", "This is %s, built %s %s", PACKAGE_VERSION, __DATE__, __TIME__);
 
 	/* Initialize */
 	server.running = 1;
 	srand(time(NULL));
 	mtrandom_init();
 	init_id();
-
-#ifdef TEST
-	run_tests();
-#endif
 
 	/* Parse command line options */
 	parseopts(argc, argv);
@@ -208,7 +204,7 @@ int main(int argc, char **argv)
 	if (pthread_create(&server.thread, NULL, server_main, &server.fd[0]) != 0)
 		die("%s", "Could not launch server thread");
 
-	mprintf("Welcome to YASTG v%s (commit %s), built %s %s.\n\n", QUOTE(__VER__), QUOTE(__COMMIT__), __DATE__, __TIME__);
+	mprintf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
 	mprintf("Universe has %lu sectors in total\n", ptrlist_len(univ->sectors));
 
 	while (server.running) {

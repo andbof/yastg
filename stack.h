@@ -16,9 +16,6 @@ struct stack* stack_init(size_t len, size_t esize);
 void stack_push(struct stack *s, void *ptr);
 void* stack_qpop(struct stack *s);
 void stack_pop(struct stack *s, void *data);
-
-#ifdef TEST
-void stack_test();
-#endif
+void stack_free(struct stack *s);
 
 #endif
