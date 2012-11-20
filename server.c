@@ -16,17 +16,15 @@
 #include "common.h"
 #include "log.h"
 #include "server.h"
-#include "sarray.h"
 #include "connection.h"
-#include "id.h"
 
 #define PORT "2049"
 #define BACKLOG 16	/* Size of pending connections queue */
 
-static struct sarray *std;
 static pthread_t srvthread;
 static fd_set fdset;
 static int sockfd, signfdw, signfdr, maxfd;
+static struct conndata connlist;
 
 static void server_cleanexit()
 {
@@ -36,22 +34,20 @@ static void server_cleanexit()
 		.type = MSG_TERM
 	};
 	struct conndata *cd;
+
 	log_printfn("server", "sending terminate to all player threads");
-	for (i = 0; i < std->elements; i++) {
-		cd = sarray_getbypos(std, i);
+	list_for_each_entry(cd, &connlist.list, list)
 		if (write(cd->threadfds[1], &msg, sizeof(msg)) < 1)
-			bug("thread %zx's signalling fd seems closed", cd->id);
-	}
+			bug("thread %x's signalling fd seems closed", cd->id);
+
 	log_printfn("server", "waiting for all player threads to terminate");
-	for (i = 0; i < std->elements; i++) {
-		cd = sarray_getbypos(std, i);
+	list_for_each_entry(cd, &connlist.list, list)
 		/* FIXME : This is a race condition if cd is free'd between the if statement and pthread_join */
 		if (cd != NULL)
 			pthread_join(cd->thread, NULL);
-	}
+
 	log_printfn("server", "server shutting down");
-	sarray_free(std);
-	free(std);
+
 	close(sockfd);
 	pthread_exit(0);
 }
@@ -70,10 +66,8 @@ static void server_signallthreads(struct signal *msg, char *msgdata)
 {
 	struct conndata *cd;
 	/* FIXME: This isn't thread safe, it assumes that std is not modified during the whole sending process */
-	for (int i = 0; i < std->elements; i++) {
-		cd = sarray_getbypos(std, i);
+	list_for_each_entry(cd, &connlist.list, list)
 		server_write_msg(cd->threadfds[1], msg, msgdata);
-	}
 }
 
 static void server_handlesignal(struct signal *msg, char *data)
@@ -87,14 +81,16 @@ static void server_handlesignal(struct signal *msg, char *data)
 		server_cleanexit();
 		break;
 	case MSG_RM:
-		st = *(size_t*)data;
-		log_printfn("server", "thread %zx is terminating, cleaning up", st);
-		cd = sarray_getbyid(std, &st);
-		if (cd != NULL) {
-			pthread_join(cd->thread, NULL);
-			sarray_freebyid(std, &st);
-		} else {
-			bug("unknown thread id %zx is terminating", st);
+		list_for_each_entry(cd, &connlist.list, list) {
+			if (cd->id == *(uint32_t*)data) {
+				log_printfn("server", "thread %x is terminating, cleaning up", cd->id);
+				pthread_join(cd->thread, NULL);
+				list_del(&cd->list);
+				conndata_free(cd);
+				free(cd);
+				cd = NULL;
+				break;
+			}
 		}
 		break;
 	case MSG_WALL:
@@ -197,6 +193,7 @@ static void server_receivemsg(int fd)
 	} else {
 		data = NULL;
 	}
+
 	server_handlesignal(&msg, data);
 }
 
@@ -207,8 +204,8 @@ void* server_main(void* p)
 	size_t st;
 	struct sockaddr_storage peer_addr;
 	socklen_t sin_size = sizeof(peer_addr);
-	std = sarray_init(sizeof(struct conndata), 0, SARRAY_ENFORCE_UNIQUE, &conndata_free, &sort_id);
 	struct conndata *cd;
+	INIT_LIST_HEAD(&connlist.list);
 
 	srvthread = pthread_self();
 	signfdr = *(int*)p;
@@ -236,10 +233,6 @@ void* server_main(void* p)
 				log_printfn("server", "failed creating connection data structure");
 				continue;
 			}
-			st = cd->id;
-			sarray_add(std, cd);
-			free(cd);
-			cd = sarray_getbyid(std, &st);
 			cd->peerfd = accept(sockfd, (struct sockaddr*)&peer_addr, &sin_size);
 			cd->serverfd = signfdw;
 			if (cd->peerfd == -1) {
@@ -257,10 +250,10 @@ void* server_main(void* p)
 				socklen_t len = sizeof(cd->sock);
 				getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
 				cd->peer = getpeer(cd->sock);
-				log_printfn("server", "new connection from %s, assigning id %zx", cd->peer, cd->id);
-				if ((i = pthread_create(&cd->thread, NULL, conn_main, cd))) {
+				log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
+				list_add_tail(&cd->list, &connlist.list);	/* FIXME: thread should be created, sleep, cd should be added to connlist, THEN thread started. Otherwise we have a race here before the thread structure is initialized if something traverses the list */
+				if ((i = pthread_create(&cd->thread, NULL, conn_main, cd)))
 					log_printfn("failed creating thread to handle connection from %s: %i", cd->peer, i);
-				}
 			}
 		}
 	}

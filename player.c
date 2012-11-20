@@ -347,7 +347,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 	case NONE:
 		break;
 	default:
-		bug("I don't know where player %zx is\n", player->conn->id);
+		bug("I don't know where player %s with connection %p is\n", player->name, player->conn);
 	}
 
 	player->postype = postype;
@@ -370,7 +370,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 	case NONE:
 		/* Fall through to default as NONE can only valid right after init */
 	default:
-		bug("I don't know where player %zx is\n", player->conn->id);
+		bug("I don't know where player %s with connection %p is\n", player->name, player->conn);
 	}
 }
 

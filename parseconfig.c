@@ -5,7 +5,6 @@
 #include "common.h"
 #include "log.h"
 #include "parseconfig.h"
-#include "id.h"
 
 /*
  * Duplicates a string but removes whitespace from the beginning and end of the string.

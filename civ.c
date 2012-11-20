@@ -11,7 +11,6 @@
 #include "sector.h"
 #include "sarray.h"
 #include "parseconfig.h"
-#include "id.h"
 #include "universe.h"
 #include "list.h"
 

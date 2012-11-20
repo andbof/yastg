@@ -13,14 +13,13 @@
 #include <signal.h>
 #include <pthread.h>
 #include <errno.h>
+#include <limits.h>
 
 #include "common.h"
 #include "log.h"
 #include "connection.h"
 #include "server.h"
-#include "sarray.h"
 #include "ptrlist.h"
-#include "id.h"
 #include "cli.h"
 #include "universe.h"
 #include "sector.h"
@@ -28,6 +27,7 @@
 #include "base.h"
 #include "planet.h"
 #include "player.h"
+#include "mtrandom.h"
 
 extern struct universe *univ;
 
@@ -38,24 +38,25 @@ struct conndata* conn_create()
 	data = malloc(sizeof(*data));
 	if (data != NULL) {
 		memset(data, 0, sizeof(*data));
-		data->id = gen_id();
+		data->id = mtrandom_uint(UINT32_MAX);
 		data->rbufs = CONN_BUFSIZE;
 		if ((data->rbuf = malloc(data->rbufs)) == NULL) {
-			log_printfn("connection", "failed allocating receive buffer for connection %zx", data->id);
+			log_printfn("connection", "failed allocating receive buffer for connection");
 			conndata_free(data);
 			return NULL;
 		}
 		data->sbufs = CONN_MAXBUFSIZE;
 		if ((data->sbuf = malloc(data->sbufs)) == NULL) {
-			log_printfn("connection", "failed allocating send buffer for connection %zx", data->id);
+			log_printfn("connection", "failed allocating send buffer for connection");
 			conndata_free(data);
 			return NULL;
 		}
 		if (pipe(data->threadfds) != 0) {
-			log_printfn("connection", "failed opening pipe to thread for connection %zx", data->id);
+			log_printfn("connection", "failed opening pipe to thread for connection");
 			conndata_free(data);
 			return NULL;
 		}
+		INIT_LIST_HEAD(&data->list);
 	}
 	return data;
 }
@@ -65,7 +66,7 @@ static void conn_signalserver(struct conndata *data, struct signal *msg, char *m
 	if (write(data->serverfd, msg, sizeof(*msg)) < 1)
 		bug("server signalling fd seems closed when sending signal: error %d (%s)", errno, strerror(errno));
 	if (msg->cnt > 0) {
-		if (write(data->serverfd, msgdata, msg->cnt) < 1)
+		if (write(data->serverfd, msgdata, msg->cnt) < msg->cnt)
 			bug("server signalling fd seems closed when seems closed when sending data: error %d (%s)", errno, strerror(errno));
 	}
 }
@@ -97,10 +98,10 @@ void conndata_free(void *ptr)
 
 void conn_cleanexit(struct conndata *data)
 {
-	log_printfn("connection", "connection %zx is terminating", data->id);  
+	log_printfn("connection", "connection %x is terminating", data->id);
 	struct signal msg = {
 		.cnt = sizeof(data->id),
-		.type = MSG_RM
+		.type = MSG_RM,
 	};
 	conn_signalserver(data, &msg, (char*)&data->id);
 	pthread_exit(0);
@@ -114,18 +115,16 @@ void conn_send(struct conndata *data, char *format, ...)
 	va_start(ap, format);
 	len = vsnprintf(data->sbuf, data->sbufs, format, ap);
 	if (len >= data->sbufs)
-		log_printfn("connection", "warning: send buffer overflow on connection %p (wanted to send %zu bytes but buffer size is %zu bytes), truncating data", len, data->sbufs, data);
+		log_printfn("connection", "warning: send buffer overflow on connection %x (wanted to send %zu bytes but buffer size is %zu bytes), truncating data", data->id, len, data->sbufs);
 	va_end(ap);
 
 	size_t sb = 0;
 	int i;
 	len = strlen(data->sbuf);
-	if (len == data->sbufs)
-		log_printfn("connection", "warning: sending maximum amount allowable (%d bytes) on connection %zx, this probably indicates overflow", data->sbufs, data->id);
 	do {
 		i = send(data->peerfd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
 		if (i < 1) {
-			log_printfn("connection", "send error (connection id %zx), terminating connection", data->id);
+			log_printfn("connection", "send error (connection %x), terminating connection", data->id);
 			conn_cleanexit(data);
 		}
 		sb += i;
@@ -194,6 +193,8 @@ static void conn_loop(struct conndata *data)
 	int rb, i;
 	char* ptr;
 
+	log_printfn("connection", "serving new connection %x", data->id);
+
 	while (1) {
 		rb = 0;
 
@@ -207,7 +208,7 @@ static void conn_loop(struct conndata *data)
 			FD_SET(data->threadfds[0], &data->rfds);
 			i = select(MAX(data->peerfd, data->threadfds[0]) + 1, &data->rfds, NULL, NULL, NULL);
 			if (i == -1) {
-				log_printfn("connection", "select() reported error, terminating connection %zx", data->id);
+				log_printfn("connection", "select() reported error, terminating connection %x", data->id);
 				conn_cleanexit(data);
 			}
 
@@ -223,12 +224,12 @@ static void conn_loop(struct conndata *data)
 				/* We have received something from the peer */
 				rb += recv(data->peerfd, data->rbuf + rb, data->rbufs - rb, 0);
 				if (rb < 1) {
-					log_printfn("connection", "peer %s disconnected, terminating connection %zx", data->peer, data->id);
+					log_printfn("connection", "peer %s disconnected, terminating connection %x", data->peer, data->id);
 					conn_cleanexit(data);
 				}
 				if ((rb == data->rbufs) && (data->rbuf[rb - 1] != '\n')) {
 					if (data->rbufs == CONN_MAXBUFSIZE) {
-						log_printfn("connection", "peer sent more data than allowed (%u), connection %zx terminated", CONN_MAXBUFSIZE, data->id);
+						log_printfn("connection", "peer sent more data than allowed (%u), connection %x terminated", CONN_MAXBUFSIZE, data->id);
 						conn_cleanexit(data);
 					}
 					data->rbufs <<= 1;
@@ -236,7 +237,7 @@ static void conn_loop(struct conndata *data)
 						data->rbufs = CONN_MAXBUFSIZE;
 					if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
 						data->rbufs >>= 1;
-						log_printfn("connection", "unable to increase receive buffer size, connection %zx terminated", data->id);
+						log_printfn("connection", "unable to increase receive buffer size, connection %x terminated", data->id);
 						conn_cleanexit(data);
 					} else {
 						data->rbuf = ptr;

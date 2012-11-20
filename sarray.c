@@ -6,7 +6,6 @@
 #include "common.h"
 #include "log.h"
 #include "sarray.h"
-#include "id.h"
 
 
 #define REALLOC_STEP 1	/* The base increase for each realloc */

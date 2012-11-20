@@ -11,7 +11,6 @@
 #include "ptrlist.h"
 #include "sarray.h"
 #include "parseconfig.h"
-#include "id.h"
 #include "star.h"
 
 struct sector* sector_init()

@@ -9,7 +9,6 @@
 #include "universe.h"
 #include "sarray.h"
 #include "ptrlist.h"
-#include "id.h"
 #include "planet.h"
 #include "base.h"
 #include "sector.h"
@@ -18,6 +17,8 @@
 #include "constellation.h"
 #include "htable.h"
 #include "mtrandom.h"
+#include "sarray.h"
+#include "id.h"
 
 /*
  * The universe consists of a number of sectors. These sectors are grouped in constellations,

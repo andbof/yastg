@@ -11,7 +11,7 @@
 #define CONN_MAXBUFSIZE 10240
 
 struct conndata {
-	size_t id;
+	uint32_t id;
 	pthread_t thread;
 	fd_set rfds;
 	int peerfd, serverfd, threadfds[2];
@@ -22,6 +22,7 @@ struct conndata {
 	char *rbuf;
 	char *sbuf;
 	int paused;
+	struct list_head list;
 };
 
 struct conndata* conn_create();
