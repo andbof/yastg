@@ -19,7 +19,7 @@ CFLAGS = -g -O0 -Wall -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 
 TESTS = test/sarraytest test/stacktest
 
 bin_PROGRAMS = yastg
-check_PROGRAMS = test/sarraytest test/stacktest
+check_PROGRAMS = test/sarraytest test/stacktest test/conntest
 
 # optflags: -O3 -funroll-loops
 yastg_SOURCES = base.c \
@@ -86,3 +86,5 @@ test_stacktest_SOURCES = test/stacktest.c \
 			 mt19937ar-cok.c \
 			 mtrandom.c \
 			 log.c
+
+test_conntest_SOURCES = test/conntest.c
