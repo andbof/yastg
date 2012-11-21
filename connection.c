@@ -110,12 +110,15 @@ void conn_send(struct conndata *data, char *format, ...)
 {
 	va_list ap;
 	size_t len;
-	size_t sb = 0;
-	int i;
 
 	va_start(ap, format);
-	vsnprintf(data->sbuf, data->sbufs, format, ap);
+	len = vsnprintf(data->sbuf, data->sbufs, format, ap);
+	if (len >= data->sbufs)
+		log_printfn("connection", "warning: send buffer overflow on connection %p (wanted to send %zu bytes but buffer size is %zu bytes), truncating data", len, data->sbufs, data);
 	va_end(ap);
+
+	size_t sb = 0;
+	int i;
 	len = strlen(data->sbuf);
 	if (len == data->sbufs)
 		log_printfn("connection", "warning: sending maximum amount allowable (%d bytes) on connection %zx, this probably indicates overflow", data->sbufs, data->id);
