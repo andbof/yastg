@@ -211,14 +211,56 @@ static void server_receivemsg(int fd)
 	server_handlesignal(&msg, data);
 }
 
-void* server_main(void* p)
+int server_accept_connection(int fd)
 {
-	int i, j;
-	unsigned long l;
+	int i;
+	struct conndata *cd;
 	size_t st;
 	struct sockaddr_storage peer_addr;
 	socklen_t sin_size = sizeof(peer_addr);
-	struct conndata *cd;
+
+	cd = conn_create();
+	if (cd == NULL) {
+		log_printfn("server", "failed creating connection data structure");
+		return -1;
+	}
+
+	cd->peerfd = accept(fd, (struct sockaddr*)&peer_addr, &sin_size);
+	cd->serverfd = signfdw;
+	if (cd->peerfd == -1) {
+		if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+			log_printfn("server", "a peer disconnected before connection could be properly accepted");
+			goto err_free;
+		} else {
+			log_printfn("server", "could not accept socket connection, error %s", strerror(errno));
+			goto err_free;
+		}
+	} else {
+		/*	inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[tnum].peer, sizeof(std[tnum].peer)); */
+		socklen_t len = sizeof(cd->sock);
+		getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
+		cd->peer = getpeer(cd->sock);
+		log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
+
+		pthread_rwlock_wrlock(&connlist_lock);
+		list_add_tail(&cd->list, &connlist.list);	/* FIXME: thread should be created, sleep, cd should be added to connlist, THEN thread started. Otherwise we have a race here before the thread structure is initialized if something traverses the list */
+		pthread_rwlock_unlock(&connlist_lock);
+
+		if ((i = pthread_create(&cd->thread, NULL, conn_main, cd)))
+			log_printfn("failed creating thread to handle connection from %s: %i", cd->peer, i);
+	}
+
+	return 0;
+
+err_free:
+	conndata_free(cd);
+	free(cd);
+	return -1;
+}
+
+void* server_main(void* p)
+{
+	int i;
 	INIT_LIST_HEAD(&connlist.list);
 	pthread_rwlock_init(&connlist_lock, NULL);
 
@@ -242,38 +284,7 @@ void* server_main(void* p)
 			/* We have received a message on the signalling file handle */
 			server_receivemsg(signfdr);
 		} else {
-			/* We have received a new connection, accept it */
-			cd = conn_create();
-			if (cd == NULL) {
-				log_printfn("server", "failed creating connection data structure");
-				continue;
-			}
-			cd->peerfd = accept(sockfd, (struct sockaddr*)&peer_addr, &sin_size);
-			cd->serverfd = signfdw;
-			if (cd->peerfd == -1) {
-				if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-					log_printfn("server", "a peer disconnected before connection could be properly accepted");
-					conndata_free(cd);
-					free(cd);
-				} else {
-					log_printfn("server", "could not accept socket connection, error %s", strerror(errno));
-					conndata_free(cd);
-					free(cd);
-				}
-			} else {
-				/*	inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[tnum].peer, sizeof(std[tnum].peer)); */
-				socklen_t len = sizeof(cd->sock);
-				getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
-				cd->peer = getpeer(cd->sock);
-				log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
-
-				pthread_rwlock_wrlock(&connlist_lock);
-				list_add_tail(&cd->list, &connlist.list);	/* FIXME: thread should be created, sleep, cd should be added to connlist, THEN thread started. Otherwise we have a race here before the thread structure is initialized if something traverses the list */
-				pthread_rwlock_unlock(&connlist_lock);
-
-				if ((i = pthread_create(&cd->thread, NULL, conn_main, cd)))
-					log_printfn("failed creating thread to handle connection from %s: %i", cd->peer, i);
-			}
+			server_accept_connection(sockfd);
 		}
 	}
 
