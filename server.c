@@ -24,7 +24,9 @@
 static pthread_t srvthread;
 static fd_set fdset;
 static int sockfd, signfdw, signfdr, maxfd;
+
 static struct conndata connlist;
+pthread_rwlock_t connlist_lock;
 
 static void server_cleanexit()
 {
@@ -34,6 +36,8 @@ static void server_cleanexit()
 		.type = MSG_TERM
 	};
 	struct conndata *cd;
+
+	pthread_rwlock_wrlock(&connlist_lock);
 
 	log_printfn("server", "sending terminate to all player threads");
 	list_for_each_entry(cd, &connlist.list, list)
@@ -45,6 +49,8 @@ static void server_cleanexit()
 		/* FIXME : This is a race condition if cd is free'd between the if statement and pthread_join */
 		if (cd != NULL)
 			pthread_join(cd->thread, NULL);
+
+	pthread_rwlock_destroy(&connlist_lock);
 
 	log_printfn("server", "server shutting down");
 
@@ -65,9 +71,10 @@ static void server_write_msg(int fd, struct signal *msg, char *msgdata)
 static void server_signallthreads(struct signal *msg, char *msgdata)
 {
 	struct conndata *cd;
-	/* FIXME: This isn't thread safe, it assumes that std is not modified during the whole sending process */
+	pthread_rwlock_rdlock(&connlist_lock);
 	list_for_each_entry(cd, &connlist.list, list)
 		server_write_msg(cd->threadfds[1], msg, msgdata);
+	pthread_rwlock_unlock(&connlist_lock);
 }
 
 static void server_handlesignal(struct signal *msg, char *data)
@@ -81,6 +88,7 @@ static void server_handlesignal(struct signal *msg, char *data)
 		server_cleanexit();
 		break;
 	case MSG_RM:
+		pthread_rwlock_wrlock(&connlist_lock);
 		list_for_each_entry(cd, &connlist.list, list) {
 			if (cd->id == *(uint32_t*)data) {
 				log_printfn("server", "thread %x is terminating, cleaning up", cd->id);
@@ -92,6 +100,7 @@ static void server_handlesignal(struct signal *msg, char *data)
 				break;
 			}
 		}
+		pthread_rwlock_unlock(&connlist_lock);
 		break;
 	case MSG_WALL:
 		log_printfn("server", "walling all users: %s", data);
@@ -206,6 +215,7 @@ void* server_main(void* p)
 	socklen_t sin_size = sizeof(peer_addr);
 	struct conndata *cd;
 	INIT_LIST_HEAD(&connlist.list);
+	pthread_rwlock_init(&connlist_lock, NULL);
 
 	srvthread = pthread_self();
 	signfdr = *(int*)p;
@@ -251,7 +261,11 @@ void* server_main(void* p)
 				getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
 				cd->peer = getpeer(cd->sock);
 				log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
+
+				pthread_rwlock_wrlock(&connlist_lock);
 				list_add_tail(&cd->list, &connlist.list);	/* FIXME: thread should be created, sleep, cd should be added to connlist, THEN thread started. Otherwise we have a race here before the thread structure is initialized if something traverses the list */
+				pthread_rwlock_unlock(&connlist_lock);
+
 				if ((i = pthread_create(&cd->thread, NULL, conn_main, cd)))
 					log_printfn("failed creating thread to handle connection from %s: %i", cd->peer, i);
 			}
