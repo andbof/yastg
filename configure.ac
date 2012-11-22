@@ -23,6 +23,10 @@ AC_CHECK_LIB([pthread],[pthread_create],
              [],
              [AC_MSG_ERROR([libpthread not found])])
 
+AC_CHECK_LIB([ev],[ev_now],
+	     [],
+	     [AC_MSG_ERROR([libev not found])])
+
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h malloc.h netdb.h netinet/in.h \
                   stddef.h stdint.h stdlib.h string.h sys/file.h sys/socket.h \
                   unistd.h],

@@ -12,6 +12,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <pthread.h>
+#include <ev.h>
 
 #include "common.h"
 #include "log.h"
@@ -21,9 +22,8 @@
 #define PORT "2049"
 #define BACKLOG 16	/* Size of pending connections queue */
 
-static pthread_t srvthread;
 static fd_set fdset;
-static int sockfd, signfdw, signfdr, maxfd;
+static int sockfd, signfdw, signfdr;
 
 static struct conndata connlist;
 pthread_rwlock_t connlist_lock;
@@ -196,14 +196,14 @@ static char* getpeer(struct sockaddr_storage sock)
 	return result;
 }
 
-static void server_receivemsg(int fd)
+static void server_receivemsg()
 {
 	struct signal msg;
 	char *data;
-	int r = read(fd, &msg, sizeof(msg));
+	int r = read(signfdr, &msg, sizeof(msg));
 	if (msg.cnt > 0) {
 		data = alloca(msg.cnt);
-		read(fd, data, msg.cnt);	/* FIXME: Validate the number of bytes */
+		read(signfdr, data, msg.cnt);	/* FIXME: Validate the number of bytes */
 	} else {
 		data = NULL;
 	}
@@ -211,7 +211,12 @@ static void server_receivemsg(int fd)
 	server_handlesignal(&msg, data);
 }
 
-int server_accept_connection(int fd)
+static void server_msg_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+	return server_receivemsg();
+}
+
+int server_accept_connection()
 {
 	int i;
 	struct conndata *cd;
@@ -225,7 +230,7 @@ int server_accept_connection(int fd)
 		return -1;
 	}
 
-	cd->peerfd = accept(fd, (struct sockaddr*)&peer_addr, &sin_size);
+	cd->peerfd = accept(sockfd, (struct sockaddr*)&peer_addr, &sin_size);
 	cd->serverfd = signfdw;
 	if (cd->peerfd == -1) {
 		if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
@@ -258,34 +263,42 @@ err_free:
 	return -1;
 }
 
+static void server_accept_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+	server_accept_connection();
+}
+
 void* server_main(void* p)
 {
 	int i;
+	ev_io msg_watcher, accept_watcher;
+	struct ev_loop *loop = EV_DEFAULT;
+
 	INIT_LIST_HEAD(&connlist.list);
 	pthread_rwlock_init(&connlist_lock, NULL);
 
-	srvthread = pthread_self();
 	signfdr = *(int*)p;
 	signfdw = *((int*)p + 1);
 	sockfd = server_setupsocket();
-	maxfd = MAX(sockfd, signfdr);
-	maxfd++;
+	printf("DEBUG: sockfd = %d\n", sockfd);
+
+	ev_io_init(&msg_watcher, server_msg_cb, signfdr, EV_READ);
+	ev_io_init(&accept_watcher, server_accept_cb, sockfd, EV_READ);
+
+	ev_io_start(loop, &msg_watcher);
+	ev_io_start(loop, &accept_watcher);
 
 	log_printfn("server", "server is up waiting for connections on port %s", PORT);
 
-	while (1) {
-		FD_ZERO(&fdset);
-		FD_SET(sockfd, &fdset);
-		FD_SET(signfdr, &fdset);
-		i = select(maxfd, &fdset, NULL, NULL, NULL);
-		if (i == -1)
-			die("select() failed in server, error %s", strerror(errno));
-		if (FD_ISSET(signfdr, &fdset)) {
-			/* We have received a message on the signalling file handle */
-			server_receivemsg(signfdr);
-		} else {
-			server_accept_connection(sockfd);
-		}
-	}
+	ev_run(loop, 0);
 
+	ev_io_stop(loop, &msg_watcher);
+	ev_io_stop(loop, &accept_watcher);
+
+	/*
+	 * We'd like to free all resources allocated by libev here, but
+	 * unfortunately there doesn't seem to be any good way of doing so.
+	 */
+
+	return NULL;
 }
