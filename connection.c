@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <limits.h>
+#include <ev.h>
 
 #include "common.h"
 #include "log.h"
@@ -148,7 +149,7 @@ static void conn_act(struct conndata *data)
 		conn_send(data, "Unknown command or syntax error: \"%s\"\n", data->rbuf);
 }
 
-static void conn_handlesignal(struct conndata *data, struct signal *msg, char *msgdata)
+static void conn_handle_signal(struct conndata *data, struct signal *msg, char *msgdata)
 {
 	switch (msg->type) {
 	case MSG_TERM:
@@ -174,10 +175,12 @@ static void conn_handlesignal(struct conndata *data, struct signal *msg, char *m
 	}
 }
 
-static void conn_receivemsg(struct conndata *data, int fd)
+static void conn_receive_signal(struct conndata *data)
 {
 	struct signal msg;
 	char *msgdata;
+	int fd = data->threadfds[0];
+
 	read(fd, &msg, sizeof(msg));
 	if (msg.cnt > 0) {
 		msgdata = alloca(msg.cnt);
@@ -185,76 +188,87 @@ static void conn_receivemsg(struct conndata *data, int fd)
 	} else {
 		msgdata = NULL;
 	}
-	conn_handlesignal(data, &msg, msgdata);
+	conn_handle_signal(data, &msg, msgdata);
 }
 
-static void conn_loop(struct conndata *data)
+static void conn_receive_data(struct conndata *data)
 {
-	int rb, i;
-	char* ptr;
+	void *ptr;
 
-	log_printfn("connection", "serving new connection %x", data->id);
+	data->rbufi += recv(data->peerfd, data->rbuf + data->rbufi, data->rbufs - data->rbufi, 0);
+	if (data->rbufi< 1) {
+		log_printfn("connection", "peer %s disconnected, terminating connection %x", data->peer, data->id);
+		conn_cleanexit(data);
+	}
+	if ((data->rbufi == data->rbufs) && (data->rbuf[data->rbufi - 1] != '\n')) {
+		if (data->rbufs == CONN_MAXBUFSIZE) {
+			log_printfn("connection", "peer sent more data than allowed (%u), connection %x terminated", CONN_MAXBUFSIZE, data->id);
+			conn_cleanexit(data);
+		}
+		data->rbufs <<= 1;
+		if (data->rbufs > CONN_MAXBUFSIZE)
+			data->rbufs = CONN_MAXBUFSIZE;
+		if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
+			data->rbufs >>= 1;
+			log_printfn("connection", "unable to increase receive buffer size, connection %x terminated", data->id);
+			conn_cleanexit(data);
+		} else {
+			data->rbuf = ptr;
+		}
+	}
 
-	while (1) {
-		rb = 0;
-
-		do {
-
-			conn_send(data, "yastg> ");
-
-			/* FIXME: Doesn't handle CTRL-D for some reason. */
-			FD_ZERO(&data->rfds);
-			FD_SET(data->peerfd, &data->rfds);
-			FD_SET(data->threadfds[0], &data->rfds);
-			i = select(MAX(data->peerfd, data->threadfds[0]) + 1, &data->rfds, NULL, NULL, NULL);
-			if (i == -1) {
-				log_printfn("connection", "select() reported error, terminating connection %x", data->id);
-				conn_cleanexit(data);
-			}
-
-			if (FD_ISSET(data->threadfds[0], &data->rfds)) {
-				/* We have received a message on the signalling fd */
-				do {
-					conn_receivemsg(data, data->threadfds[0]);
-				} while (data->paused);
-			}
-
-			if (FD_ISSET(data->peerfd, &data->rfds)) {
-
-				/* We have received something from the peer */
-				rb += recv(data->peerfd, data->rbuf + rb, data->rbufs - rb, 0);
-				if (rb < 1) {
-					log_printfn("connection", "peer %s disconnected, terminating connection %x", data->peer, data->id);
-					conn_cleanexit(data);
-				}
-				if ((rb == data->rbufs) && (data->rbuf[rb - 1] != '\n')) {
-					if (data->rbufs == CONN_MAXBUFSIZE) {
-						log_printfn("connection", "peer sent more data than allowed (%u), connection %x terminated", CONN_MAXBUFSIZE, data->id);
-						conn_cleanexit(data);
-					}
-					data->rbufs <<= 1;
-					if (data->rbufs > CONN_MAXBUFSIZE)
-						data->rbufs = CONN_MAXBUFSIZE;
-					if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
-						data->rbufs >>= 1;
-						log_printfn("connection", "unable to increase receive buffer size, connection %x terminated", data->id);
-						conn_cleanexit(data);
-					} else {
-						data->rbuf = ptr;
-					}
-				}
-
-			}
-		} while ((rb == 0) || (data->rbuf[rb - 1] != '\n'));
-
-		data->rbuf[rb - 1] = '\0';
+	if (data->rbufi != 0 && data->rbuf[data->rbufi - 1] == '\n') {
+		data->rbuf[data->rbufi - 1] = '\0';
 		chomp(data->rbuf);
 
 		mprintf("debug: received \"%s\" on socket\n", data->rbuf);
 
 		conn_act(data);
 
+		data->rbufi = 0;
+		conn_send(data, "yastg> ");
 	}
+
+}
+
+static void conn_peer_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+	struct conndata *data = w->data;
+	conn_receive_data(data);
+}
+
+static void conn_server_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+
+	struct conndata *data = w->data;
+	conn_receive_signal(data);
+}
+
+static void conn_loop(struct conndata *data)
+{
+	int i;
+	char* ptr;
+	ev_io peer_watcher, server_watcher;
+	struct ev_loop *loop = ev_loop_new(EVFLAG_AUTO);
+
+	peer_watcher.data = data;
+	server_watcher.data = data;
+
+	ev_io_init(&server_watcher, conn_server_cb, data->threadfds[0], EV_READ);
+	ev_io_init(&peer_watcher, conn_peer_cb, data->peerfd, EV_READ);
+
+	ev_io_start(loop, &server_watcher);
+	ev_io_start(loop, &peer_watcher);
+
+	log_printfn("connection", "serving new connection %x", data->id);
+	conn_send(data, "yastg> ");
+
+	ev_run(loop, 0);
+
+	ev_io_stop(loop, &peer_watcher);
+	ev_io_stop(loop, &server_watcher);
+
+	ev_loop_destroy(loop);
 }
 
 void* conn_main(void *dataptr)

@@ -19,6 +19,7 @@ struct conndata {
 	char *peer;
 	struct player *pl;
 	size_t rbufs, sbufs;
+	size_t rbufi;
 	char *rbuf;
 	char *sbuf;
 	int paused;

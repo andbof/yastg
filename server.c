@@ -280,7 +280,6 @@ void* server_main(void* p)
 	signfdr = *(int*)p;
 	signfdw = *((int*)p + 1);
 	sockfd = server_setupsocket();
-	printf("DEBUG: sockfd = %d\n", sockfd);
 
 	ev_io_init(&msg_watcher, server_msg_cb, signfdr, EV_READ);
 	ev_io_init(&accept_watcher, server_accept_cb, sockfd, EV_READ);
