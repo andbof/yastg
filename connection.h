@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <ev.h>
 #include "player.h"
 #include "server.h"
 
@@ -12,7 +13,8 @@
 
 struct conndata {
 	uint32_t id;
-	pthread_t thread;
+	ev_io watcher;
+	pthread_t worker;
 	fd_set rfds;
 	int peerfd, serverfd, threadfds[2];
 	struct sockaddr_storage sock;
@@ -24,6 +26,7 @@ struct conndata {
 	char *sbuf;
 	int paused;
 	struct list_head list;
+	int worker_working;
 };
 
 struct conndata* conn_create();
@@ -32,5 +35,7 @@ void* conn_main(void *dataptr);
 void conn_send(struct conndata *data, char *format, ...);
 void conn_cleanexit(struct conndata *data);
 void conn_error(struct conndata *data, char *format, ...);
+void* connection_worker(void *_data);
+void conn_fulfixinit(struct conndata *data);
 
 #endif

@@ -39,6 +39,7 @@ static void server_cleanexit()
 
 	pthread_rwlock_wrlock(&connlist_lock);
 
+#if 0
 	log_printfn("server", "sending terminate to all player threads");
 	list_for_each_entry(cd, &connlist.list, list)
 		if (write(cd->threadfds[1], &msg, sizeof(msg)) < 1)
@@ -47,8 +48,8 @@ static void server_cleanexit()
 	log_printfn("server", "waiting for all player threads to terminate");
 	list_for_each_entry(cd, &connlist.list, list)
 		pthread_join(cd->thread, NULL);
-
 	log_printfn("server", "server shutting down");
+#endif
 
 	struct conndata *tmp;
 	list_for_each_entry_safe(cd, tmp, &connlist.list, list) {
@@ -97,7 +98,6 @@ static void server_handlesignal(struct signal *msg, char *data)
 		list_for_each_entry(cd, &connlist.list, list) {
 			if (cd->id == *(uint32_t*)data) {
 				log_printfn("server", "thread %x is terminating, cleaning up", cd->id);
-				pthread_join(cd->thread, NULL);
 				list_del(&cd->list);
 				conndata_free(cd);
 				free(cd);
@@ -181,7 +181,7 @@ static int server_setupsocket()
 	return fd;
 }
 
-static char* getpeer(struct sockaddr_storage sock)
+static char* getpeer(const struct sockaddr_storage sock)
 {
 	struct sockaddr_in *s4 = (struct sockaddr_in*)&sock;
 	struct sockaddr_in6 *s6 = (struct sockaddr_in6*)&sock;
@@ -211,12 +211,70 @@ static void server_receivemsg()
 	server_handlesignal(&msg, data);
 }
 
-static void server_msg_cb(struct ev_loop *loop, ev_io *w, int revents)
+static void server_msg_cb(struct ev_loop * const loop, ev_io * const w, const int revents)
 {
 	return server_receivemsg();
 }
 
-int server_accept_connection()
+static void launch_conn_worker(struct conndata *data)
+{
+	if (pthread_create(&data->worker, NULL, connection_worker, data) != 0)
+		die("%s", "Could not launch worker thread");
+	pthread_join(data->worker, NULL);
+	memset(&data->worker, 0, sizeof(data->worker));
+}
+
+static void receive_peer_data(struct conndata *data)
+{
+	void *ptr;
+
+	if (data->worker) {
+		log_printfn("server", "peer sent data too quickly, dropped");
+		return;
+	}
+
+	data->rbufi += recv(data->peerfd, data->rbuf + data->rbufi, data->rbufs - data->rbufi, 0);
+	if (data->rbufi< 1) {
+		log_printfn("server", "peer %s disconnected, terminating connection %x", data->peer, data->id);
+		conn_cleanexit(data);
+	}
+	if ((data->rbufi == data->rbufs) && (data->rbuf[data->rbufi - 1] != '\n')) {
+		if (data->rbufs == CONN_MAXBUFSIZE) {
+			log_printfn("server", "peer sent more data than allowed (%u), connection %x terminated", CONN_MAXBUFSIZE, data->id);
+			conn_cleanexit(data);
+		}
+		data->rbufs <<= 1;
+		if (data->rbufs > CONN_MAXBUFSIZE)
+			data->rbufs = CONN_MAXBUFSIZE;
+		if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
+			data->rbufs >>= 1;
+			log_printfn("server", "unable to increase receive buffer size, connection %x terminated", data->id);
+			conn_cleanexit(data);
+		} else {
+			data->rbuf = ptr;
+		}
+	}
+
+	if (data->rbufi != 0 && data->rbuf[data->rbufi - 1] == '\n') {
+		data->rbuf[data->rbufi - 1] = '\0';
+		chomp(data->rbuf);
+
+		mprintf("debug: received \"%s\" on socket\n", data->rbuf);
+		
+		launch_conn_worker(data);
+
+		data->rbufi = 0;
+		conn_send(data, "yastg> ");
+	}
+}
+
+static void peer_cb(struct ev_loop * const loop, ev_io * const w, const int revents)
+{
+	struct conndata *data = (struct conndata*)w->data;
+	receive_peer_data(data);
+}
+
+int server_accept_connection(struct ev_loop * const loop)
 {
 	int i;
 	struct conndata *cd;
@@ -248,11 +306,15 @@ int server_accept_connection()
 		log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
 
 		pthread_rwlock_wrlock(&connlist_lock);
-		list_add_tail(&cd->list, &connlist.list);	/* FIXME: thread should be created, sleep, cd should be added to connlist, THEN thread started. Otherwise we have a race here before the thread structure is initialized if something traverses the list */
+		list_add_tail(&cd->list, &connlist.list);
+		ev_io_init(&cd->watcher, peer_cb, cd->peerfd, EV_READ);
+		cd->watcher.data = cd;
 		pthread_rwlock_unlock(&connlist_lock);
 
-		if ((i = pthread_create(&cd->thread, NULL, conn_main, cd)))
-			log_printfn("failed creating thread to handle connection from %s: %i", cd->peer, i);
+		ev_io_start(loop, &cd->watcher);
+
+		log_printfn("server", "serving new connection %x", cd->id);
+		conn_fulfixinit(cd);
 	}
 
 	return 0;
@@ -263,9 +325,9 @@ err_free:
 	return -1;
 }
 
-static void server_accept_cb(struct ev_loop *loop, ev_io *w, int revents)
+static void server_accept_cb(struct ev_loop * const loop, ev_io * const w, const int revents)
 {
-	server_accept_connection();
+	server_accept_connection(loop);
 }
 
 void* server_main(void* p)

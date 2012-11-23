@@ -142,11 +142,14 @@ void conn_error(struct conndata *data, char *format, ...)
 	conn_cleanexit(data);
 }
 
-static void conn_act(struct conndata *data)
+void* connection_worker(void *_data)
 {
-	struct sector *s;
+	struct conndata *data = _data;
+
 	if (data->rbuf[0] != '\0' && cli_run_cmd(data->pl->cli, data->rbuf) < 0)
 		conn_send(data, "Unknown command or syntax error: \"%s\"\n", data->rbuf);
+
+	return NULL;
 }
 
 static void conn_handle_signal(struct conndata *data, struct signal *msg, char *msgdata)
@@ -191,91 +194,8 @@ static void conn_receive_signal(struct conndata *data)
 	conn_handle_signal(data, &msg, msgdata);
 }
 
-static void conn_receive_data(struct conndata *data)
+void conn_fulfixinit(struct conndata *data)
 {
-	void *ptr;
-
-	data->rbufi += recv(data->peerfd, data->rbuf + data->rbufi, data->rbufs - data->rbufi, 0);
-	if (data->rbufi< 1) {
-		log_printfn("connection", "peer %s disconnected, terminating connection %x", data->peer, data->id);
-		conn_cleanexit(data);
-	}
-	if ((data->rbufi == data->rbufs) && (data->rbuf[data->rbufi - 1] != '\n')) {
-		if (data->rbufs == CONN_MAXBUFSIZE) {
-			log_printfn("connection", "peer sent more data than allowed (%u), connection %x terminated", CONN_MAXBUFSIZE, data->id);
-			conn_cleanexit(data);
-		}
-		data->rbufs <<= 1;
-		if (data->rbufs > CONN_MAXBUFSIZE)
-			data->rbufs = CONN_MAXBUFSIZE;
-		if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
-			data->rbufs >>= 1;
-			log_printfn("connection", "unable to increase receive buffer size, connection %x terminated", data->id);
-			conn_cleanexit(data);
-		} else {
-			data->rbuf = ptr;
-		}
-	}
-
-	if (data->rbufi != 0 && data->rbuf[data->rbufi - 1] == '\n') {
-		data->rbuf[data->rbufi - 1] = '\0';
-		chomp(data->rbuf);
-
-		mprintf("debug: received \"%s\" on socket\n", data->rbuf);
-
-		conn_act(data);
-
-		data->rbufi = 0;
-		conn_send(data, "yastg> ");
-	}
-
-}
-
-static void conn_peer_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-	struct conndata *data = w->data;
-	conn_receive_data(data);
-}
-
-static void conn_server_cb(struct ev_loop *loop, ev_io *w, int revents)
-{
-
-	struct conndata *data = w->data;
-	conn_receive_signal(data);
-}
-
-static void conn_loop(struct conndata *data)
-{
-	int i;
-	char* ptr;
-	ev_io peer_watcher, server_watcher;
-	struct ev_loop *loop = ev_loop_new(EVFLAG_AUTO);
-
-	peer_watcher.data = data;
-	server_watcher.data = data;
-
-	ev_io_init(&server_watcher, conn_server_cb, data->threadfds[0], EV_READ);
-	ev_io_init(&peer_watcher, conn_peer_cb, data->peerfd, EV_READ);
-
-	ev_io_start(loop, &server_watcher);
-	ev_io_start(loop, &peer_watcher);
-
-	log_printfn("connection", "serving new connection %x", data->id);
-	conn_send(data, "yastg> ");
-
-	ev_run(loop, 0);
-
-	ev_io_stop(loop, &peer_watcher);
-	ev_io_stop(loop, &server_watcher);
-
-	ev_loop_destroy(loop);
-}
-
-void* conn_main(void *dataptr)
-{
-	struct conndata *data = dataptr;
-	/* temporary solution */
-	/* Create player */
 	MALLOC_DIE(data->pl, sizeof(*data->pl));
 	player_init(data->pl);
 
@@ -284,9 +204,5 @@ void* conn_main(void *dataptr)
 	data->pl->conn = data;
 	player_go(data->pl, SECTOR, ptrlist_entry(&univ->sectors, 0));
 
-	conn_loop(data);
-
-	log_printfn("connection", "peer %s disconnected, cleaning up", data->peer);
-	conn_cleanexit(data);
-	return NULL;
+	conn_send(data, "yastg> ");
 }
