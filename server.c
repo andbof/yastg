@@ -19,21 +19,29 @@
 #include "server.h"
 #include "connection.h"
 
-#define PORT "2049"
-#define BACKLOG 16	/* Size of pending connections queue */
-
 static fd_set fdset;
 static int sockfd, signfdw, signfdr;
 
 static struct conndata connlist;
 pthread_rwlock_t connlist_lock;
 
+struct socket_list {
+	int fd;
+	struct list_head list;
+};
+
+struct watcher_list {
+	ev_io watcher;
+	int fd;
+	struct list_head list;
+};
+
 static void server_cleanexit()
 {
 	int i, *j;
 	struct signal msg = {
 		.cnt = 0,
-		.type = MSG_TERM
+		.type = MSG_TERM,
 	};
 	struct conndata *cd;
 
@@ -124,6 +132,7 @@ static void server_handlesignal(struct signal *msg, char *data)
 	}
 }
 
+#define SERVER_PORT "2049"
 static void server_preparesocket(struct addrinfo **servinfo)
 {
 	int i;
@@ -132,7 +141,7 @@ static void server_preparesocket(struct addrinfo **servinfo)
 	hints.ai_family = AF_UNSPEC;		/* Don't care if we bind to IPv4 or IPv6 sockets */
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
-	if ((i = getaddrinfo(NULL, PORT, &hints, servinfo)) != 0)
+	if ((i = getaddrinfo(NULL, SERVER_PORT, &hints, servinfo)) != 0)
 		die("getaddrinfo: %s\n", gai_strerror(i));
 }
 
@@ -146,39 +155,85 @@ static void* server_get_in_addr(struct sockaddr *sa)
 	}
 }
 
-static int server_setupsocket()
+#define SERVER_MAX_PENDING_CONNECTIONS 16
+static int setupsocket(struct addrinfo *p)
+{
+	int fd;
+
+	fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+	if (fd < 0)
+		return -1;
+
+	int yes = 1;
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
+		goto err;
+
+	/* This will fail on newer BSDs since they turned off IPv4->IPv6 mapping.
+	 * That's perfectly OK but we can't check the exit status. */
+	if (p->ai_family == AF_INET6)
+		setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(yes));
+
+	if (bind(fd, p->ai_addr, p->ai_addrlen) < 0)
+		goto err;
+
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+		goto err;
+
+	if (listen(fd, SERVER_MAX_PENDING_CONNECTIONS) < 0)
+		goto err;
+
+	return fd;
+
+err:
+	close(fd);
+	return -1;
+}
+
+static void close_and_free_sockets(struct list_head *sockets)
+{
+	struct socket_list *s, *_s;
+
+	list_for_each_entry(s, sockets, list)
+		if (s->fd > 0)
+			close(s->fd);
+
+	list_for_each_entry_safe(s, _s, sockets, list) {
+		list_del(&s->list);
+		free(s);
+	}
+}
+
+static int setup_server_sockets(struct list_head *sockets)
 {
 	struct addrinfo *servinfo, *p;
 	server_preparesocket(&servinfo);
 	int fd;
 	int yes = 1;
+	struct socket_list *s;
 
-	/* We loop trough each ai structure to get the first one that actually works */
+	/* We want to bind to all valid combinations returned by getaddrinfo()
+	 * to make sure we support IPv4 and IPv6 */
 	for (p = servinfo; p != NULL; p = p->ai_next) {
-		if ((fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-			mprintf("%s", "socket error");
+		fd = setupsocket(p);
+		if (fd < 0)
 			continue;
-		}
-		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == 1)
-			die("%s", "setsockopt error");
-		if (bind(fd, p->ai_addr, p->ai_addrlen) == -1) {
-			close(fd);
-			mprintf("%s", "bind error");
-			continue;
-		}
-		break;
-	}
-	if (p == NULL)
-		die("%s", "server failed to bind");
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-		die("failed setting server socket to non-blocking, error %s", strerror(errno));
-	if (listen(fd, BACKLOG) == -1)
-		die("%s", "listen error");
 
-	/* The servinfo structure was only used to get an ai struct, so we can free it now */
+		s = malloc(sizeof(*s));
+		if (!s)
+			goto err;
+
+		s->fd = fd;
+		list_add(&s->list, sockets);
+	}
+
 	freeaddrinfo(servinfo);
 
-	return fd;
+	return 0;
+
+err:
+	close_and_free_sockets(sockets);
+
+	return -1;
 }
 
 static char* getpeer(const struct sockaddr_storage sock)
@@ -274,7 +329,7 @@ static void peer_cb(struct ev_loop * const loop, ev_io * const w, const int reve
 	receive_peer_data(data);
 }
 
-int server_accept_connection(struct ev_loop * const loop)
+int server_accept_connection(struct ev_loop * const loop, int fd)
 {
 	int i;
 	struct conndata *cd;
@@ -288,7 +343,7 @@ int server_accept_connection(struct ev_loop * const loop)
 		return -1;
 	}
 
-	cd->peerfd = accept(sockfd, (struct sockaddr*)&peer_addr, &sin_size);
+	cd->peerfd = accept(fd, (struct sockaddr*)&peer_addr, &sin_size);
 	cd->serverfd = signfdw;
 	if (cd->peerfd == -1) {
 		if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
@@ -327,7 +382,47 @@ err_free:
 
 static void server_accept_cb(struct ev_loop * const loop, ev_io * const w, const int revents)
 {
-	server_accept_connection(loop);
+	struct socket_list *s = w->data;
+	server_accept_connection(loop, s->fd);
+}
+
+static void stop_and_free_server_watchers(struct list_head *watchers, struct ev_loop *loop)
+{
+	struct watcher_list *w, *_w;
+
+	list_for_each_entry(w, watchers, list)
+		ev_io_stop(loop, &w->watcher);
+
+	list_for_each_entry_safe(w, _w, watchers, list) {
+		list_del(&w->list);
+		free(w);
+	}
+}
+
+static int start_server_watchers(struct list_head *watchers, struct ev_loop *loop, struct list_head *sockets)
+{
+	struct watcher_list *w;
+	struct socket_list *s;
+
+	list_for_each_entry(s, sockets, list) {
+		w = malloc(sizeof(*w));
+		if (!w)
+			goto err;
+
+		ev_io_init(&w->watcher, server_accept_cb, s->fd, EV_READ);
+		w->watcher.data = s;
+		list_add(&w->list, watchers);
+	}
+
+	list_for_each_entry(w, watchers, list)
+		ev_io_start(loop, &w->watcher);
+
+	return 0;
+
+err:
+	stop_and_free_server_watchers(watchers, loop);
+
+	return -1;
 }
 
 void* server_main(void* p)
@@ -335,26 +430,34 @@ void* server_main(void* p)
 	int i;
 	ev_io msg_watcher, accept_watcher;
 	struct ev_loop *loop = EV_DEFAULT;
+	LIST_HEAD(sockets);
+	LIST_HEAD(watchers);
 
 	INIT_LIST_HEAD(&connlist.list);
 	pthread_rwlock_init(&connlist_lock, NULL);
 
 	signfdr = *(int*)p;
 	signfdw = *((int*)p + 1);
-	sockfd = server_setupsocket();
+
+	setup_server_sockets(&sockets);
+	if (list_empty(&sockets))
+		die("%s", "server failed to bind");
+
+	start_server_watchers(&watchers, loop, &sockets);
+	if (list_empty(&watchers))
+		die("%s", "server failed to create watchers");
 
 	ev_io_init(&msg_watcher, server_msg_cb, signfdr, EV_READ);
-	ev_io_init(&accept_watcher, server_accept_cb, sockfd, EV_READ);
-
 	ev_io_start(loop, &msg_watcher);
-	ev_io_start(loop, &accept_watcher);
 
-	log_printfn("server", "server is up waiting for connections on port %s", PORT);
+	log_printfn("server", "server is up waiting for connections on port %s", SERVER_PORT);
 
 	ev_run(loop, 0);
 
 	ev_io_stop(loop, &msg_watcher);
-	ev_io_stop(loop, &accept_watcher);
+
+	stop_and_free_server_watchers(&watchers, loop);
+	close_and_free_sockets(&sockets);
 
 	/*
 	 * We'd like to free all resources allocated by libev here, but
