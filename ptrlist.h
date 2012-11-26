@@ -27,6 +27,15 @@ static inline unsigned long ptrlist_len(const struct ptrlist * const l)
 	return l->len;
 }
 
+static inline int ptrlist_empty(const struct ptrlist * const l)
+{
+	if (l->len)
+		return 0;
+	else
+		return 1;
+}
+	
+
 static inline void* ptrlist_random(const struct ptrlist * const l)
 {
 	return ptrlist_entry(l, mtrandom_ulong(ptrlist_len(l)));

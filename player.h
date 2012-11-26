@@ -17,7 +17,7 @@ struct player {
 	void *pos;
 	struct list_head list;
 	struct cli_tree *cli;
-	struct conndata *conn;
+	struct connection *conn;
 };
 
 void player_init(struct player *player);

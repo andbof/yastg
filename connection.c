@@ -32,9 +32,9 @@
 
 extern struct universe *univ;
 
-struct conndata* conn_create()
+struct connection* conn_create()
 {
-	struct conndata *data;
+	struct connection *data;
 	int r = 1;
 	data = malloc(sizeof(*data));
 	if (data != NULL) {
@@ -43,18 +43,13 @@ struct conndata* conn_create()
 		data->rbufs = CONN_BUFSIZE;
 		if ((data->rbuf = malloc(data->rbufs)) == NULL) {
 			log_printfn("connection", "failed allocating receive buffer for connection");
-			conndata_free(data);
+			connection_free(data);
 			return NULL;
 		}
 		data->sbufs = CONN_MAXBUFSIZE;
 		if ((data->sbuf = malloc(data->sbufs)) == NULL) {
 			log_printfn("connection", "failed allocating send buffer for connection");
-			conndata_free(data);
-			return NULL;
-		}
-		if (pipe(data->threadfds) != 0) {
-			log_printfn("connection", "failed opening pipe to thread for connection");
-			conndata_free(data);
+			connection_free(data);
 			return NULL;
 		}
 		INIT_LIST_HEAD(&data->list);
@@ -62,7 +57,7 @@ struct conndata* conn_create()
 	return data;
 }
 
-static void conn_signalserver(struct conndata *data, struct signal *msg, char *msgdata)
+static void conn_signalserver(struct connection *data, struct signal *msg, char *msgdata)
 {
 	if (write(data->serverfd, msg, sizeof(*msg)) < 1)
 		bug("server signalling fd seems closed when sending signal: error %d (%s)", errno, strerror(errno));
@@ -74,18 +69,14 @@ static void conn_signalserver(struct conndata *data, struct signal *msg, char *m
 
 /*
  * This function needs to be very safe as it can be called on a
- * half-initialized conndata structure if something went wrong.
+ * half-initialized connection structure if something went wrong.
  */
-void conndata_free(void *ptr)
+void connection_free(void *ptr)
 {
-	struct conndata *data = ptr;
+	struct connection *data = ptr;
 	if (data != NULL) {
 		if (data->peerfd)
 			close(data->peerfd);
-		if (data->threadfds[0])
-			close(data->threadfds[0]);
-		if (data->threadfds[1])
-			close(data->threadfds[1]);
 		if (data->peer)
 			free(data->peer);
 		if (data->rbuf)
@@ -97,7 +88,7 @@ void conndata_free(void *ptr)
 	}
 }
 
-void conn_cleanexit(struct conndata *data)
+void conn_cleanexit(struct connection *data)
 {
 	log_printfn("connection", "connection %x is terminating", data->id);
 	struct signal msg = {
@@ -105,10 +96,9 @@ void conn_cleanexit(struct conndata *data)
 		.type = MSG_RM,
 	};
 	conn_signalserver(data, &msg, (char*)&data->id);
-	pthread_exit(0);
 }
 
-void conn_send(struct conndata *data, char *format, ...)
+void conn_send(struct connection *data, char *format, ...)
 {
 	va_list ap;
 	size_t len;
@@ -133,7 +123,7 @@ void conn_send(struct conndata *data, char *format, ...)
 
 }
 
-void conn_error(struct conndata *data, char *format, ...)
+void conn_error(struct connection *data, char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
@@ -142,59 +132,34 @@ void conn_error(struct conndata *data, char *format, ...)
 	conn_cleanexit(data);
 }
 
-void* connection_worker(void *_data)
+#define PROMPT "yastg> "
+void* connection_worker(void *_w)
 {
-	struct conndata *data = _data;
+	struct conn_worker_list *w = _w;
+	struct conn_data *data = w->conn_data;
+	struct connection *conn;
 
-	if (data->rbuf[0] != '\0' && cli_run_cmd(data->pl->cli, data->rbuf) < 0)
-		conn_send(data, "Unknown command or syntax error: \"%s\"\n", data->rbuf);
+	do {
+		pthread_mutex_lock(&data->workers_lock);
+
+		while (ptrlist_empty(&data->work_items) && !w->terminate)
+			pthread_cond_wait(&data->workers_cond, &data->workers_lock);
+		conn = ptrlist_pull(&data->work_items);
+
+		pthread_mutex_unlock(&data->workers_lock);
+
+		if (w->terminate)
+			break;
+
+		if (conn->rbuf[0] != '\0' && cli_run_cmd(conn->pl->cli, conn->rbuf) < 0)
+			conn_send(conn, "Unknown command or syntax error: \"%s\"\n", conn->rbuf);
+		conn_send(conn, PROMPT);
+	} while(1);
 
 	return NULL;
 }
 
-static void conn_handle_signal(struct conndata *data, struct signal *msg, char *msgdata)
-{
-	switch (msg->type) {
-	case MSG_TERM:
-		conn_send(data, "\nServer is shutting down, you are being disconnected.\n");
-		conn_cleanexit(data);
-		break;
-	case MSG_PAUSE:
-		conn_send(data, "\nYou have been paused by God. This might mean the whole universe is currently on hold\n"
-				"or just you. Anything you enter at the prompt will queue up until you are resumed.\n");
-		data->paused = 1;
-		break;
-	case MSG_CONT:
-		conn_send(data, "\nYou have been resumed, feel free to play away!\n");
-		data->paused = 0;
-		break;
-	case MSG_WALL:
-		conn_send(data, "\nMessage to all connected users:\n"
-				"%s"
-				"\nEnd of message.\n", msgdata);
-		break;
-	default:
-		log_printfn("connection", "received unknown signal: %d", msg->type);
-	}
-}
-
-static void conn_receive_signal(struct conndata *data)
-{
-	struct signal msg;
-	char *msgdata;
-	int fd = data->threadfds[0];
-
-	read(fd, &msg, sizeof(msg));
-	if (msg.cnt > 0) {
-		msgdata = alloca(msg.cnt);
-		read(fd, msgdata, msg.cnt);
-	} else {
-		msgdata = NULL;
-	}
-	conn_handle_signal(data, &msg, msgdata);
-}
-
-void conn_fulfixinit(struct conndata *data)
+void conn_fulfixinit(struct connection *data)
 {
 	MALLOC_DIE(data->pl, sizeof(*data->pl));
 	player_init(data->pl);
@@ -204,5 +169,104 @@ void conn_fulfixinit(struct conndata *data)
 	data->pl->conn = data;
 	player_go(data->pl, SECTOR, ptrlist_entry(&univ->sectors, 0));
 
-	conn_send(data, "yastg> ");
+	conn_send(data, PROMPT);
+}
+
+void conn_do_work(struct conn_data *data, struct connection *conn)
+{
+	pthread_mutex_lock(&data->workers_lock);
+	ptrlist_push(&data->work_items, conn);
+	pthread_cond_signal(&data->workers_cond);
+	pthread_mutex_unlock(&data->workers_lock);
+}
+
+static int start_new_worker(struct conn_data *data)
+{
+	int r;
+	struct conn_worker_list *w;
+	w = malloc(sizeof(*w));
+	if (!w)
+		return -1;
+	memset(w, 0, sizeof(*w));
+	w->conn_data = data;
+
+	r = pthread_create(&w->thread, NULL, connection_worker, w);
+	if (r) {
+		free(w);
+		return -1;
+	}
+
+	list_add(&w->list, &data->workers);
+
+	return 0;
+}
+
+#define NUM_WORKERS 4
+static int initialize_workers(struct conn_data *data)
+{
+	INIT_LIST_HEAD(&data->workers);
+
+	for (int i = 0; i < NUM_WORKERS; i++) {
+		if (start_new_worker(data))
+			goto err;
+	}
+
+	return 0;
+
+	struct conn_worker_list *w;
+err:
+	list_for_each_entry(w, &data->workers, list)
+		free(w);
+
+	return -1;
+}       
+
+int conn_init(struct conn_data *data)
+{
+	memset(data, 0, sizeof(*data));
+	if (pthread_mutex_init(&data->workers_lock, NULL))
+		return -1;
+	if (pthread_cond_init(&data->workers_cond, NULL))
+		goto err_mutex;
+	if (initialize_workers(data))
+		goto err_cond;
+	if (ptrlist_init(&data->work_items))
+		goto err_workers;
+
+	return 0;
+
+err_workers:
+	ptrlist_free(&data->work_items);
+err_cond:
+	pthread_cond_destroy(&data->workers_cond);
+err_mutex:
+	pthread_mutex_destroy(&data->workers_lock);
+
+	return -1;
+}
+
+void conn_shutdown(struct conn_data *data)
+{
+	struct conn_worker_list *w;
+
+	pthread_mutex_lock(&data->workers_lock);
+
+	list_for_each_entry(w, &data->workers, list)
+		w->terminate = 1;
+	pthread_cond_broadcast(&data->workers_cond);
+
+	pthread_mutex_unlock(&data->workers_lock);
+
+	list_for_each_entry(w, &data->workers, list)
+		pthread_join(w->thread, NULL);
+}
+
+void conn_destroy(struct conn_data *data)
+{
+	pthread_cond_destroy(&data->workers_cond);
+	pthread_mutex_destroy(&data->workers_lock);
+
+	struct conn_worker_list *w, *p;
+	list_for_each_entry_safe(w, p, &data->workers, list)
+		free(w);
 }

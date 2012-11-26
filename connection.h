@@ -7,16 +7,16 @@
 #include <ev.h>
 #include "player.h"
 #include "server.h"
+#include "ptrlist.h"
 
 #define CONN_BUFSIZE 1500
 #define CONN_MAXBUFSIZE 10240
 
-struct conndata {
+struct connection {
 	uint32_t id;
 	ev_io watcher;
-	pthread_t worker;
 	fd_set rfds;
-	int peerfd, serverfd, threadfds[2];
+	int peerfd, serverfd;
 	struct sockaddr_storage sock;
 	char *peer;
 	struct player *pl;
@@ -25,17 +25,36 @@ struct conndata {
 	char *rbuf;
 	char *sbuf;
 	int paused;
-	struct list_head list;
-	int worker_working;
+	struct list_head list, work;
 };
 
-struct conndata* conn_create();
-void conndata_free(void *ptr);
+struct conn_data {
+	struct list_head workers;
+	pthread_mutex_t workers_lock;
+	pthread_cond_t workers_cond;
+	struct ptrlist work_items;
+};
+
+struct conn_worker_list {
+	pthread_t thread;
+	volatile int terminate;
+	struct conn_data *conn_data;
+	struct list_head list;
+};
+
+struct connection* conn_create();
+void connection_free(void *ptr);
 void* conn_main(void *dataptr);
-void conn_send(struct conndata *data, char *format, ...);
-void conn_cleanexit(struct conndata *data);
-void conn_error(struct conndata *data, char *format, ...);
+void conn_send(struct connection *data, char *format, ...);
+void conn_cleanexit(struct connection *data);
+void conn_error(struct connection *data, char *format, ...);
 void* connection_worker(void *_data);
-void conn_fulfixinit(struct conndata *data);
+void conn_fulfixinit(struct connection *data);
+
+void conn_do_work(struct conn_data *data, struct connection *conn);
+
+int conn_init(struct conn_data *data);
+void conn_shutdown(struct conn_data *data);
+void conn_destroy(struct conn_data *data);
 
 #endif
