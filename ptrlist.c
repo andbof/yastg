@@ -8,15 +8,14 @@
 #include "ptrlist.h"
 #include "sector.h"
 
-struct ptrlist* ptrlist_init()
+int ptrlist_init(struct ptrlist *l)
 {
-	struct ptrlist *l;
-	MALLOC_DIE(l, sizeof(*l));
+	memset(l, 0, sizeof(*l));
+
 	INIT_LIST_HEAD(&l->list);
 	pthread_rwlock_init(&l->lock, NULL);
-	l->len = 0;
-	l->data = NULL;
-	return l;
+
+	return 0;
 }
 
 void ptrlist_free(struct ptrlist *l)
@@ -31,13 +30,18 @@ void ptrlist_free(struct ptrlist *l)
 		free(e);
 	}
 	pthread_rwlock_destroy(&l->lock);
-	free(l);
 }
 
 int ptrlist_push(struct ptrlist *l, void *e)
 {
+	struct ptrlist *nl;
 	assert(l != NULL);
-	struct ptrlist *nl = ptrlist_init();
+
+	nl = malloc(sizeof(*nl));
+	if (!nl)
+		return -1;
+	ptrlist_init(nl);
+
 	nl->data = e;
 	list_add_tail(&nl->list, &l->list);
 	l->len++;
@@ -46,16 +50,22 @@ int ptrlist_push(struct ptrlist *l, void *e)
 
 void* ptrlist_pull(struct ptrlist * const l)
 {
+	struct ptrlist *e;
+	void *data;
+
 	assert(l != NULL);
-	assert(!list_empty(&l->list));
-	struct list_head *head = l->list.next;
+
+	if (list_empty(&l->list))
+		return NULL;
+
+	e = list_entry(l->list.next, struct ptrlist, list);
+	list_del_init(&e->list);
 	l->len--;
-	struct ptrlist *e = list_entry(head, struct ptrlist, list);
-	list_del_init(head);
-	void *d = e->data;
-	ptrlist_free(e);
-	return d;
-	assert(l != NULL);
+	data = e->data;
+
+	free(e);
+
+	return data;
 }
 
 struct ptrlist* ptrlist_get(const struct ptrlist * const l, const unsigned long n)
@@ -78,10 +88,14 @@ void* ptrlist_entry(const struct ptrlist * const l, const unsigned long n)
 
 void ptrlist_rm(struct ptrlist *l, const unsigned long n)
 {
+	struct ptrlist *e;
+
 	assert(l != NULL);
 	assert(!list_empty(&l->list));
+
+	e = ptrlist_get(l, n);
+	list_del(&e->list);
+	free(e);
+
 	l->len--;
-	struct ptrlist *m = ptrlist_get(l, n);
-	list_del_init(&m->list);
-	ptrlist_free(m);
 }

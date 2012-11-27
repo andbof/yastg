@@ -15,8 +15,9 @@ struct base* loadbase(struct configtree *ctree)
 	struct base *b;
 	MALLOC_DIE(b, sizeof(*b));
 	memset(b, 0, sizeof(*b));
-	b->inventory = ptrlist_init();
-	b->players = ptrlist_init();
+	ptrlist_init(&b->inventory);
+	ptrlist_init(&b->players);
+
 	b->docks = 0;
 	while (ctree) {
 		if (strcmp(ctree->key, "NAME") == 0)
@@ -35,8 +36,8 @@ void base_free(struct base *b)
 {
 	htable_rm(univ->basenames, b->name);
 	free(b->name);
-	if (b->inventory) free(b->inventory);
-	if (b->players) free(b->players);
+	ptrlist_free(&b->inventory);
+	ptrlist_free(&b->players);
 	free(b);
 }
 
@@ -45,8 +46,8 @@ static struct base* base_create()
 	struct base *base;
 	MALLOC_DIE(base, sizeof(*base));
 	memset(base, 0, sizeof(*base));
-	base->inventory = ptrlist_init();
-	base->players = ptrlist_init();
+	ptrlist_init(&base->inventory);
+	ptrlist_init(&base->players);
 	return base;
 }
 
@@ -76,7 +77,7 @@ void base_populate_planet(struct planet* planet)
 	for (int i = 0; i < num; i++) {
 		b = base_create();
 		base_genesis(b, planet);
-		ptrlist_push(planet->bases, b);
+		ptrlist_push(&planet->bases, b);
 		htable_add(univ->basenames, b->name, b);
 	}
 

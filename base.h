@@ -10,8 +10,8 @@ struct base {
 	int docks;
 	struct planet *planet;
 	struct sector *sector;
-	struct ptrlist *inventory;
-	struct ptrlist *players;
+	struct ptrlist inventory;
+	struct ptrlist players;
 };
 
 struct base* loadbase(struct configtree *ctree);

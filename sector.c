@@ -19,10 +19,12 @@ struct sector* sector_init()
 	MALLOC_DIE(s, sizeof(*s));
 	memset(s, 0, sizeof(*s));
 	s->phi = 0.0;
-	s->stars = ptrlist_init();
-	s->planets = ptrlist_init();
-	s->bases = ptrlist_init();
-	s->links = ptrlist_init();
+
+	ptrlist_init(&s->stars);
+	ptrlist_init(&s->planets);
+	ptrlist_init(&s->bases);
+	ptrlist_init(&s->links);
+
 	INIT_LIST_HEAD(&s->list);
 	return s;
 }
@@ -41,19 +43,19 @@ void sector_free(void *ptr) {
 	if (s->gname)
 		free(s->gname);
 
-	ptrlist_for_each_entry(sol, s->stars, lh)
+	ptrlist_for_each_entry(sol, &s->stars, lh)
 		star_free(sol);
-	ptrlist_free(s->stars);
+	ptrlist_free(&s->stars);
 
-	ptrlist_for_each_entry(planet, s->planets, lh)
+	ptrlist_for_each_entry(planet, &s->planets, lh)
 		planet_free(planet);
-	ptrlist_free(s->planets);
+	ptrlist_free(&s->planets);
 
-	ptrlist_for_each_entry(base, s->bases, lh)
+	ptrlist_for_each_entry(base, &s->bases, lh)
 		base_free(base);
-	ptrlist_free(s->bases);
+	ptrlist_free(&s->bases);
 
-	ptrlist_free(s->links);
+	ptrlist_free(&s->links);
 	free(s);
 }
 
@@ -71,13 +73,13 @@ struct sector* sector_load(struct configtree *ctree)
 			s->name = NULL;
 		} else if (strcmp(ctree->key, "PLANET") == 0) {
 			p = loadplanet(ctree->sub);
-			ptrlist_push(s->planets, p);
+			ptrlist_push(&s->planets, p);
 		} else if (strcmp(ctree->key, "BASE") == 0) {
 			b = loadbase(ctree->sub);
-			ptrlist_push(s->bases, b);
+			ptrlist_push(&s->bases, b);
 		} else if (strcmp(ctree->key, "STAR") == 0) {
 			sol = loadstar(ctree->sub);
-			ptrlist_push(s->stars, sol);
+			ptrlist_push(&s->stars, sol);
 		} else if (strcmp(ctree->key, "POS") == 0) {
 			sscanf(ctree->data, "%lu %lu", &s->x, &s->y);
 			haspos = 1;
@@ -86,7 +88,7 @@ struct sector* sector_load(struct configtree *ctree)
 	}
 
 	unsigned int totlum = 0;
-	ptrlist_for_each_entry(sol, s->stars, lh) {
+	ptrlist_for_each_entry(sol, &s->stars, lh) {
 		s->hab += sol->hab;
 		totlum += sol->lumval;
 	}
@@ -111,7 +113,7 @@ struct sector* sector_create(char *name)
 	s->hab = 0;
 
 	unsigned int totlum = 0;
-	ptrlist_for_each_entry(sol, s->stars, lh) {
+	ptrlist_for_each_entry(sol, &s->stars, lh) {
 		s->hab += sol->hab;
 		totlum += sol->lumval;
 	}
@@ -119,7 +121,7 @@ struct sector* sector_create(char *name)
 	s->habhigh = star_gethabhigh(totlum);
 
 	planet_populate_sector(s);
-	printf("  Number of planets: %lu\n", ptrlist_len(s->planets));
+	printf("  Number of planets: %lu\n", ptrlist_len(&s->planets));
 
 	return s;
 }

@@ -282,7 +282,7 @@ void* conn_main(void *dataptr)
 	log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
 
 	data->pl->conn = data;
-	player_go(data->pl, SECTOR, ptrlist_entry(univ->sectors, 0));
+	player_go(data->pl, SECTOR, ptrlist_entry(&univ->sectors, 0));
 
 	conn_loop(data);
 

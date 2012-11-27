@@ -2,6 +2,7 @@
 #define _HAS_CIV_H
 
 #include "list.h"
+#include "ptrlist.h"
 
 struct universe;
 
@@ -9,9 +10,9 @@ struct civ {
 	char* name;
 	struct sector* home;
 	int power;
-	struct ptrlist* presectors;
-	struct ptrlist* availnames;
-	struct ptrlist* sectors;
+	struct ptrlist presectors;
+	struct ptrlist availnames;
+	struct ptrlist sectors;
 	struct list_head list;
 };
 

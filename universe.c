@@ -41,7 +41,7 @@
 
 void universe_free(struct universe *u)
 {
-	ptrlist_free(u->sectors);
+	ptrlist_free(&u->sectors);
 	htable_free(u->sectornames);
 	htable_free(u->planetnames);
 	htable_free(u->basenames);
@@ -56,8 +56,8 @@ void universe_free(struct universe *u)
 
 void linksectors(struct sector *s1, struct sector *s2)
 {
-	ptrlist_push(s1->links, s2);
-	ptrlist_push(s2->links, s1);
+	ptrlist_push(&s1->links, s2);
+	ptrlist_push(&s2->links, s1);
 }
 
 int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsigned long max)
@@ -88,10 +88,15 @@ struct ptrlist* getneighbours(struct sector *s, unsigned long dist)
 {
 	size_t st;
 	struct sector *t;
-	struct ptrlist *r = ptrlist_init();
+	struct ptrlist *r;
 	struct list_head *lh;
 
-	ptrlist_for_each_entry(t, univ->sectors, lh) {
+	r = malloc(sizeof(*r));
+	if (!r)
+		return NULL;
+	ptrlist_init(r);
+
+	ptrlist_for_each_entry(t, &univ->sectors, lh) {
 		if (sector_distance(s, t) < dist)
 			ptrlist_push(r, t);
 	}
@@ -105,7 +110,7 @@ size_t countneighbours(struct sector *s, unsigned long dist)
 	struct sector *t;
 	struct list_head *lh;
 
-	ptrlist_for_each_entry(t, univ->sectors, lh) {
+	ptrlist_for_each_entry(t, &univ->sectors, lh) {
 		if ((t != s) && (sector_distance(s, t) < dist))
 			r++;
 	}
@@ -121,7 +126,7 @@ struct universe* universe_create()
 	u->id = 0;
 	u->name = NULL;
 	u->numsector = 0;
-	u->sectors = ptrlist_init();
+	ptrlist_init(&u->sectors);
 	u->sectornames = htable_create();
 	u->planetnames = htable_create();
 	u->basenames = htable_create();

@@ -12,7 +12,7 @@ struct universe {
 	char* name;			/* The name of the universe (or the game?) */
 	struct tm *created;		/* When the universe was created */
 	size_t numsector;
-	struct ptrlist *sectors;
+	struct ptrlist sectors;
 	struct htable *sectornames;
 	struct htable *planetnames;
 	struct htable *basenames;

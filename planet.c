@@ -19,9 +19,10 @@ struct planet* initplanet()
 	struct planet *p;
 	MALLOC_DIE(p, sizeof(*p));
 	memset(p, 0, sizeof(*p));
-	p->bases = ptrlist_init();
-	p->stations = ptrlist_init();
-	p->moons = ptrlist_init();
+
+	ptrlist_init(&p->bases);
+	ptrlist_init(&p->stations);
+	ptrlist_init(&p->moons);
 	INIT_LIST_HEAD(&p->list);
 	return p;
 }
@@ -37,7 +38,7 @@ struct planet* loadplanet(struct configtree *ctree)
 			p->type = ctree->data[0];
 		} else if (strcmp(ctree->key, "BASE") == 0) {
 			b = loadbase(ctree->sub);
-			ptrlist_push(p->bases, b);
+			ptrlist_push(&p->bases, b);
 		}
 		ctree = ctree->next;
 	}
@@ -50,15 +51,15 @@ void planet_free(struct planet *p)
 	struct base *b;
 	struct planet *m;
 	struct list_head *lh;
-	ptrlist_for_each_entry(b, p->bases, lh)
+	ptrlist_for_each_entry(b, &p->bases, lh)
 		base_free(b);
-	ptrlist_free(p->bases);
-	ptrlist_for_each_entry(b, p->stations, lh)
+	ptrlist_free(&p->bases);
+	ptrlist_for_each_entry(b, &p->stations, lh)
 		base_free(b);
-	ptrlist_free(p->stations);
-	ptrlist_for_each_entry(m, p->moons, lh)
+	ptrlist_free(&p->stations);
+	ptrlist_for_each_entry(m, &p->moons, lh)
 		planet_free(m);
-	ptrlist_free(p->moons);
+	ptrlist_free(&p->moons);
 	if (p->name) {
 		htable_rm(univ->planetnames, p->name);
 		free(p->name);
@@ -138,7 +139,7 @@ void planet_populate_sector(struct sector* sector)
 		planet_genesis(p, sector);
 		MALLOC_DIE(p->name, strlen(sector->name) + ROMAN_LEN + 2);
 		sprintf(p->name, "%s %s", sector->name, roman[i]);	/* FIXME: Wait with naming until all are made, sort on mean distance from sun. */
-		ptrlist_push(sector->planets, p);
+		ptrlist_push(&sector->planets, p);
 		htable_add(univ->planetnames, p->name, p);
 		if (p->gname)
 			htable_add(univ->planetnames, p->gname, p);

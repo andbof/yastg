@@ -202,7 +202,7 @@ void star_populate_sector(struct sector *sector)
 	struct star *sol = star_create();
 	MALLOC_DIE(sol->name, strlen(sector->name) + 3);
 	sprintf(sol->name, "%s A", sector->name);
-	ptrlist_push(sector->stars, sol);
+	ptrlist_push(&sector->stars, sol);
 
 	unsigned int mulodds = stellar_clsmul[sol->cls];
 	for (int i = 1; star_generate_more(mulodds) && i < STELLAR_MUL_MAX; i++) {
@@ -211,7 +211,7 @@ void star_populate_sector(struct sector *sector)
 		sprintf(sol->name, "%s %c", sector->name, i + 65);
 		if (stellar_clsmul[sol->cls] < mulodds)
 			mulodds = stellar_clsmul[sol->cls];
-		ptrlist_push(sector->stars, sol);
+		ptrlist_push(&sector->stars, sol);
 	}
 }
 

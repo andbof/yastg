@@ -2,6 +2,7 @@
 #define _HAS_SECTOR_H
 
 #include "list.h"
+#include "ptrlist.h"
 
 struct universe;
 struct ptrlist;
@@ -16,10 +17,10 @@ struct sector {
 	double phi;
 	int hab;
 	unsigned int hablow, habhigh;
-	struct ptrlist *stars;
-	struct ptrlist *planets;
-	struct ptrlist *bases;
-	struct ptrlist *links;
+	struct ptrlist stars;
+	struct ptrlist planets;
+	struct ptrlist bases;
+	struct ptrlist links;
 	struct list_head list;
 };
 

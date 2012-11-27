@@ -55,7 +55,7 @@ static void player_showsector(struct player *player, struct sector *sector)
 		sector->name, sector->x, sector->y, sector->hab, sector->hablow, sector->habhigh);
 
 	player_talk(player, "Stars:\n");
-	ptrlist_for_each_entry(sol, sector->stars, lh) {
+	ptrlist_for_each_entry(sol, &sector->stars, lh) {
 		char *string = hundreths(sol->lumval);
 		player_talk(player,
 			"  %s: Class %c %s\n"
@@ -64,9 +64,9 @@ static void player_showsector(struct player *player, struct sector *sector)
 		free(string);
 	}
 
-	if (!list_empty(&sector->planets->list)) {
+	if (!list_empty(&sector->planets.list)) {
 		player_talk(player, "Planets:\n");
-		ptrlist_for_each_entry(planet, sector->planets, lh) {
+		ptrlist_for_each_entry(planet, &sector->planets, lh) {
 			struct planet_type *type = &planet_types[planet->type];
 			player_talk(player,
 				"  %s: Class %c (%s)\n"
@@ -79,15 +79,16 @@ static void player_showsector(struct player *player, struct sector *sector)
 		player_talk(player, "Sector does not have any planets.\n");
 	}
 
-	if (!list_empty(&sector->links->list)) {
+	if (!list_empty(&sector->links.list)) {
 		player_talk(player, "This sector has hyperspace links to\n");
-		ptrlist_for_each_entry(t, sector->links, lh)
+		ptrlist_for_each_entry(t, &sector->links, lh)
 			player_talk(player, "  %s\n", t->name);
 	} else {
 		player_talk(player, "This sector does not have any hyperspace links.\n");
 	}
 
 	player_talk(player, "Sectors within 50 lys are:\n");
+
 	/* FIXME: getneighbours() is awful */
 	struct ptrlist *neigh = getneighbours(sector, 50);
 	if (!list_empty(&neigh->list)) {
@@ -99,6 +100,7 @@ static void player_showsector(struct player *player, struct sector *sector)
 		player_talk(player, "No sectors within 50 lys.\n");
 	}
 	ptrlist_free(neigh);
+	free(neigh);
 
 	if (sector->owner != NULL) {
 		player_talk(player, "This sector is owned by civ %s\n", sector->owner->name);
@@ -146,9 +148,9 @@ static void player_showplanet(struct player *player, struct planet *planet)
 		planet->dia*100, planet->dist, ptype->atmo,
 		planet_life_desc[planet->life]);
 
-	if (!list_empty(&planet->bases->list)) {
+	if (!list_empty(&planet->bases.list)) {
 		player_talk(player, "Bases:\n");
-		ptrlist_for_each_entry(base, planet->bases, lh) {
+		ptrlist_for_each_entry(base, &planet->bases, lh) {
 			player_talk(player, "  ");
 			player_describe_base(player, base);
 		}
@@ -156,9 +158,9 @@ static void player_showplanet(struct player *player, struct planet *planet)
 		player_talk(player, "No bases.\n");
 	}
 
-	if (!list_empty(&planet->stations->list)) {
+	if (!list_empty(&planet->stations.list)) {
 		player_talk(player, "Orbital stations:\n");
-		ptrlist_for_each_entry(base, planet->stations, lh) {
+		ptrlist_for_each_entry(base, &planet->stations, lh) {
 			player_talk(player, "  ");
 			player_describe_base(player, base);
 		}
@@ -225,7 +227,7 @@ static int cmd_hyper(void *ptr, char *param)
 	struct sector *tmp;
 	struct sector *pos = player->pos;
 	struct list_head *lh;
-	ptrlist_for_each_entry(tmp, pos->links, lh) {
+	ptrlist_for_each_entry(tmp, &pos->links, lh) {
 		if (tmp == sector) {
 			ok = 1;
 			break;

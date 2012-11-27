@@ -23,7 +23,7 @@ static void growciv(struct universe *u, struct civ *c)
 	struct list_head *lh;
 	size_t i;
 	unsigned long rad = CIV_GROW_MIN;
-	t = ptrlist_random(c->sectors);
+	t = ptrlist_random(&c->sectors);
 	do {
 		s = NULL;
 		neigh = getneighbours(t, rad);
@@ -34,10 +34,11 @@ static void growciv(struct universe *u, struct civ *c)
 		if ((s == NULL) || (s->owner))
 			rad += CIV_GROW_STEP;
 		ptrlist_free(neigh);
+		free(neigh);
 	} while ((s == NULL) || (s->owner));
 	s->owner = c;
 	linksectors(s, t);
-	ptrlist_push(c->sectors, s);
+	ptrlist_push(&c->sectors, s);
 }
 
 #define UNIVERSE_CIV_FRAC 0.4
@@ -49,7 +50,7 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 	struct sector *s;
 	struct ptrlist *neigh;
 	struct civ *c;
-	nhab = ptrlist_len(u->sectors) * UNIVERSE_CIV_FRAC;
+	nhab = ptrlist_len(&u->sectors) * UNIVERSE_CIV_FRAC;
 	/* Calculate total civilization power (we need this to be able
 	   to get their relative values) */
 	tpow = 0;
@@ -61,7 +62,7 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 	list_for_each_entry(c, &civs->list, list) {
 		do {
 			k = 1;
-			s = ptrlist_random(u->sectors);
+			s = ptrlist_random(&u->sectors);
 			if (!s->owner) {
 				neigh = getneighbours(s, UNIVERSE_MIN_INTERCIV_DISTANCE);
 				struct sector *t;
@@ -73,6 +74,7 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 					}
 				}
 				ptrlist_free(neigh);
+				free(neigh);
 			} else {
 				k = 0;
 			}
@@ -80,7 +82,7 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 		printf("Chose %s as home system for %s\n", s->name, c->name);
 		s->owner = c;
 		c->home = s;
-		ptrlist_push(c->sectors, s);
+		ptrlist_push(&c->sectors, s);
 	}
 
 	mprintf("Growing civilizations ...\n");
@@ -99,8 +101,8 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 	struct list_head *lh;
 	printf("Civilization stats:\n");
 	list_for_each_entry(c, &civs->list, list)
-		printf("  %s has %lu sectors (%.2f%%) with power %u\n", c->name, ptrlist_len(c->sectors), (float)ptrlist_len(c->sectors)/chab*100, c->power);
-	printf("%lu sectors of %lu are inhabited (%.2f%%)\n", chab, ptrlist_len(u->sectors), (float)chab/ptrlist_len(u->sectors)*100);
+		printf("  %s has %lu sectors (%.2f%%) with power %u\n", c->name, ptrlist_len(&c->sectors), (float)ptrlist_len(&c->sectors)/chab*100, c->power);
+	printf("%lu sectors of %lu are inhabited (%.2f%%)\n", chab, ptrlist_len(&u->sectors), (float)chab/ptrlist_len(&u->sectors)*100);
 }
 
 struct civ* civ_create()
@@ -108,9 +110,9 @@ struct civ* civ_create()
 	struct civ *c;
 	MALLOC_DIE(c, sizeof(*c));
 	memset(c, 0, sizeof(*c));
-	c->presectors = ptrlist_init();
-	c->availnames = ptrlist_init();
-	c->sectors = ptrlist_init();
+	ptrlist_init(&c->presectors);
+	ptrlist_init(&c->availnames);
+	ptrlist_init(&c->sectors);
 	INIT_LIST_HEAD(&c->list);
 	return c;
 }
@@ -133,7 +135,7 @@ struct civ* loadciv(struct configtree *ctree)
 			        ptrlist_push(c->presectors, s); */
 		} else if (strcmp(ctree->key, "SNAME") == 0) {
 			st = strdup(ctree->data);
-			ptrlist_push(c->availnames, st);
+			ptrlist_push(&c->availnames, st);
 		}
 		ctree = ctree->next;
 	}
@@ -175,11 +177,11 @@ void civ_free(struct civ *civ)
 	size_t st;
 	char *c;
 	struct list_head *lh;
-	ptrlist_free(civ->sectors);
-	ptrlist_free(civ->presectors);
-	ptrlist_for_each_entry(c, civ->availnames, lh)
+	ptrlist_free(&civ->sectors);
+	ptrlist_free(&civ->presectors);
+	ptrlist_for_each_entry(c, &civ->availnames, lh)
 		free(c);
-	ptrlist_free(civ->availnames);
+	ptrlist_free(&civ->availnames);
 	free(civ->name);
 	free(civ);
 }

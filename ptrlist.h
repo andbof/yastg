@@ -13,7 +13,7 @@ struct ptrlist {
 	unsigned long len;
 };
 
-struct ptrlist* ptrlist_init();
+int ptrlist_init(struct ptrlist *l);
 void ptrlist_free(struct ptrlist *l);
 
 int ptrlist_push(struct ptrlist *l, void *e);
