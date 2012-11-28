@@ -289,7 +289,7 @@ static void got_new_peer_data(struct ev_loop * const loop, ev_io * const w, cons
 
 int server_accept_connection(struct ev_loop * const loop, int fd)
 {
-	int i;
+	int i, r;
 	struct connection *cd;
 	size_t st;
 	struct sockaddr_storage peer_addr;
@@ -301,47 +301,77 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 		return -1;
 	}
 
-	cd->peerfd = accept(fd, (struct sockaddr*)&peer_addr, &sin_size);
 	cd->serverfd = signfdw;
-	if (cd->peerfd == -1) {
+	cd->peerfd = accept(fd, (struct sockaddr*)&peer_addr, &sin_size);
+	if (cd->peerfd < 0) {
+		r = errno;
 		if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 			log_printfn("server", "a peer disconnected before connection could be properly accepted");
 			goto err_free;
 		} else {
-			log_printfn("server", "could not accept socket connection, error %s", strerror(errno));
+			log_printfn("server", "could not accept socket connection: %s", strerror(errno));
 			goto err_free;
 		}
-	} else {
-		/*	inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[tnum].peer, sizeof(std[tnum].peer)); */
-		socklen_t len = sizeof(cd->sock);
-		getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
-		cd->peer = getpeer(cd->sock);
-		log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
-
-		pthread_rwlock_wrlock(&conn_list_lock);
-		list_add_tail(&cd->list, &conn_list);
-		ev_io_init(&cd->watcher, got_new_peer_data, cd->peerfd, EV_READ);
-		cd->watcher.data = cd;
-		pthread_rwlock_unlock(&conn_list_lock);
-
-		ev_io_start(loop, &cd->watcher);
-
-		log_printfn("server", "serving new connection %x", cd->id);
-		conn_fulfixinit(cd);
 	}
+
+	/*	inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[tnum].peer, sizeof(std[tnum].peer)); */
+	socklen_t len = sizeof(cd->sock);
+	getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
+	cd->peer = getpeer(cd->sock);
+	log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
+
+	pthread_rwlock_wrlock(&conn_list_lock);
+	list_add_tail(&cd->list, &conn_list);
+	ev_io_init(&cd->watcher, got_new_peer_data, cd->peerfd, EV_READ);
+	cd->watcher.data = cd;
+	pthread_rwlock_unlock(&conn_list_lock);
+
+	ev_io_start(loop, &cd->watcher);
+
+	log_printfn("server", "serving new connection %x", cd->id);
+	conn_fulfixinit(cd);
 
 	return 0;
 
 err_free:
 	connection_free(cd);
 	free(cd);
-	return -1;
+	return r;
 }
 
+static void enable_accept_after_timer(struct ev_loop * const loop, ev_timer * const t, const int revents)
+{
+	ev_io *server_watcher = t->data;
+	ev_timer_stop(loop, t);
+	ev_io_start(loop, server_watcher);
+	free(t);
+	log_printfn("server", "server now accepting connections again");
+}
+
+static void disable_accept_for_a_while(struct ev_loop * const loop, ev_io * const server_watcher, unsigned int const seconds)
+{
+		ev_io_stop(loop, server_watcher);
+
+		ev_timer *t = malloc(sizeof(*t));
+		memset(t, 0, sizeof(*t));
+
+		ev_timer_init(t, enable_accept_after_timer, seconds, 0);
+		t->data = server_watcher;
+		ev_timer_start(loop, t);
+}
+
+#define SERVER_EMFILE_SLEEP 30
 static void server_accept_cb(struct ev_loop * const loop, ev_io * const w, const int revents)
 {
+	int r;
 	struct socket_list *s = w->data;
-	server_accept_connection(loop, s->fd);
+	r = server_accept_connection(loop, s->fd);
+
+	if (r == EMFILE) {
+		log_printfn("server", "you should raise the ulimit for this process\n");
+		log_printfn("server", "disabling new connections for %d seconds to lessen system load", SERVER_EMFILE_SLEEP);
+		disable_accept_for_a_while(loop, w, SERVER_EMFILE_SLEEP);
+	}
 }
 
 static void stop_and_free_server_watchers(struct list_head *watchers, struct ev_loop *loop)
