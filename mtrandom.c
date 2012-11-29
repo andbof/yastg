@@ -27,82 +27,54 @@ void mtrandom_init()
 	mt_init_genrand(seed);
 }
 
-#if 0
-#define RANDOM_INT_FUNCTION(TYPE, NAME)							\
-	TYPE mtrandom_ ## NAME(TYPE range)						\
-	{										\
-		uint32_t ran;								\
-		TYPE res = 0;								\
-		unsigned int i = 0;							\
-		if (range == 0)								\
-			return (range)							\
-		do {									\
-			i += sizeof(int32_t);						\
-			ran = mt_genrand_int32();					\
-			res |= ran;							\
-			if (i < sizeof(TYPE))						\
-				res <<= sizeof(int32_t)*8;				\
-		} while (i < sizeof(TYPE));						\
-		return (TYPE)res % range;						\
-	}
+int64_t mtrandom_int64(int64_t range)
+{
+	int64_t r = 0;
+	if (range == 0)
+		return range;
 
-RANDOM_INT_FUNCTION(unsigned int, uint);
-RANDOM_INT_FUNCTION(int, int);
-RANDOM_INT_FUNCTION(unsigned long, ulong);
-#endif
+	r |= mt_genrand_int32();
+	r <<= 32;
+	r |= mt_genrand_int32();
+
+	return r % range;
+}
+
+uint64_t mtrandom_uint64(uint64_t range)
+{
+	uint64_t r = 0;
+	if (range == 0)
+		return range;
+
+	r |= mt_genrand_int32();
+	r <<= 32;
+	r |= mt_genrand_int32();
+
+	return r % range;
+}
 
 unsigned int mtrandom_uint(unsigned int range)
 {
-	uint32_t ran;
-	unsigned int res = 0;
-	unsigned int i = 0;
 	if (range == 0)
-		return 0;
-	do {
-		i += sizeof(int32_t);
-		ran = mt_genrand_int32();
-		res |= ran;
-		if (i < sizeof(unsigned int))
-			res <<= sizeof(int32_t)*8;
-	} while (i < sizeof(unsigned int));
-	return (unsigned int)res % range;
-}
+		return range;
 
-unsigned long mtrandom_ulong(unsigned long range)
-{
-	uint32_t ran;
-	unsigned long res = 0;
-	unsigned int i = 0;
-	if (range == 0)
-		return 0;
-	do {
-		i += sizeof(int32_t);
-		ran = mt_genrand_int32();
-		res |= ran;
-		if (i < sizeof(unsigned long))
-			res <<= sizeof(int32_t)*8;
-	} while (i < sizeof(unsigned long));
-	return (unsigned long)res % range;
+	return mt_genrand_int32() % range;
 }
 
 int mtrandom_int(int range)
 {
-	uint32_t ran;
-	int res = 0;
-	unsigned int i = 0;
 	if (range == 0)
 		return range;
-	do {
-		i += sizeof(int32_t);
-		ran = mt_genrand_int32();
-		res |= ran;
-		if (i < sizeof(int))
-			res <<= sizeof(int32_t)*8;
-	} while (i < sizeof(int));
-	return (int)res % range;
+
+	return mt_genrand_int32() % range;
 }
 
-inline double mtrandom_double(double range)
+unsigned long mtrandom_ulong(unsigned long range)
+{
+	return mtrandom_uint64(range);
+}
+
+double mtrandom_double(double range)
 {
 	/* This method will actually generate a numerical distribution error
 	   of range * 2^(-32), but it is good enough for our purposes. */
@@ -110,7 +82,7 @@ inline double mtrandom_double(double range)
 	return r;
 }
 
-inline int mtrandom_bool()
+int mtrandom_bool()
 {
 	return mt_genrand_int32() & 0x1;
 }
