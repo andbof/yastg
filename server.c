@@ -120,16 +120,6 @@ static void server_preparesocket(struct addrinfo **servinfo)
 		die("getaddrinfo: %s\n", gai_strerror(i));
 }
 
-/* get sockaddr, IPv4 or IPv6: */
-static void* server_get_in_addr(struct sockaddr *sa)
-{
-	if (sa->sa_family == AF_INET) {
-		return &(((struct sockaddr_in*)sa)->sin_addr);
-	} else {
-		return &(((struct sockaddr_in6*)sa)->sin6_addr);
-	}
-}
-
 #define SERVER_MAX_PENDING_CONNECTIONS 16
 static int setupsocket(struct addrinfo *p)
 {
@@ -314,7 +304,6 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 		}
 	}
 
-	/*	inet_ntop(peer_addr.ss_family, server_get_in_addr((struct sockaddr*)&peer_addr), std[tnum].peer, sizeof(std[tnum].peer)); */
 	socklen_t len = sizeof(cd->sock);
 	getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
 	cd->peer = getpeer(cd->sock);
