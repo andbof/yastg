@@ -46,13 +46,18 @@ static void server_cleanexit()
 
 	log_printfn("server", "waiting for all player threads to terminate");
 	list_for_each_entry(cd, &connlist.list, list)
-		/* FIXME : This is a race condition if cd is free'd between the if statement and pthread_join */
-		if (cd != NULL)
-			pthread_join(cd->thread, NULL);
-
-	pthread_rwlock_destroy(&connlist_lock);
+		pthread_join(cd->thread, NULL);
 
 	log_printfn("server", "server shutting down");
+
+	struct conndata *tmp;
+	list_for_each_entry_safe(cd, tmp, &connlist.list, list) {
+		list_del(&cd->list);
+		conndata_free(cd);
+		free(cd);
+	}
+
+	pthread_rwlock_destroy(&connlist_lock);
 
 	close(sockfd);
 	pthread_exit(0);
