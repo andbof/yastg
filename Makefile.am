@@ -20,6 +20,7 @@ TESTS = test/sarraytest test/stacktest
 
 bin_PROGRAMS = yastg
 check_PROGRAMS = test/sarraytest test/stacktest test/conntest
+check_LTLIBRARIES = test_module.la
 
 # optflags: -O3 -funroll-loops
 yastg_SOURCES = base.c \
@@ -90,3 +91,9 @@ test_stacktest_SOURCES = test/stacktest.c \
 			 log.c
 
 test_conntest_SOURCES = test/conntest.c
+
+# The LDFLAGS for test_module are required to make a shared library without the
+# 'lib' prefix (-module), without any version suffix (-avoid-version) and force
+# building a shared library even though it isn't installed (-rpath /dev/null)
+test_module_la_LDFLAGS = -module -avoid-version -rpath /dev/null
+test_module_la_SOURCES = test/test_module.c
