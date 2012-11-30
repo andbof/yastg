@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <malloc.h>
+#include <dlfcn.h>
 
 #include "config.h"
 #include "common.h"
@@ -28,6 +29,7 @@
 #include "civ.h"
 #include "id.h"
 #include "names.h"
+#include "module.h"
 
 #define PORT "2049"
 #define BACKLOG 16
@@ -73,6 +75,40 @@ static int cmd_help(void *ptr, char *param)
 	return 0;
 }
 
+static int cmd_insmod(void *ptr, char *param)
+{
+	int r;
+
+	if (!param) {
+		mprintf("usage: insmod <file name.so>\n");
+		return 0;
+	}
+
+	r = module_insert(param);
+	if (r != 0)
+		mprintf("Error inserting module: %s\n",
+				(r == MODULE_DL_ERROR ? dlerror() : module_strerror(r))
+		       );
+
+	return 0;
+}
+
+static int cmd_lsmod(void *ptr, char *param)
+{
+	struct module *m;
+
+	if (list_empty(&modules_loaded)) {
+		mprintf("No modules are currently loaded\n");
+		return 0;
+	}
+
+	mprintf("%-16s %-8s\n", "Module", "Size");
+	list_for_each_entry(m, &modules_loaded, list)
+		mprintf("%-16s %-8d\n", m->name, m->size);
+
+	return 0;
+}
+
 static int cmd_wall(void *ptr, char *param)
 {
 	struct server *server = ptr;
@@ -107,6 +143,38 @@ static int cmd_resume(void *ptr, char *param)
 		.type = MSG_CONT
 	};
 	write_msg(server->fd[1], &msg, NULL);
+	return 0;
+}
+
+static void _cmd_rmmod(struct module *m)
+{
+	int r;
+
+	r = module_remove(m);
+	if (r)
+		mprintf("Error removing module: %s\n",
+				(r == MODULE_DL_ERROR ? dlerror() : module_strerror(r))
+		       );
+}
+
+static int cmd_rmmod(void *ptr, char *param)
+{
+	struct module *m;
+	int r;
+
+	if (!param) {
+		mprintf("usage: rmmod <module>\n");
+		return 0;
+	}
+
+	list_for_each_entry(m, &modules_loaded, list) {
+		if (strcmp(m->name, param) == 0) {
+			_cmd_rmmod(m);
+			return 0;
+		}
+	}
+
+	mprintf("Module %s is not currently loaded\n", param);
 	return 0;
 }
 
@@ -174,9 +242,12 @@ int main(int argc, char **argv)
 	if (cli_root == NULL)
 		die("%s", "Unable to allocate memory\n");
 	cli_add_cmd(cli_root, "help", cmd_help, &server, NULL);
+	cli_add_cmd(cli_root, "insmod", cmd_insmod, &server, NULL);
+	cli_add_cmd(cli_root, "lsmod", cmd_lsmod, &server, NULL);
 	cli_add_cmd(cli_root, "wall", cmd_wall, &server, NULL);
 	cli_add_cmd(cli_root, "pause", cmd_pause, &server, NULL);
 	cli_add_cmd(cli_root, "resume", cmd_resume, &server, NULL);
+	cli_add_cmd(cli_root, "rmmod", cmd_rmmod, &server, NULL);
 	cli_add_cmd(cli_root, "stats", cmd_stats, &server, NULL);
 	cli_add_cmd(cli_root, "memstat", cmd_memstat, &server, NULL);
 	cli_add_cmd(cli_root, "quit", cmd_quit, &server, NULL);

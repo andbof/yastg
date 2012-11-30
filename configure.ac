@@ -12,6 +12,7 @@ AC_PROG_CC_STDC
 AM_PROG_CC_C_O
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])    # Fixes automake 1.12 (where -Wall implies portability warnings), but automake <= 1.11 does not recognize it
 AC_LANG_C
+AC_PROG_LIBTOOL
 
 AC_CHECK_LIB([mcheck],[mcheck],
              [],
@@ -26,6 +27,10 @@ AC_CHECK_LIB([pthread],[pthread_create],
 AC_CHECK_LIB([ev],[ev_now],
 	     [],
 	     [AC_MSG_ERROR([libev not found])])
+
+AC_CHECK_LIB([dl],[dlopen],
+	     [],
+	     [AC_MSG_ERROR([libdl not found])])
 
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h malloc.h netdb.h netinet/in.h \
                   stddef.h stdint.h stdlib.h string.h sys/file.h sys/socket.h \

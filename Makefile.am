@@ -45,6 +45,8 @@ yastg_SOURCES = base.c \
 		log.c \
 		log.h \
 		main.c \
+		module.c \
+		module.h \
 		mt19937ar-cok.c \
 		mt19937ar-cok.h \
 		mtrandom.c \
