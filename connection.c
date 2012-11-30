@@ -77,8 +77,6 @@ void connection_free(void *ptr)
 	if (data != NULL) {
 		if (data->peerfd)
 			close(data->peerfd);
-		if (data->peer)
-			free(data->peer);
 		if (data->rbuf)
 			free(data->rbuf);
 		if (data->sbuf)

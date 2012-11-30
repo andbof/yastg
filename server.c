@@ -201,19 +201,21 @@ err:
 	return -1;
 }
 
-static char* getpeer(const struct sockaddr_storage sock)
+static char* pretty_print_peer(char * const out, const size_t len, const struct sockaddr_storage sock)
 {
 	struct sockaddr_in *s4 = (struct sockaddr_in*)&sock;
 	struct sockaddr_in6 *s6 = (struct sockaddr_in6*)&sock;
-	char *result = malloc(INET6_ADDRSTRLEN + 6);
+	if (len < INET6_ADDRSTRLEN + 7)
+		return NULL;
+
 	if (sock.ss_family == AF_INET) {
-		inet_ntop(AF_INET, &s4->sin_addr, result, INET6_ADDRSTRLEN + 6);
-		sprintf(result + strlen(result), ":%d", ntohs(s4->sin_port));
+		inet_ntop(AF_INET, &s4->sin_addr, out, INET6_ADDRSTRLEN + 6);
+		sprintf(out + strlen(out), ":%d", ntohs(s4->sin_port));
 	} else {
-		inet_ntop(AF_INET6, &s6->sin6_addr, result, INET6_ADDRSTRLEN + 6);
-		sprintf(result + strlen(result), ":%d", ntohs(s6->sin6_port));
+		inet_ntop(AF_INET6, &s6->sin6_addr, out, INET6_ADDRSTRLEN + 6);
+		sprintf(out + strlen(out), ":%d", ntohs(s6->sin6_port));
 	}
-	return result;
+	return out;
 }
 
 static void server_msg_cb(struct ev_loop * const loop, ev_io * const w, const int revents)
@@ -306,7 +308,7 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 
 	socklen_t len = sizeof(cd->sock);
 	getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
-	cd->peer = getpeer(cd->sock);
+	pretty_print_peer(cd->peer, sizeof(cd->peer), cd->sock);
 	log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
 
 	pthread_rwlock_wrlock(&conn_list_lock);

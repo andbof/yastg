@@ -18,7 +18,7 @@ struct connection {
 	fd_set rfds;
 	int peerfd, serverfd;
 	struct sockaddr_storage sock;
-	char *peer;
+	char peer[INET6_ADDRSTRLEN + 7];
 	struct player *pl;
 	size_t rbufs, sbufs;
 	size_t rbufi;
