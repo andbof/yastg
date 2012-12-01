@@ -157,7 +157,10 @@ void* connection_worker(void *_w)
 
 void conn_fulfixinit(struct connection *data)
 {
-	MALLOC_DIE(data->pl, sizeof(*data->pl));
+	data->pl = malloc(sizeof(*data->pl));
+	if (!data->pl)
+		return;
+
 	player_init(data->pl);
 
 	log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
