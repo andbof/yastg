@@ -2,6 +2,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stringtree.h>
+#include "common.h"
 
 struct char_list {
 	char c;
@@ -34,7 +35,7 @@ void st_destroy(struct list_head * const root, const int do_free_data)
 	}
 }
 
-int st_add_string(struct list_head * const root, char *string, void *data)
+static int _st_add_string(struct list_head * const root, char *string, void *data)
 {
 	struct st_node *new_node, *prev_node;
 
@@ -63,6 +64,23 @@ int st_add_string(struct list_head * const root, char *string, void *data)
 	} else {
 		return st_add_string(&new_node->children, string + 1, data);
 	}
+}
+
+int st_add_string(struct list_head * const root, char *_string, void *data)
+{
+	char *string;
+	int r;
+
+	if (!root || !_string || _string[0] == '\0')
+		return -1;
+
+	string = strdup(_string);
+	downcase_valid(string);
+
+	r = _st_add_string(root, string, data);
+
+	free(string);
+	return r;
 }
 
 /*
@@ -132,14 +150,20 @@ static struct st_node* find_node(const struct list_head * const root, const char
 	return NULL;
 }
 
-void* st_lookup_string(const struct list_head * const root, const char * const string)
+void* st_lookup_string(const struct list_head * const root, const char * const _string)
 {
 	struct st_node *node;
+	char *string;
 
-	if (!root || !string || string[0] == '\0')
+	if (!root || !_string || _string[0] == '\0')
 		return NULL;
 
+	string = strdup(_string);
+	downcase_valid(string);
+
 	node = find_node(root, string, 0);
+
+	free(string);
 	if (!node)
 		return NULL;
 
@@ -147,14 +171,20 @@ void* st_lookup_string(const struct list_head * const root, const char * const s
 }
 
 
-void* st_lookup_exact(const struct list_head * const root, const char * const string)
+void* st_lookup_exact(const struct list_head * const root, const char * const _string)
 {
 	struct st_node *node;
+	char *string;
 
-	if (!root || !string || string[0] == '\0')
+	if (!root || !_string || _string[0] == '\0')
 		return NULL;
 
+	string = strdup(_string);
+	downcase_valid(string);
+
 	node = find_node(root, string, 1);
+
+	free(string);
 	if (!node)
 		return NULL;
 
@@ -167,15 +197,21 @@ void* st_lookup_exact(const struct list_head * const root, const char * const st
  * This is a feature for trees where it is likely the nodes will be reused
  * later on and we want to keep the calls to malloc() and free() down.
  */
-void* st_rm_string(struct list_head * const root, const char * const string)
+void* st_rm_string(struct list_head * const root, const char * const _string)
 {
 	void *data;
 	struct st_node *node;
+	char *string;
 
-	if (!root || !string || string[0] == '\0')
+	if (!root || !_string || _string[0] == '\0')
 		return NULL;
 
+	string = strdup(_string);
+	downcase_valid(string);
+
 	node = find_node(root, string, 1);
+
+	free(string);
 	if (!node)
 		return NULL;
 

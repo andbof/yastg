@@ -2,7 +2,7 @@
 #include "stringtree.h"
 #include "list.h"
 
-#define NUM_TESTS 153
+#define NUM_TESTS 158
 
 struct test_pair {
 	char name[32];
@@ -224,6 +224,30 @@ int do_shortest_match_tests(struct list_head *root)
 	return tests;
 }
 
+int do_case_insensitive_tests(struct list_head *root)
+{
+	unsigned int tests = 0;
+
+	int foo;
+
+	assert(st_add_string(root, "foo", &foo) == 0);
+	tests++;
+
+	assert(st_lookup_string(root, "foo") == &foo);
+	tests++;
+
+	assert(st_lookup_string(root, "fOo") == &foo);
+	tests++;
+
+	assert(st_rm_string(root, "foo") == &foo);
+	tests++;
+
+	assert(st_rm_string(root, "fOo") == NULL);
+	tests++;
+
+	return tests;
+}
+
 int do_destroy_tests(struct list_head *root)
 {
 	unsigned int tests = 0;
@@ -249,6 +273,7 @@ int main(int argc, char *argv[])
 	tests += do_add_and_remove_tests(&head);
 	tests += do_uniqueness_tests(&head);
 	tests += do_shortest_match_tests(&head);
+	tests += do_case_insensitive_tests(&head);
 	tests += do_destroy_tests(&head);
 
 	assert(tests == NUM_TESTS);

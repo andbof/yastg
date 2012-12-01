@@ -95,7 +95,8 @@ test_stacktest_SOURCES = test/stacktest.c \
 test_conntest_SOURCES = test/conntest.c
 
 test_stringtree_test_SOURCES = test/stringtree_test.c \
-			       stringtree.c
+			       stringtree.c \
+			       common.c
 
 # The LDFLAGS for test_module are required to make a shared library without the
 # 'lib' prefix (-module), without any version suffix (-avoid-version) and force
