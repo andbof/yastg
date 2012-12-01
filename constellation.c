@@ -16,7 +16,7 @@
 
 void loadconstellations()
 {
-	struct configtree *ctree, *e;
+	struct config *ctree, *e;
 	unsigned int ncons = 0;
 	ctree = parseconfig("data/constellations");
 	e = ctree->sub;

@@ -22,7 +22,7 @@ struct planet {
 	struct list_head list;
 };
 
-struct planet* loadplanet(struct configtree *ctree);
+struct planet* loadplanet(struct config *ctree);
 void planet_free(struct planet *p);
 struct planet* createplanet();
 void planet_populate_sector(struct sector* s);

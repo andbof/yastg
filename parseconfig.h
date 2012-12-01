@@ -3,15 +3,15 @@
 
 #include <stdio.h>
 
-struct configtree {
+struct config {
 	char *key;
 	char *data;
-	struct configtree *sub;
-	struct configtree *next;
+	struct config *sub;
+	struct config *next;
 };
 
-struct configtree* parseconfig(char *fname);
-struct configtree* recparseconfig(FILE *f, char *fname);
-void destroyctree(struct configtree *ctree);
+struct config* parseconfig(char *fname);
+struct config* recparseconfig(FILE *f, char *fname);
+void destroyctree(struct config *ctree);
 
 #endif

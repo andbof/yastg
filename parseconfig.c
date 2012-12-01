@@ -45,12 +45,12 @@ static char* strdupsp(char *s)
  *   KEY4.2 DATA
  * }
  *
- * and returns a configtree structure.
+ * and returns a config structure.
  */
-struct configtree* parseconfig(char *fname)
+struct config* parseconfig(char *fname)
 {
 	FILE *f;
-	struct configtree *root;
+	struct config *root;
 
 	MALLOC_DIE(root, sizeof(*root));
 
@@ -69,9 +69,9 @@ struct configtree* parseconfig(char *fname)
 	return root;
 }
 
-struct configtree* recparseconfig(FILE *f, char *fname)
+struct config* recparseconfig(FILE *f, char *fname)
 {
-	struct configtree *root = NULL, *ce = NULL;
+	struct config *root = NULL, *ce = NULL;
 	int hassub;
 	size_t i, j;
 	unsigned long linen = 1;
@@ -174,12 +174,12 @@ struct configtree* recparseconfig(FILE *f, char *fname)
 }
 
 /*
- * Recursively free all subnodes in a configtree.
+ * Recursively free all subnodes in a config.
  * Will free the entire tree if called on root node.
  */
-void destroyctree(struct configtree *ctree)
+void destroyctree(struct config *ctree)
 {
-	struct configtree *ptree;
+	struct config *ptree;
 
 	while (ctree) {
 		destroyctree(ctree->sub);

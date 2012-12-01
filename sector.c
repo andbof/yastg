@@ -59,7 +59,7 @@ void sector_free(void *ptr) {
 	free(s);
 }
 
-struct sector* sector_load(struct configtree *ctree)
+struct sector* sector_load(struct config *ctree)
 {
 	struct sector *s = sector_init();
 	struct list_head *lh;

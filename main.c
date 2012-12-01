@@ -214,7 +214,7 @@ static int cmd_quit(void *_server, char *param)
 int main(int argc, char **argv)
 {
 	char *line = malloc(256); /* FIXME */
-	struct configtree *ctree;
+	struct config *ctree;
 	struct civ *cv;
 	struct sector *s, *t;
 	size_t st, su;

@@ -27,7 +27,7 @@ struct planet* initplanet()
 	return p;
 }
 
-struct planet* loadplanet(struct configtree *ctree)
+struct planet* loadplanet(struct config *ctree)
 {
 	struct base *b;
 	struct planet *p = initplanet();

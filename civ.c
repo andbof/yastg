@@ -117,7 +117,7 @@ struct civ* civ_create()
 	return c;
 }
 
-struct civ* loadciv(struct configtree *ctree)
+struct civ* loadciv(struct config *ctree)
 {
 	struct civ *c = civ_create();
 	struct sector *s;
@@ -146,7 +146,7 @@ int civ_load_all(struct civ *civs)
 {
 	DIR *dirp;
 	struct dirent *de;
-	struct configtree *ctree;
+	struct config *ctree;
 	struct civ *cv;
 	char* path = NULL;
 	int pathlen = 0;

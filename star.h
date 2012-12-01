@@ -17,7 +17,7 @@ struct star {
 	unsigned int temp;
 };
 
-struct star* loadstar(struct configtree *ctree);
+struct star* loadstar(struct config *ctree);
 
 unsigned long star_gethablow(unsigned int lumval);
 unsigned long star_gethabhigh(unsigned int lumval);

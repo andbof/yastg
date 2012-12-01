@@ -10,7 +10,7 @@
 #include "sarray.h"
 #include "universe.h"
 
-struct base* loadbase(struct configtree *ctree)
+struct base* loadbase(struct config *ctree)
 {
 	struct base *b;
 	MALLOC_DIE(b, sizeof(*b));

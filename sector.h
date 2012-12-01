@@ -6,7 +6,7 @@
 
 struct universe;
 struct ptrlist;
-struct configtree;
+struct config;
 
 struct sector {
 	char *name;
@@ -25,7 +25,7 @@ struct sector {
 };
 
 struct sector* sector_init();
-struct sector* sector_load(struct configtree *ctree);
+struct sector* sector_load(struct config *ctree);
 struct sector* sector_create(char *name);
 void sector_free(void *ptr);
 

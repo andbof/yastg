@@ -93,7 +93,7 @@ static int star_genlumval(struct star *star)
 /*
  * Parses a configuration tree and returns a struct star*
  */
-struct star* loadstar(struct configtree *ctree)
+struct star* loadstar(struct config *ctree)
 {
 	struct star *sol;
 	int i;
