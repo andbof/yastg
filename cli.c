@@ -54,14 +54,39 @@ int cli_rm_cmd(struct list_head *root, char *cmd)
 	return 0;
 }
 
+static char* trim_and_validate(char *string)
+{
+	size_t last;
+
+	if (!string || string[0] == '\0')
+		return NULL;
+
+	while (string[0] == ' ')
+		string++;
+
+	last = strlen(string) -1;
+	while (string[last] == ' ')
+		string[last--] = '\0';
+
+	if (last == 1)
+		return NULL;
+
+	return string;
+}
+
 int cli_run_cmd(struct list_head *root, char *string)
 {
 	int ret;
-	unsigned int i;
-	unsigned int len = strlen(string);
+	unsigned int i, len;
 	char *cmd;
 	char *param;
 	struct cli_data *node;
+
+	string = trim_and_validate(string);
+	if (!string)
+		return -1;
+
+	len = strlen(string);
 
 	for (i = 0; i < len && string[i] != ' '; i++);
 
