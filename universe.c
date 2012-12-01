@@ -38,6 +38,8 @@
 #define NEIGHBOUR_CHANCE 5		/* The higher the value, the more neighbours a system will have */
 #define NEIGHBOUR_DISTANCE 50
 
+struct universe univ;
+
 void universe_free(struct universe *u)
 {
 	ptrlist_free(&u->sectors);
@@ -50,7 +52,6 @@ void universe_free(struct universe *u)
 	free(u->sphi);
 	if (u->name)
 		free(u->name);
-	free(u);
 }
 
 void linksectors(struct sector *s1, struct sector *s2)
@@ -95,7 +96,7 @@ struct ptrlist* getneighbours(struct sector *s, unsigned long dist)
 		return NULL;
 	ptrlist_init(r);
 
-	ptrlist_for_each_entry(t, &univ->sectors, lh) {
+	ptrlist_for_each_entry(t, &univ.sectors, lh) {
 		if (sector_distance(s, t) < dist)
 			ptrlist_push(r, t);
 	}
@@ -109,7 +110,7 @@ size_t countneighbours(struct sector *s, unsigned long dist)
 	struct sector *t;
 	struct list_head *lh;
 
-	ptrlist_for_each_entry(t, &univ->sectors, lh) {
+	ptrlist_for_each_entry(t, &univ.sectors, lh) {
 		if ((t != s) && (sector_distance(s, t) < dist))
 			r++;
 	}
@@ -117,11 +118,8 @@ size_t countneighbours(struct sector *s, unsigned long dist)
 	return r;
 }
 
-struct universe* universe_create()
+void universe_init(struct universe *u)
 {
-	struct universe *u;
-
-	MALLOC_DIE(u, sizeof(*u));
 	u->id = 0;
 	u->name = NULL;
 	u->numsector = 0;
@@ -134,11 +132,9 @@ struct universe* universe_create()
 	pthread_rwlock_init(&u->basenames_lock, NULL);
 	u->srad = sarray_init(sizeof(struct ulong_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
 	u->sphi = sarray_init(sizeof(struct double_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
-
-	return u;
 }
 
-void universe_init(struct civ *civs)
+void universe_genesis(struct universe *univ, struct civ *civs)
 {
 	int i;
 	int power = 0;

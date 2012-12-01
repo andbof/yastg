@@ -34,7 +34,7 @@ struct base* loadbase(struct config *ctree)
 
 void base_free(struct base *b)
 {
-	st_rm_string(&univ->basenames, b->name);
+	st_rm_string(&univ.basenames, b->name);
 	free(b->name);
 	ptrlist_free(&b->inventory);
 	ptrlist_free(&b->players);
@@ -63,8 +63,8 @@ static void base_genesis(struct base *base, struct planet *planet)
 	do {
 		if (base->name)
 			free(base->name);
-		base->name = names_generate(&univ->avail_base_names);
-	} while (st_lookup_exact(&univ->basenames, base->name));
+		base->name = names_generate(&univ.avail_base_names);
+	} while (st_lookup_exact(&univ.basenames, base->name));
 }
 
 void base_populate_planet(struct planet* planet)
@@ -72,14 +72,14 @@ void base_populate_planet(struct planet* planet)
 	struct base *b;
 	int num = 10; /* FIXME */
 
-	pthread_rwlock_wrlock(&univ->basenames_lock);
+	pthread_rwlock_wrlock(&univ.basenames_lock);
 
 	for (int i = 0; i < num; i++) {
 		b = base_create();
 		base_genesis(b, planet);
 		ptrlist_push(&planet->bases, b);
-		st_add_string(&univ->basenames, b->name, b);
+		st_add_string(&univ.basenames, b->name, b);
 	}
 
-	pthread_rwlock_unlock(&univ->basenames_lock);
+	pthread_rwlock_unlock(&univ.basenames_lock);
 }

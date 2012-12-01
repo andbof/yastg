@@ -199,7 +199,7 @@ static int cmd_stats(void *ptr, char *param)
 	        "  Size of universe:          %lu sectors\n"
 	        "  Number of users known:     %s\n"
 	        "  Number of users connected: %s\n",
-		ptrlist_len(&univ->sectors), "FIXME", "FIXME");
+		ptrlist_len(&univ.sectors), "FIXME", "FIXME");
 	return 0;
 }
 
@@ -254,15 +254,15 @@ int main(int argc, char **argv)
 	printf("done, %lu civs loaded.\n", list_len(&civs->list));
 	/* Create universe */
 	printf("Creating universe\n");
-	univ = universe_create();
+	universe_init(&univ);
 	printf("Loading names ... ");
-	names_init(&univ->avail_base_names);
-	names_init(&univ->avail_player_names);
-	names_load(&univ->avail_base_names, "data/placeprefix", "data/placenames", NULL, "data/placesuffix");
-	names_load(&univ->avail_player_names, NULL, "data/firstnames", "data/surnames", NULL);
+	names_init(&univ.avail_base_names);
+	names_init(&univ.avail_player_names);
+	names_load(&univ.avail_base_names, "data/placeprefix", "data/placenames", NULL, "data/placesuffix");
+	names_load(&univ.avail_player_names, NULL, "data/firstnames", "data/surnames", NULL);
 	printf("done.\n");
 
-	universe_init(civs);
+	universe_genesis(&univ, civs);
 
 	/* Start server thread */
 	if (pipe(server.fd) != 0)
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
 		die("%s", "Could not launch server thread");
 
 	mprintf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
-	mprintf("Universe has %lu sectors in total\n", ptrlist_len(&univ->sectors));
+	mprintf("Universe has %lu sectors in total\n", ptrlist_len(&univ.sectors));
 
 	while (server.running) {
 		mprintf("console> ");
@@ -296,7 +296,7 @@ int main(int argc, char **argv)
 
 	log_printfn("main", "cleaning up");
 	struct list_head *p, *q;
-	ptrlist_for_each_entry(s, &univ->sectors, p) {
+	ptrlist_for_each_entry(s, &univ.sectors, p) {
 		printf("Freeing sector %s\n", s->name);
 		sector_free(s);
 	}
@@ -307,10 +307,10 @@ int main(int argc, char **argv)
 	}
 	civ_free(civs);
 
-	names_free(&univ->avail_base_names);
-	names_free(&univ->avail_player_names);
+	names_free(&univ.avail_base_names);
+	names_free(&univ.avail_player_names);
 
-	universe_free(univ);
+	universe_free(&univ);
 	free(line);
 	cli_tree_destroy(&cli_root);
 	log_close();

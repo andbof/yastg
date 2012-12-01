@@ -216,9 +216,9 @@ static int cmd_hyper(void *ptr, char *param)
 	assert(player->postype == SECTOR);
 
 	struct sector *sector;
-	pthread_rwlock_rdlock(&univ->sectornames_lock);
-	sector = st_lookup_string(&univ->sectornames, param);
-	pthread_rwlock_unlock(&univ->sectornames_lock);
+	pthread_rwlock_rdlock(&univ.sectornames_lock);
+	sector = st_lookup_string(&univ.sectornames, param);
+	pthread_rwlock_unlock(&univ.sectornames_lock);
 
 	if (sector == NULL) {
 		player_talk(player, "Sector not found.\n");
@@ -253,9 +253,9 @@ static int cmd_jump(void *ptr, char *param)
 	struct player *player = ptr;
 	struct sector *sector;
 
-	pthread_rwlock_rdlock(&univ->sectornames_lock);
-	sector = st_lookup_string(&univ->sectornames, param);
-	pthread_rwlock_unlock(&univ->sectornames_lock);
+	pthread_rwlock_rdlock(&univ.sectornames_lock);
+	sector = st_lookup_string(&univ.sectornames, param);
+	pthread_rwlock_unlock(&univ.sectornames_lock);
 
 	if (sector != NULL) {
 		player_talk(player, "Jumping to %s\n", sector->name);
@@ -273,9 +273,9 @@ static int cmd_dock(void *ptr, char *param)
 	struct player *player = ptr;
 
 	struct base *base;
-	pthread_rwlock_rdlock(&univ->basenames_lock);
-	base = st_lookup_string(&univ->basenames, param);
-	pthread_rwlock_unlock(&univ->basenames_lock);
+	pthread_rwlock_rdlock(&univ.basenames_lock);
+	base = st_lookup_string(&univ.basenames, param);
+	pthread_rwlock_unlock(&univ.basenames_lock);
 
 	if (base && ((player->postype == PLANET && base->planet == player->pos)
 		|| (player->postype == SECTOR && base->sector == player->pos))) {
@@ -297,9 +297,9 @@ static int cmd_orbit(void *ptr, char *param)
 	struct list_head *lh;
 
 	struct planet *planet;
-	pthread_rwlock_rdlock(&univ->planetnames_lock);
-	planet = st_lookup_string(&univ->planetnames, param);
-	pthread_rwlock_unlock(&univ->planetnames_lock);
+	pthread_rwlock_rdlock(&univ.planetnames_lock);
+	planet = st_lookup_string(&univ.planetnames, param);
+	pthread_rwlock_unlock(&univ.planetnames_lock);
 
 	if (planet && planet->sector == sector) {
 		player_talk(player, "Entering orbit around %s\n", planet->name);
@@ -388,7 +388,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 void player_init(struct player *player)
 {
 	memset(player, 0, sizeof(*player));
-	player->name = names_generate(&univ->avail_player_names);
+	player->name = names_generate(&univ.avail_player_names);
 	INIT_LIST_HEAD(&player->list);
 	INIT_LIST_HEAD(&player->cli);
 	player->postype = NONE;

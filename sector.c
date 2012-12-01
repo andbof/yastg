@@ -140,25 +140,25 @@ void sector_move(struct sector *s, long x, long y)
 	dptr.i = XYTOPHI(s->x, s->y);
 	/* We need to make sure we're not adding this sector twice to srad and sphi
 	   FIXME: Scales really badly */
-	for (st = 0; st < univ->srad->elements; st++) {
-		stmp = sarray_getbypos(univ->srad, st);
+	for (st = 0; st < univ.srad->elements; st++) {
+		stmp = sarray_getbypos(univ.srad, st);
 		if (stmp == s) {
-			sarray_rmbypos(univ->srad, st);
+			sarray_rmbypos(univ.srad, st);
 			break;
 		}
 	}
-	for (st = 0; st < univ->sphi->elements; st++) {
-		stmp = sarray_getbypos(univ->sphi, st);
+	for (st = 0; st < univ.sphi->elements; st++) {
+		stmp = sarray_getbypos(univ.sphi, st);
 		if (stmp == s) {
-			sarray_rmbypos(univ->sphi, st);
+			sarray_rmbypos(univ.sphi, st);
 			break;
 		}
 	}
 	/* Now update the coordinates and add them to srad and sphi */
 	s->r = uptr.i;
-	sarray_add(univ->srad, &uptr);
+	sarray_add(univ.srad, &uptr);
 	s->phi = dptr.i;
-	sarray_add(univ->sphi, &dptr);
+	sarray_add(univ.sphi, &dptr);
 }
 
 unsigned long sector_distance(struct sector *a, struct sector *b) {
