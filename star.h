@@ -17,12 +17,12 @@ struct star {
 	unsigned int temp;
 };
 
-struct star* loadstar(struct config *ctree);
+int star_load(struct star *sol, struct config *ctree);
 
 unsigned long star_gethablow(unsigned int lumval);
 unsigned long star_gethabhigh(unsigned int lumval);
 
-void star_populate_sector(struct sector *sector);
+int star_populate_sector(struct sector *sector);
 void star_free(struct star *s);
 
 #endif

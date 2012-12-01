@@ -91,18 +91,18 @@ static int star_genlumval(struct star *star)
 }
 
 /*
- * Parses a configuration tree and returns a struct star*
+ * Parses a configuration tree and loads the information
+ * into the supplied struct star*
  */
-struct star* loadstar(struct config *ctree)
+int star_load(struct star *sol, struct config *ctree)
 {
-	struct star *sol;
 	int i;
 	int habset = 0;
 	int tempset = 0;
 	int lumset = 0;
 	int lumvalset = 0;
 	int clsset = 0;
-	MALLOC_DIE(sol, sizeof(*sol));
+
 	sol->temp = 0;
 	sol->hab = 0;
 	sol->name = NULL;
@@ -161,7 +161,8 @@ struct star* loadstar(struct config *ctree)
 		sol->temp = star_gentemp(sol);
 	sol->hablow = star_gethablow(sol->lumval);
 	sol->habhigh = star_gethabhigh(sol->lumval);
-	return sol;
+
+	return 0;
 }
 
 static int star_generate_more(unsigned int mulodds)
@@ -181,10 +182,8 @@ unsigned long star_gethabhigh(unsigned int lumval)
 	return sqrt((double)lumval/100.0) * HAB_ZONE_END * GM_PER_AU;
 }
 
-static struct star* star_create()
+static void star_init(struct star *s)
 {
-	struct star *s;
-	MALLOC_DIE(s, sizeof(struct star));
 	s->name = NULL;
 	s->cls = star_gencls();
 	s->lum = star_genlum();
@@ -193,26 +192,51 @@ static struct star* star_create()
 	s->temp = star_gentemp(s);
 	s->hablow = star_gethablow(s->lum);
 	s->habhigh = star_gethabhigh(s->lum);
-	return s;
 }
 
 #define STELLAR_MUL_MAX 4
-void star_populate_sector(struct sector *sector)
+int star_populate_sector(struct sector *sector)
 {
-	struct star *sol = star_create();
-	MALLOC_DIE(sol->name, strlen(sector->name) + 3);
+	struct star *sol;
+
+	sol = malloc(sizeof(*sol));
+	if (!sol)
+		goto err;
+	star_init(sol);
+
+	sol->name = malloc(strlen(sector->name) + 3);
+	if (!sol->name)
+		goto err;
+
 	sprintf(sol->name, "%s A", sector->name);
 	ptrlist_push(&sector->stars, sol);
 
 	unsigned int mulodds = stellar_clsmul[sol->cls];
 	for (int i = 1; star_generate_more(mulodds) && i < STELLAR_MUL_MAX; i++) {
-		sol = star_create();
-		MALLOC_DIE(sol->name, strlen(sector->name) + 4);
+		sol = malloc(sizeof(*sol));
+		if (!sol)
+			goto err;
+		star_init(sol);
+
+		sol->name = malloc(strlen(sector->name) + 4);
+		if (!sol->name)
+			goto err;
+
 		sprintf(sol->name, "%s %c", sector->name, i + 65);
 		if (stellar_clsmul[sol->cls] < mulodds)
 			mulodds = stellar_clsmul[sol->cls];
 		ptrlist_push(&sector->stars, sol);
 	}
+
+	return 0;
+
+err:
+	if (sol && sol->name)
+		free(sol->name);
+	if (sol)
+		free(sol);
+
+	return -1;
 }
 
 void star_free(struct star *s)

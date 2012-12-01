@@ -96,7 +96,11 @@ struct sector* sector_load(struct config *ctree)
 
 		} else if (strcmp(ctree->key, "STAR") == 0) {
 
-			sol = loadstar(ctree->sub);
+			sol = malloc(sizeof(*sol));
+			if (!sol)
+				goto err;
+
+			star_load(sol, ctree->sub);
 			ptrlist_push(&s->stars, sol);
 
 		} else if (strcmp(ctree->key, "POS") == 0) {
@@ -136,7 +140,12 @@ int sector_create(struct sector *s, char *name)
 	sector_init(s);
 
 	s->name = strdup(name);
-	star_populate_sector(s);
+
+	if (star_populate_sector(s)) {
+		free(s->name);
+		return -1;
+	}
+
 	s->hab = 0;
 
 	unsigned int totlum = 0;
