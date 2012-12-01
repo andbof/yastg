@@ -12,7 +12,7 @@
 #include "star.h"
 #include "sarray.h"
 #include "ptrlist.h"
-#include "htable.h"
+#include "stringtree.h"
 
 void loadconstellations()
 {
@@ -51,7 +51,7 @@ void addconstellation(char* cname)
 
 	mprintf("addconstellation: will create %lu sectors (universe has %lu so far)\n", nums, ptrlist_len(&univ->sectors));
 
-	pthread_rwlock_wrlock(&univ->sectornames->lock);
+	pthread_rwlock_wrlock(&univ->sectornames_lock);
 
 	fs = NULL;
 	for (numc = 0; numc < nums; numc++) {
@@ -60,7 +60,7 @@ void addconstellation(char* cname)
 		sprintf(string, "%s %s", greek[numc], cname);
 		s = sector_create(string);
 		ptrlist_push(&univ->sectors, s);
-		htable_add(univ->sectornames, s->name, s);
+		st_add_string(&univ->sectornames, s->name, s);
 
 		if (fs == NULL) {
 			/* This was the first sector generated for this constellation
@@ -103,7 +103,7 @@ void addconstellation(char* cname)
 
 	}
 
-	pthread_rwlock_unlock(&univ->sectornames->lock);
+	pthread_rwlock_unlock(&univ->sectornames_lock);
 
 	free(string);
 	ptrlist_free(&work);

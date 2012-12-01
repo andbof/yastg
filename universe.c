@@ -15,7 +15,7 @@
 #include "civ.h"
 #include "star.h"
 #include "constellation.h"
-#include "htable.h"
+#include "stringtree.h"
 #include "mtrandom.h"
 #include "sarray.h"
 #include "id.h"
@@ -42,9 +42,9 @@
 void universe_free(struct universe *u)
 {
 	ptrlist_free(&u->sectors);
-	htable_free(u->sectornames);
-	htable_free(u->planetnames);
-	htable_free(u->basenames);
+	st_destroy(&u->sectornames, ST_DONT_FREE_DATA);
+	st_destroy(&u->planetnames, ST_DONT_FREE_DATA);
+	st_destroy(&u->basenames, ST_DONT_FREE_DATA);
 	sarray_free(u->srad);
 	free(u->srad);
 	sarray_free(u->sphi);
@@ -127,9 +127,12 @@ struct universe* universe_create()
 	u->name = NULL;
 	u->numsector = 0;
 	ptrlist_init(&u->sectors);
-	u->sectornames = htable_create();
-	u->planetnames = htable_create();
-	u->basenames = htable_create();
+	INIT_LIST_HEAD(&u->sectornames);
+	pthread_rwlock_init(&u->sectornames_lock, NULL);
+	INIT_LIST_HEAD(&u->planetnames);
+	pthread_rwlock_init(&u->planetnames_lock, NULL);
+	INIT_LIST_HEAD(&u->basenames);
+	pthread_rwlock_init(&u->basenames_lock, NULL);
 	u->srad = sarray_init(sizeof(struct ulong_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
 	u->sphi = sarray_init(sizeof(struct double_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
 

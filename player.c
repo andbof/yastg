@@ -9,7 +9,7 @@
 #include "common.h"
 #include "connection.h"
 #include "data.h"
-#include "htable.h"
+#include "stringtree.h"
 #include "log.h"
 #include "planet.h"
 #include "player.h"
@@ -214,9 +214,10 @@ static int cmd_hyper(void *ptr, char *param)
 	struct player *player = ptr;
 	assert(player->postype == SECTOR);
 
-	pthread_rwlock_rdlock(&univ->sectornames->lock);
-	struct sector *sector = htable_get(univ->sectornames, param);
-	pthread_rwlock_unlock(&univ->sectornames->lock);
+	struct sector *sector;
+	pthread_rwlock_rdlock(&univ->sectornames_lock);
+	sector = st_lookup_string(&univ->sectornames, param);
+	pthread_rwlock_unlock(&univ->sectornames_lock);
 
 	if (sector == NULL) {
 		player_talk(player, "Sector not found.\n");
@@ -249,7 +250,12 @@ static char cmd_hyper_help[] = "Travel by hyperspace to sector";
 static int cmd_jump(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	struct sector *sector = htable_get(univ->sectornames, param);
+	struct sector *sector;
+
+	pthread_rwlock_rdlock(&univ->sectornames_lock);
+	sector = st_lookup_string(&univ->sectornames, param);
+	pthread_rwlock_unlock(&univ->sectornames_lock);
+
 	if (sector != NULL) {
 		player_talk(player, "Jumping to %s\n", sector->name);
 		player_go(player, SECTOR, sector);
@@ -265,9 +271,10 @@ static int cmd_dock(void *ptr, char *param)
 {
 	struct player *player = ptr;
 
-	pthread_rwlock_rdlock(&univ->sectornames->lock);
-	struct base *base = htable_get(univ->basenames, param);
-	pthread_rwlock_unlock(&univ->sectornames->lock);
+	struct base *base;
+	pthread_rwlock_rdlock(&univ->basenames_lock);
+	base = st_lookup_string(&univ->basenames, param);
+	pthread_rwlock_unlock(&univ->basenames_lock);
 
 	if (base && ((player->postype == PLANET && base->planet == player->pos)
 		|| (player->postype == SECTOR && base->sector == player->pos))) {
@@ -288,9 +295,10 @@ static int cmd_orbit(void *ptr, char *param)
 	struct sector *sector = player->pos;
 	struct list_head *lh;
 
-	pthread_rwlock_rdlock(&univ->planetnames->lock);
-	struct planet *planet = htable_get(univ->planetnames, param);
-	pthread_rwlock_unlock(&univ->planetnames->lock);
+	struct planet *planet;
+	pthread_rwlock_rdlock(&univ->planetnames_lock);
+	planet = st_lookup_string(&univ->planetnames, param);
+	pthread_rwlock_unlock(&univ->planetnames_lock);
 
 	if (planet && planet->sector == sector) {
 		player_talk(player, "Entering orbit around %s\n", planet->name);

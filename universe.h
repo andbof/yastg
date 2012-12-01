@@ -13,9 +13,12 @@ struct universe {
 	struct tm *created;		/* When the universe was created */
 	size_t numsector;
 	struct ptrlist sectors;
-	struct htable *sectornames;
-	struct htable *planetnames;
-	struct htable *basenames;
+	struct list_head sectornames;
+	pthread_rwlock_t sectornames_lock;
+	struct list_head planetnames;
+	pthread_rwlock_t planetnames_lock;
+	struct list_head basenames;
+	pthread_rwlock_t basenames_lock;
 	struct sarray *srad;		/* Sector IDs sorted by radial position from (0,0) */
 	struct sarray *sphi;		/* Sector IDs sorted by angle from (0,0) */
 	struct list_head list;

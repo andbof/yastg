@@ -5,7 +5,7 @@
 #include "base.h"
 #include "common.h"
 #include "data.h"
-#include "htable.h"
+#include "stringtree.h"
 #include "log.h"
 #include "mtrandom.h"
 #include "parseconfig.h"
@@ -61,11 +61,11 @@ void planet_free(struct planet *p)
 		planet_free(m);
 	ptrlist_free(&p->moons);
 	if (p->name) {
-		htable_rm(univ->planetnames, p->name);
+		st_rm_string(&univ->planetnames, p->name);
 		free(p->name);
 	}
 	if (p->gname) {
-		htable_rm(univ->planetnames, p->gname);
+		st_rm_string(&univ->planetnames, p->gname);
 		free(p->gname);
 	}
 	free(p);
@@ -132,7 +132,7 @@ void planet_populate_sector(struct sector* sector)
 	struct planet *p;
 	int num = planet_gennum();
 
-	pthread_rwlock_wrlock(&univ->planetnames->lock);
+	pthread_rwlock_wrlock(&univ->planetnames_lock);
 
 	for (int i = 0; i < num; i++) {
 		p = initplanet();
@@ -140,10 +140,10 @@ void planet_populate_sector(struct sector* sector)
 		MALLOC_DIE(p->name, strlen(sector->name) + ROMAN_LEN + 2);
 		sprintf(p->name, "%s %s", sector->name, roman[i]);	/* FIXME: Wait with naming until all are made, sort on mean distance from sun. */
 		ptrlist_push(&sector->planets, p);
-		htable_add(univ->planetnames, p->name, p);
+		st_add_string(&univ->planetnames, p->name, p);
 		if (p->gname)
-			htable_add(univ->planetnames, p->gname, p);
+			st_add_string(&univ->planetnames, p->gname, p);
 	}
 
-	pthread_rwlock_unlock(&univ->planetnames->lock);
+	pthread_rwlock_unlock(&univ->planetnames_lock);
 }
