@@ -10,7 +10,7 @@ struct char_list {
 
 void st_init(struct st_node * const node)
 {
-	assert(node != NULL);
+	assert(node);
 
 	memset(node, 0, sizeof(*node));
 
@@ -21,6 +21,9 @@ void st_init(struct st_node * const node)
 void st_destroy(struct list_head * const root, const int do_free_data)
 {
 	struct st_node *node, *_node;
+
+	assert(root);
+
 	list_for_each_entry_safe(node, _node, root, list) {
 		if (!list_empty(&node->children))
 			st_destroy(&node->children, do_free_data);
@@ -34,9 +37,6 @@ void st_destroy(struct list_head * const root, const int do_free_data)
 int st_add_string(struct list_head * const root, char *string, void *data)
 {
 	struct st_node *new_node, *prev_node;
-
-	if (root == NULL || string[0] == '\0')
-		return -1;
 
 	new_node = NULL;
 	list_for_each_entry(prev_node, root, list) {
@@ -65,13 +65,50 @@ int st_add_string(struct list_head * const root, char *string, void *data)
 	}
 }
 
-static struct st_node* find_node(const struct list_head * const root, const char * const string)
+/*
+ * If there is only one node with a data pointer if we traverse all child nodes
+ * from root, function get_the_only_child() will return that node. Otherwise,
+ * it will return NULL. This is useful for implementing matching the shortest
+ * unique string for a set of strings.
+ */
+static int _get_the_only_child(const struct list_head * const root, struct st_node **unique)
 {
-	assert(root != NULL);
 	struct st_node *node;
+	int r;
 
-	if (!string || string[0] == '\0')
+	list_for_each_entry(node, root, list) {
+		if (node->data) {
+			if (!*unique)
+				*unique = node;
+			else
+				return -1;
+		}
+		if (!list_empty(&node->children)) {
+			r = _get_the_only_child(&node->children, unique);
+			if (r)
+				return r;
+		}
+	}
+
+	return 0;
+}
+
+static void* get_the_only_child(const struct list_head * const root)
+{
+	struct st_node *node = NULL;
+	int r;
+
+	r = _get_the_only_child(root, &node);
+	if (r)
 		return NULL;
+
+	return node;
+}
+
+static struct st_node* find_node(const struct list_head * const root, const char * const string, const int exact_match_only)
+{
+	struct st_node *node, *unique;
+	int i;
 
 	list_for_each_entry(node, root, list) {
 		if (node->c < string[0])
@@ -81,12 +118,15 @@ static struct st_node* find_node(const struct list_head * const root, const char
 			return NULL;
 
 		if (string[1] != '\0')
-			return find_node(&node->children, string + 1);
+			return find_node(&node->children, string + 1, exact_match_only);
 
 		if (node->data)
 			return node;
 
-		return NULL;
+		if (exact_match_only)
+			return NULL;
+		else
+			return get_the_only_child(&node->children);
 	}
 
 	return NULL;
@@ -96,7 +136,25 @@ void* st_lookup_string(const struct list_head * const root, const char * const s
 {
 	struct st_node *node;
 
-	node = find_node(root, string);
+	if (!root || !string || string[0] == '\0')
+		return NULL;
+
+	node = find_node(root, string, 0);
+	if (!node)
+		return NULL;
+
+	return node->data;
+}
+
+
+void* st_lookup_exact(const struct list_head * const root, const char * const string)
+{
+	struct st_node *node;
+
+	if (!root || !string || string[0] == '\0')
+		return NULL;
+
+	node = find_node(root, string, 1);
 	if (!node)
 		return NULL;
 
@@ -114,7 +172,10 @@ void* st_rm_string(struct list_head * const root, const char * const string)
 	void *data;
 	struct st_node *node;
 
-	node = find_node(root, string);
+	if (!root || !string || string[0] == '\0')
+		return NULL;
+
+	node = find_node(root, string, 1);
 	if (!node)
 		return NULL;
 

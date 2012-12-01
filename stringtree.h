@@ -40,12 +40,15 @@ struct st_node {
 	struct list_head list;
 };
 
+#define ST_DO_FREE_DATA 1
+#define ST_DONT_FREE_DATA 0
 void st_init(struct st_node * const node);
 void st_destroy(struct list_head * const root, const int do_free_data);
 
 int st_add_string(struct list_head * const root, char *string, void *data);
 
 void* st_lookup_string(const struct list_head * const root, const char * const string);
+void* st_lookup_exact(const struct list_head * const root, const char * const string);
 
 void* st_rm_string(struct list_head * const root, const char * const string);
 
