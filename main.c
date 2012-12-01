@@ -27,7 +27,6 @@
 #include "universe.h"
 #include "parseconfig.h"
 #include "civ.h"
-#include "id.h"
 #include "names.h"
 #include "module.h"
 
@@ -231,7 +230,6 @@ int main(int argc, char **argv)
 	server.running = 1;
 	srand(time(NULL));
 	mtrandom_init();
-	init_id();
 
 	/* Parse command line options */
 	parseopts(argc, argv);
@@ -312,7 +310,6 @@ int main(int argc, char **argv)
 	names_free(&univ->avail_base_names);
 	names_free(&univ->avail_player_names);
 
-	id_destroy();
 	universe_free(univ);
 	free(line);
 	cli_tree_destroy(&cli_root);

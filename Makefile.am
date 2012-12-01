@@ -37,8 +37,6 @@ yastg_SOURCES = base.c \
 		constellation.h \
 		data.c \
 		data.h \
-		id.c \
-		id.h \
 		inventory.h \
 		list.h \
 		log.c \
@@ -79,7 +77,6 @@ test_sarraytest_SOURCES = test/sarraytest.c \
 			  sarray.c \
 			  mt19937ar-cok.c \
 			  mtrandom.c \
-			  id.c \
 			  log.c
 
 test_conntest_SOURCES = test/conntest.c

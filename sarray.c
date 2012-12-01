@@ -278,3 +278,23 @@ void sarray_free(struct sarray *a) {
 	}
 	free(a->array);
 }
+
+int sort_ulong(void *a, void *b)
+{
+	if (GET_ULONG(b) > GET_ULONG(a))
+		return -1;
+	else if (GET_ULONG(b) < GET_ULONG(a))
+		return 1;
+	else
+		return 0;
+}
+
+int sort_double(void *a, void *b)
+{
+	if (GET_DOUBLE(a) > GET_DOUBLE(b))
+		return -1;
+	else if (GET_DOUBLE(b) < GET_DOUBLE(a))
+		return 1;
+	else
+		return 0;
+}

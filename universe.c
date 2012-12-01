@@ -18,7 +18,6 @@
 #include "stringtree.h"
 #include "mtrandom.h"
 #include "sarray.h"
-#include "id.h"
 
 /*
  * The universe consists of a number of sectors. These sectors are grouped in constellations,

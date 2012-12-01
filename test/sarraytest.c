@@ -3,7 +3,6 @@
 #include <config.h>
 #include "common.h"
 #include "sarray.h"
-#include "id.h"
 #include "mtrandom.h"
 
 struct foo {
@@ -57,7 +56,7 @@ int main(int argc, char **argv)
 	a->allocated = SORTEDARRAY_N;
 	a->array = malloc(sizeof(struct foo)*SORTEDARRAY_N);
 	a->maxkey = SARRAY_ENFORCE_UNIQUE;
-	a->sortfnc = &sort_id;
+	a->sortfnc = &sort_ulong;
 	a->freefnc = NULL;
 
 	/* u[] is our array with test elements to add and remove */

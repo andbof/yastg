@@ -41,4 +41,7 @@ void sarray_print(struct sarray *a);
 
 void sarray_free(struct sarray *a);
 
+int sort_ulong(void *a, void *b);
+int sort_double(void *a, void *b);
+
 #endif
