@@ -49,7 +49,7 @@ void conn_send(struct connection *data, char *format, ...);
 void conn_cleanexit(struct connection *data);
 void conn_error(struct connection *data, char *format, ...);
 void* connection_worker(void *_data);
-void conn_fulfixinit(struct connection *data);
+int conn_fulfixinit(struct connection *data);
 
 void conn_do_work(struct conn_data *data, struct connection *conn);
 

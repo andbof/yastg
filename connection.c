@@ -155,20 +155,25 @@ void* connection_worker(void *_w)
 	return NULL;
 }
 
-void conn_fulfixinit(struct connection *data)
+int conn_fulfixinit(struct connection *data)
 {
+	log_printfn("connection", "initializing connection from peer %s", data->peer);
+
 	data->pl = malloc(sizeof(*data->pl));
 	if (!data->pl)
-		return;
+		return -1;
 
-	player_init(data->pl);
-
-	log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
+	if (player_init(data->pl))
+		return -1;
 
 	data->pl->conn = data;
 	player_go(data->pl, SECTOR, ptrlist_entry(&univ.sectors, 0));
 
 	conn_send(data, PROMPT);
+
+	log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
+
+	return 0;
 }
 
 void conn_do_work(struct conn_data *data, struct connection *conn)

@@ -35,7 +35,7 @@ void names_load(struct name_list *l, char *prefix, char *first, char *second, ch
 		l->suffix = file_to_ptrarray(suffix, l->suffix);
 }
 
-char* names_generate(struct name_list *l)
+char* create_unique_name(struct name_list *l)
 {
 	char *pr = NULL;
 	char *fi = NULL;
@@ -65,7 +65,9 @@ char* names_generate(struct name_list *l)
 
 	len += 4;		/* Spaces between words and ending null */
 	char *name;
-	MALLOC_DIE(name, len);
+	name = malloc(len);
+	if (!name)
+		return NULL;
 
 	char *p = name;
 	if (pr) {

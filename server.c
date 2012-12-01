@@ -312,17 +312,30 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 	log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
 
 	pthread_rwlock_wrlock(&conn_list_lock);
+
 	list_add_tail(&cd->list, &conn_list);
 	ev_io_init(&cd->watcher, got_new_peer_data, cd->peerfd, EV_READ);
 	cd->watcher.data = cd;
+
 	pthread_rwlock_unlock(&conn_list_lock);
 
 	ev_io_start(loop, &cd->watcher);
 
 	log_printfn("server", "serving new connection %x", cd->id);
-	conn_fulfixinit(cd);
+	if (conn_fulfixinit(cd)) {
+		log_printfn("server", "unable to initialize connection\n");
+		r = -1;
+		goto err_stop;
+	}
 
 	return 0;
+
+err_stop:
+	pthread_rwlock_wrlock(&conn_list_lock);
+	list_del(&cd->list);
+	ev_io_stop(loop, &cd->watcher);
+	close(cd->peerfd);
+	pthread_rwlock_unlock(&conn_list_lock);
 
 err_free:
 	connection_free(cd);

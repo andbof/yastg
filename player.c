@@ -385,10 +385,13 @@ void player_go(struct player *player, enum postype postype, void *pos)
 	}
 }
 
-void player_init(struct player *player)
+int player_init(struct player *player)
 {
 	memset(player, 0, sizeof(*player));
-	player->name = names_generate(&univ.avail_player_names);
+	player->name = create_unique_name(&univ.avail_player_names);
+	if (!player->name)
+		return -1;
+
 	INIT_LIST_HEAD(&player->list);
 	INIT_LIST_HEAD(&player->cli);
 	player->postype = NONE;
@@ -397,4 +400,6 @@ void player_init(struct player *player)
 	cli_add_cmd(&player->cli, "go", cmd_hyper, player, cmd_hyper_help);
 	cli_add_cmd(&player->cli, "quit", cmd_quit, player, cmd_quit_help);
 	cli_add_cmd(&player->cli, "look", cmd_look, player, cmd_look_help);
+
+	return 0;
 }

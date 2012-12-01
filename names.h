@@ -13,6 +13,6 @@ struct name_list {
 void names_init(struct name_list *l);
 void names_free(struct name_list *l);
 void names_load(struct name_list *l, char *prefix, char *first, char *second, char *suffix);
-char* names_generate(struct name_list *l);
+char* create_unique_name(struct name_list *l);
 
 #endif

@@ -58,7 +58,7 @@ static void base_genesis(struct base *base, struct planet *planet)
 	do {
 		if (base->name)
 			free(base->name);
-		base->name = names_generate(&univ.avail_base_names);
+		base->name = create_unique_name(&univ.avail_base_names);
 	} while (st_lookup_exact(&univ.basenames, base->name));
 }
 
