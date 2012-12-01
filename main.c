@@ -218,8 +218,13 @@ int main(int argc, char **argv)
 	struct civ *cv;
 	struct sector *s, *t;
 	size_t st, su;
-	struct civ *civs = civ_create();
+	struct civ *civs;
 	struct server server;
+
+	civs = malloc(sizeof(*civs));
+	if (!civs)
+		goto nomem;
+	civ_init(civs);
 
 	/* Open log file */
 	log_init();
@@ -317,4 +322,8 @@ int main(int argc, char **argv)
 
 	return 0;
 
+nomem:
+	printf("Out of memory\n");
+	log_printfn("main", "out of memory");
+	return -1;
 }

@@ -1,6 +1,7 @@
 #ifndef _HAS_CIV_H
 #define _HAS_CIV_H
 
+#include "parseconfig.h"
 #include "list.h"
 #include "ptrlist.h"
 
@@ -16,8 +17,8 @@ struct civ {
 	struct list_head list;
 };
 
-struct civ* loadciv();
-struct civ* civ_create();
+void loadciv(struct civ *c, struct config *ctree);
+void civ_init(struct civ *c);
 int civ_load_all(struct civ *civs);
 
 void civ_spawncivs(struct universe *u, struct civ *civs);

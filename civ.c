@@ -105,24 +105,22 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 	printf("%lu sectors of %lu are inhabited (%.2f%%)\n", chab, ptrlist_len(&u->sectors), (float)chab/ptrlist_len(&u->sectors)*100);
 }
 
-struct civ* civ_create()
+void civ_init(struct civ *c)
 {
-	struct civ *c;
-	MALLOC_DIE(c, sizeof(*c));
 	memset(c, 0, sizeof(*c));
 	ptrlist_init(&c->presectors);
 	ptrlist_init(&c->availnames);
 	ptrlist_init(&c->sectors);
 	INIT_LIST_HEAD(&c->list);
-	return c;
 }
 
-struct civ* loadciv(struct config *ctree)
+void loadciv(struct civ *c, struct config *ctree)
 {
-	struct civ *c = civ_create();
 	struct sector *s;
 	char *st;
-	ctree=ctree->sub;
+	civ_init(c);
+
+	ctree = ctree->sub;
 	while (ctree) {
 		if (strcmp(ctree->key, "NAME") == 0) {
 			c->name = strdup(ctree->data);
@@ -139,7 +137,6 @@ struct civ* loadciv(struct config *ctree)
 		}
 		ctree = ctree->next;
 	}
-	return c;
 }
 
 int civ_load_all(struct civ *civs)
@@ -150,26 +147,42 @@ int civ_load_all(struct civ *civs)
 	struct civ *cv;
 	char* path = NULL;
 	int pathlen = 0;
-	if (!(dirp = opendir("civs"))) die("%s", "opendir() on civs failed");
+	int r = 0;
+
+	if (!(dirp = opendir("civs")))
+		die("%s", "opendir() on civs failed");
+
 	while ((de = readdir(dirp)) != NULL) {
 		if (de->d_name[0] != '.') {
 			if ((int)strlen(de->d_name) > pathlen-6) {
-				if (path != NULL) free(path);
+				if (path != NULL)
+					free(path);
+
 				pathlen = strlen(de->d_name)+6;
 				path = malloc(pathlen);
 			}
+
 			sprintf(path, "%s/%s", "civs", de->d_name);
 			ctree = parseconfig(path);
-			cv = loadciv(ctree);
+
+			cv = malloc(sizeof(*cv));
+			if (!cv) {
+				r = -1;
+				goto close;
+			}
+
+			loadciv(cv, ctree);
 			destroyctree(ctree);
 			list_add_tail(&(cv->list), &(civs->list));
 		}
 	}
+
+close:
 	if (path != NULL)
 		free(path);
 	closedir(dirp);
 
-	return 0;
+	return r;
 }
 
 void civ_free(struct civ *civ)
