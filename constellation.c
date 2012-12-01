@@ -14,25 +14,37 @@
 #include "ptrlist.h"
 #include "stringtree.h"
 
-void loadconstellations()
+int loadconstellations()
 {
 	struct config *ctree, *e;
 	unsigned int ncons = 0;
+
 	ctree = parseconfig("data/constellations");
 	e = ctree->sub;
+
 	if (!e->next)
 		die("%s contained no useful data", e->key);
+
 	e = e->next;
+
 	while ((e) && (ncons < CONSTELLATION_MAXNUM)) {
 		printf("Adding constellation %s\n", e->key);
-		addconstellation(e->key);
+		if (addconstellation(e->key))
+			goto err;
+
 		e = e->next;
 		ncons++;
 	}
+
 	destroyctree(ctree);
+	return 0;
+
+err:
+	destroyctree(ctree);
+	return -1;
 }
 
-void addconstellation(char* cname)
+int addconstellation(char* cname)
 {
 	unsigned long nums, numc, i;
 	char *string;
@@ -41,7 +53,11 @@ void addconstellation(char* cname)
 	unsigned long x, y;
 	double phi;
 	unsigned long r;
-	MALLOC_DIE(string, strlen(cname)+GREEK_LEN+2);
+
+	string = malloc(strlen(cname)+GREEK_LEN+2);
+	if (!string)
+		return -1;
+
 	ptrlist_init(&work);
 
 	/* Determine number of sectors in constellation */
@@ -108,4 +124,5 @@ void addconstellation(char* cname)
 	free(string);
 	ptrlist_free(&work);
 
+	return 0;
 }

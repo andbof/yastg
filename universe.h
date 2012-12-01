@@ -31,7 +31,7 @@ extern struct universe univ;
 void universe_free(struct universe *u);
 struct universe* universe_create();
 void universe_init(struct universe *u);
-void universe_genesis(struct universe *univ, struct civ *civs);
+int universe_genesis(struct universe *univ, struct civ *civs);
 size_t countneighbours(struct sector *s, unsigned long dist);
 struct ptrlist* getneighbours(struct sector *s, unsigned long dist);
 int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsigned long max);

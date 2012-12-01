@@ -267,7 +267,8 @@ int main(int argc, char **argv)
 	names_load(&univ.avail_player_names, NULL, "data/firstnames", "data/surnames", NULL);
 	printf("done.\n");
 
-	universe_genesis(&univ, civs);
+	if (universe_genesis(&univ, civs))
+		die("%s", "Error when creating universe");
 
 	/* Start server thread */
 	if (pipe(server.fd) != 0)

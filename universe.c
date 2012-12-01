@@ -134,7 +134,7 @@ void universe_init(struct universe *u)
 	u->sphi = sarray_init(sizeof(struct double_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
 }
 
-void universe_genesis(struct universe *univ, struct civ *civs)
+int universe_genesis(struct universe *univ, struct civ *civs)
 {
 	int i;
 	int power = 0;
@@ -147,11 +147,14 @@ void universe_genesis(struct universe *univ, struct civ *civs)
 	 * 1. Decide number of constellations in universe.
 	 * 2. For each constellation, create a number of sectors, grouping them together.
 	 */
-	loadconstellations(univ);
+	if (loadconstellations(univ))
+		return -1;
 
 	/*
 	 * 3. Randomly distribute civilizations
 	 * 4. Let civilizations grow and create hyperspace links
 	 */
 	civ_spawncivs(univ, civs);
+
+	return 0;
 }
