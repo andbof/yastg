@@ -24,9 +24,9 @@ struct sector {
 	struct list_head list;
 };
 
-struct sector* sector_init();
+void sector_init(struct sector *s);
 struct sector* sector_load(struct config *ctree);
-struct sector* sector_create(char *name);
+int sector_create(struct sector *s, char *name);
 void sector_free(void *ptr);
 
 void sector_move(struct sector *s, long x, long y);

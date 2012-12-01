@@ -13,10 +13,8 @@
 #include "parseconfig.h"
 #include "star.h"
 
-struct sector* sector_init()
+void sector_init(struct sector *s)
 {
-	struct sector *s;
-	MALLOC_DIE(s, sizeof(*s));
 	memset(s, 0, sizeof(*s));
 	s->phi = 0.0;
 
@@ -26,7 +24,6 @@ struct sector* sector_init()
 	ptrlist_init(&s->links);
 
 	INIT_LIST_HEAD(&s->list);
-	return s;
 }
 
 void sector_free(void *ptr) {
@@ -61,13 +58,18 @@ void sector_free(void *ptr) {
 
 struct sector* sector_load(struct config *ctree)
 {
-	struct sector *s = sector_init();
+	struct sector *s;
 	struct list_head *lh;
 	struct planet *p;
 	struct base *b;
 	struct star *sol;
 	size_t i;
 	int haspos = 0;
+
+	s = malloc(sizeof(*s));
+	if (!s)
+		return NULL;
+	sector_init(s);
 
 	while (ctree) {
 		if (strcmp(ctree->key, "SECTOR") == 0) {
@@ -126,11 +128,13 @@ err:
 }
 
 #define STELLAR_MUL_HAB -50
-struct sector* sector_create(char *name)
+int sector_create(struct sector *s, char *name)
 {
 	struct star *sol;
-	struct sector *s = sector_init();
 	struct list_head *lh;
+
+	sector_init(s);
+
 	s->name = strdup(name);
 	star_populate_sector(s);
 	s->hab = 0;
@@ -144,15 +148,11 @@ struct sector* sector_create(char *name)
 	s->habhigh = star_gethabhigh(totlum);
 
 	if (planet_populate_sector(s))
-		goto err;
+		return -1;
 
 	printf("  Number of planets: %lu\n", ptrlist_len(&s->planets));
 
-	return s;
-
-err:
-	sector_free(s);
-	return NULL;
+	return 0;
 }
 
 void sector_move(struct sector *s, long x, long y)

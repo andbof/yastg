@@ -73,9 +73,11 @@ int addconstellation(char* cname)
 	for (numc = 0; numc < nums; numc++) {
 
 		/* Create a new sector and put it in s */
-		sprintf(string, "%s %s", greek[numc], cname);
-		s = sector_create(string);
+		s = malloc(sizeof(*s));
 		if (!s)
+			goto err;
+		sprintf(string, "%s %s", greek[numc], cname);
+		if (sector_create(s, string))
 			goto err;
 
 		ptrlist_push(&univ.sectors, s);
