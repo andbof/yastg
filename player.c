@@ -30,17 +30,17 @@ void player_free(void *ptr)
 	free(player);
 }
 
-static char* hundreths(unsigned long l)
+static char* hundreths(unsigned long l, char *buf, size_t len)
 {
-	int mod = l%100;
-	char* result;
-	MALLOC_DIE(result, (size_t)10);
+	int mod = l % 100;
+
 	if (mod < 10) {
-		sprintf(result, "%lu.0%lu", l/100, l%100);
+		snprintf(buf, len, "%lu.0%lu", l / 100, l % 100);
 	} else {
-		sprintf(result, "%lu.0%lu", l/100, l%100);
+		snprintf(buf, len, "%lu.0%lu", l / 100, l % 100);
 	}
-	return result;
+
+	return buf;
 }
 
 static void player_showsector(struct player *player, struct sector *sector)
@@ -49,20 +49,21 @@ static void player_showsector(struct player *player, struct sector *sector)
 	struct list_head *lh;
 	struct star *sol;
 	struct planet *planet;
+	char buf[10];
+
 	player_talk(player,
 		"Sector %s (coordinates %ldx%ld), habitability %d\n"
 		"Habitable zone is from %lu to %lu Gm\n",
 		sector->name, sector->x, sector->y, sector->hab, sector->hablow, sector->habhigh);
 
 	player_talk(player, "Stars:\n");
-	ptrlist_for_each_entry(sol, &sector->stars, lh) {
-		char *string = hundreths(sol->lumval);
+	ptrlist_for_each_entry(sol, &sector->stars, lh)
 		player_talk(player,
 			"  %s: Class %c %s\n"
 			"    Surface temperature: %dK, habitability modifier: %d, luminosity: %s\n",
-			sol->name, stellar_cls[sol->cls], stellar_lum[sol->lum], sol->temp, sol->hab, string);
-		free(string);
-	}
+			sol->name, stellar_cls[sol->cls],
+			stellar_lum[sol->lum], sol->temp, sol->hab,
+			hundreths(sol->lumval, buf, sizeof(buf)));
 
 	if (!list_empty(&sector->planets.list)) {
 		player_talk(player, "Planets:\n");
