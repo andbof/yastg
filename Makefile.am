@@ -37,8 +37,6 @@ yastg_SOURCES = base.c \
 		constellation.h \
 		data.c \
 		data.h \
-		htable.c \
-		htable.h \
 		id.c \
 		id.h \
 		inventory.h \
