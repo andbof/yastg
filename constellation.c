@@ -75,6 +75,9 @@ int addconstellation(char* cname)
 		/* Create a new sector and put it in s */
 		sprintf(string, "%s %s", greek[numc], cname);
 		s = sector_create(string);
+		if (!s)
+			goto err;
+
 		ptrlist_push(&univ.sectors, s);
 		st_add_string(&univ.sectornames, s->name, s);
 
@@ -125,4 +128,8 @@ int addconstellation(char* cname)
 	ptrlist_free(&work);
 
 	return 0;
+
+err:
+	pthread_rwlock_unlock(&univ.sectornames_lock);
+	return -1;
 }

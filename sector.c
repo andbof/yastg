@@ -68,25 +68,40 @@ struct sector* sector_load(struct config *ctree)
 	struct star *sol;
 	size_t i;
 	int haspos = 0;
+
 	while (ctree) {
 		if (strcmp(ctree->key, "SECTOR") == 0) {
+
 			s->name = NULL;
+
 		} else if (strcmp(ctree->key, "PLANET") == 0) {
-			p = loadplanet(ctree->sub);
+
+			p = malloc(sizeof(*p));
+			if (!p)
+				goto err;
+
+			planet_load(p, ctree->sub);
 			ptrlist_push(&s->planets, p);
+
 		} else if (strcmp(ctree->key, "BASE") == 0) {
+
 			b = malloc(sizeof(*b));
 			if (!b)
 				goto err;
 
 			loadbase(b, ctree->sub);
 			ptrlist_push(&s->bases, b);
+
 		} else if (strcmp(ctree->key, "STAR") == 0) {
+
 			sol = loadstar(ctree->sub);
 			ptrlist_push(&s->stars, sol);
+
 		} else if (strcmp(ctree->key, "POS") == 0) {
+
 			sscanf(ctree->data, "%lu %lu", &s->x, &s->y);
 			haspos = 1;
+
 		}
 		ctree = ctree->next;
 	}
@@ -128,10 +143,16 @@ struct sector* sector_create(char *name)
 	s->hablow = star_gethablow(totlum);
 	s->habhigh = star_gethabhigh(totlum);
 
-	planet_populate_sector(s);
+	if (planet_populate_sector(s))
+		goto err;
+
 	printf("  Number of planets: %lu\n", ptrlist_len(&s->planets));
 
 	return s;
+
+err:
+	sector_free(s);
+	return NULL;
 }
 
 void sector_move(struct sector *s, long x, long y)

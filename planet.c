@@ -14,17 +14,14 @@
 #include "sector.h"
 #include "universe.h"
 
-struct planet* initplanet()
+static void planet_init(struct planet *p)
 {
-	struct planet *p;
-	MALLOC_DIE(p, sizeof(*p));
 	memset(p, 0, sizeof(*p));
 
 	ptrlist_init(&p->bases);
 	ptrlist_init(&p->stations);
 	ptrlist_init(&p->moons);
 	INIT_LIST_HEAD(&p->list);
-	return p;
 }
 
 void planet_free(struct planet *p)
@@ -53,10 +50,10 @@ void planet_free(struct planet *p)
 	free(p);
 }
 
-struct planet* loadplanet(struct config *ctree)
+int planet_load(struct planet *p, struct config *ctree)
 {
 	struct base *b;
-	struct planet *p = initplanet();
+
 	while (ctree) {
 		if (strcmp(ctree->key, "NAME") == 0) {
 			p->name = strdup(ctree->data);
@@ -65,7 +62,7 @@ struct planet* loadplanet(struct config *ctree)
 		} else if (strcmp(ctree->key, "BASE") == 0) {
 			b = malloc(sizeof(*b));
 			if (!b)
-				goto err;
+				return -1;
 
 			loadbase(b, ctree->sub);
 			ptrlist_push(&p->bases, b);
@@ -73,11 +70,7 @@ struct planet* loadplanet(struct config *ctree)
 		ctree = ctree->next;
 	}
 
-	return p;
-
-err:
-	planet_free(p);
-	return NULL;
+	return 0;
 }
 
 #define PLANET_MUL_ODDS 2
@@ -136,7 +129,7 @@ static void planet_genesis(struct planet *planet, struct sector *sector)
 	base_populate_planet(planet);
 }
 
-void planet_populate_sector(struct sector* sector)
+int planet_populate_sector(struct sector* sector)
 {
 	struct planet *p;
 	int num = planet_gennum();
@@ -144,9 +137,19 @@ void planet_populate_sector(struct sector* sector)
 	pthread_rwlock_wrlock(&univ.planetnames_lock);
 
 	for (int i = 0; i < num; i++) {
-		p = initplanet();
+		p = malloc(sizeof(*p));
+		if (!p)
+			return -1;
+
+		planet_init(p);
 		planet_genesis(p, sector);
-		MALLOC_DIE(p->name, strlen(sector->name) + ROMAN_LEN + 2);
+
+		p->name = malloc(strlen(sector->name) + ROMAN_LEN + 2);
+		if (!p->name) {
+			free(p);
+			return -1;
+		}
+
 		sprintf(p->name, "%s %s", sector->name, roman[i]);	/* FIXME: Wait with naming until all are made, sort on mean distance from sun. */
 		ptrlist_push(&sector->planets, p);
 		st_add_string(&univ.planetnames, p->name, p);
@@ -155,4 +158,6 @@ void planet_populate_sector(struct sector* sector)
 	}
 
 	pthread_rwlock_unlock(&univ.planetnames_lock);
+
+	return 0;
 }
