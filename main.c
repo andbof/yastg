@@ -36,7 +36,7 @@
 
 const char* options = "d";
 int detached = 0;
-struct cli_tree *cli_root;
+LIST_HEAD(cli_root);
 
 extern int sockfd;
 
@@ -71,7 +71,7 @@ static void write_msg(int fd, struct signal *msg, char *msgdata)
 
 static int cmd_help(void *ptr, char *param)
 {
-	cli_print_help(stdout, cli_root);
+	cli_print_help(stdout, &cli_root);
 	return 0;
 }
 
@@ -109,24 +109,24 @@ static int cmd_lsmod(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_wall(void *ptr, char *param)
+static int cmd_wall(void *_server, char *message)
 {
-	struct server *server = ptr;
-	if (param) {
+	struct server *server = _server;
+	if (message) {
 		struct signal msg = {
-			.cnt = strlen(param) + 1,
+			.cnt = strlen(message) + 1,
 			.type = MSG_WALL
 		};
-		write_msg(server->fd[1], &msg, param);
+		write_msg(server->fd[1], &msg, message);
 	} else {
 		mprintf("usage: wall <message>\n");
 	}
 	return 0;
 }
 
-static int cmd_pause(void *ptr, char *param)
+static int cmd_pause(void *_server, char *param)
 {
-	struct server *server = ptr;
+	struct server *server = _server;
 	struct signal msg = {
 		.cnt = 0,
 		.type = MSG_PAUSE
@@ -135,9 +135,9 @@ static int cmd_pause(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_resume(void *ptr, char *param)
+static int cmd_resume(void *_server, char *param)
 {
-	struct server *server = ptr;
+	struct server *server = _server;
 	struct signal msg = {
 		.cnt = 0,
 		.type = MSG_CONT
@@ -157,24 +157,24 @@ static void _cmd_rmmod(struct module *m)
 		       );
 }
 
-static int cmd_rmmod(void *ptr, char *param)
+static int cmd_rmmod(void *ptr, char *name)
 {
 	struct module *m;
 	int r;
 
-	if (!param) {
+	if (!name) {
 		mprintf("usage: rmmod <module>\n");
 		return 0;
 	}
 
 	list_for_each_entry(m, &modules_loaded, list) {
-		if (strcmp(m->name, param) == 0) {
+		if (strcmp(m->name, name) == 0) {
 			_cmd_rmmod(m);
 			return 0;
 		}
 	}
 
-	mprintf("Module %s is not currently loaded\n", param);
+	mprintf("Module %s is not currently loaded\n", name);
 	return 0;
 }
 
@@ -204,9 +204,9 @@ static int cmd_stats(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_quit(void *ptr, char *param)
+static int cmd_quit(void *_server, char *param)
 {
-	struct server *server = ptr;
+	struct server *server = _server;
 	mprintf("Bye!\n");
 	server->running = 0;
 	return 0;
@@ -238,19 +238,16 @@ int main(int argc, char **argv)
 
 	/* Register server console commands */
 	printf("Registering server console commands\n");
-	cli_root = cli_tree_create();
-	if (cli_root == NULL)
-		die("%s", "Unable to allocate memory\n");
-	cli_add_cmd(cli_root, "help", cmd_help, &server, NULL);
-	cli_add_cmd(cli_root, "insmod", cmd_insmod, &server, NULL);
-	cli_add_cmd(cli_root, "lsmod", cmd_lsmod, &server, NULL);
-	cli_add_cmd(cli_root, "wall", cmd_wall, &server, NULL);
-	cli_add_cmd(cli_root, "pause", cmd_pause, &server, NULL);
-	cli_add_cmd(cli_root, "resume", cmd_resume, &server, NULL);
-	cli_add_cmd(cli_root, "rmmod", cmd_rmmod, &server, NULL);
-	cli_add_cmd(cli_root, "stats", cmd_stats, &server, NULL);
-	cli_add_cmd(cli_root, "memstat", cmd_memstat, &server, NULL);
-	cli_add_cmd(cli_root, "quit", cmd_quit, &server, NULL);
+	cli_add_cmd(&cli_root, "help", cmd_help, &server, NULL);
+	cli_add_cmd(&cli_root, "insmod", cmd_insmod, &server, NULL);
+	cli_add_cmd(&cli_root, "lsmod", cmd_lsmod, &server, NULL);
+	cli_add_cmd(&cli_root, "wall", cmd_wall, &server, NULL);
+	cli_add_cmd(&cli_root, "pause", cmd_pause, &server, NULL);
+	cli_add_cmd(&cli_root, "resume", cmd_resume, &server, NULL);
+	cli_add_cmd(&cli_root, "rmmod", cmd_rmmod, &server, NULL);
+	cli_add_cmd(&cli_root, "stats", cmd_stats, &server, NULL);
+	cli_add_cmd(&cli_root, "memstat", cmd_memstat, &server, NULL);
+	cli_add_cmd(&cli_root, "quit", cmd_quit, &server, NULL);
 
 	/* Load config files */
 	printf("Parsing configuration files\n");
@@ -283,7 +280,7 @@ int main(int argc, char **argv)
 		fgets(line, 256, stdin); /* FIXME */
 		chomp(line);
 
-		if (strlen(line) > 0 && cli_run_cmd(cli_root, line) < 0)
+		if (strlen(line) > 0 && cli_run_cmd(&cli_root, line) < 0)
 			mprintf("Unknown command or syntax error.\n");
 	}
 
@@ -318,7 +315,7 @@ int main(int argc, char **argv)
 	id_destroy();
 	universe_free(univ);
 	free(line);
-	cli_tree_destroy(cli_root);
+	cli_tree_destroy(&cli_root);
 	log_close();
 
 	return 0;

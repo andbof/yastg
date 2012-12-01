@@ -149,7 +149,7 @@ void* connection_worker(void *_w)
 		if (w->terminate)
 			break;
 
-		if (conn->rbuf[0] != '\0' && cli_run_cmd(conn->pl->cli, conn->rbuf) < 0)
+		if (conn->rbuf[0] != '\0' && cli_run_cmd(&conn->pl->cli, conn->rbuf) < 0)
 			conn_send(conn, "Unknown command or syntax error: \"%s\"\n", conn->rbuf);
 		conn_send(conn, PROMPT);
 	} while(1);

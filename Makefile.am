@@ -16,10 +16,10 @@ ACLOCAL_AMFLAGS = -I m4
 
 CFLAGS = -g -O0 -Wall -Werror -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -ftrapv -Wno-unused-variable -Wno-unused-parameter -Wtype-limits -fstack-protector-all -fno-strict-aliasing
 
-TESTS = test/sarraytest test/stacktest
+TESTS = test/sarraytest test/stacktest test/stringtree_test
 
 bin_PROGRAMS = yastg
-check_PROGRAMS = test/sarraytest test/stacktest test/conntest
+check_PROGRAMS = test/sarraytest test/stacktest test/stringtree_test test/conntest
 check_LTLIBRARIES = test_module.la
 
 # optflags: -O3 -funroll-loops
@@ -74,6 +74,8 @@ yastg_SOURCES = base.c \
 		stack.h \
 		star.c \
 		star.h \
+		stringtree.c \
+		stringtree.h \
 		universe.c \
 		universe.h
 
@@ -91,6 +93,9 @@ test_stacktest_SOURCES = test/stacktest.c \
 			 log.c
 
 test_conntest_SOURCES = test/conntest.c
+
+test_stringtree_test_SOURCES = test/stringtree_test.c \
+			       stringtree.c
 
 # The LDFLAGS for test_module are required to make a shared library without the
 # 'lib' prefix (-module), without any version suffix (-avoid-version) and force

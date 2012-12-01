@@ -26,7 +26,7 @@ void player_free(void *ptr)
 {
 	struct player *player = (struct player*)ptr;
 	free(player->name);
-	cli_tree_destroy(player->cli);
+	cli_tree_destroy(&player->cli);
 	free(player);
 }
 
@@ -174,7 +174,7 @@ static int cmd_help(void *ptr, char *param)
 	struct player *player = ptr;
 	/* FIXME: This should use conn_send instead of writing directly to the fd */
 	FILE *f = fdopen(dup(player->conn->peerfd), "w");
-	cli_print_help(f, player->cli);
+	cli_print_help(f, &player->cli);
 	fclose(f);
 	return 0;
 }
@@ -335,16 +335,16 @@ void player_go(struct player *player, enum postype postype, void *pos)
 {
 	switch (player->postype) {
 	case SECTOR:
-		cli_rm_cmd(player->cli, "jump");
-		cli_rm_cmd(player->cli, "dock");
-		cli_rm_cmd(player->cli, "orbit");
+		cli_rm_cmd(&player->cli, "jump");
+		cli_rm_cmd(&player->cli, "dock");
+		cli_rm_cmd(&player->cli, "orbit");
 		break;
 	case BASE:
-		cli_rm_cmd(player->cli, "leave");
+		cli_rm_cmd(&player->cli, "leave");
 		break;
 	case PLANET:
-		cli_rm_cmd(player->cli, "dock");
-		cli_rm_cmd(player->cli, "leave");
+		cli_rm_cmd(&player->cli, "dock");
+		cli_rm_cmd(&player->cli, "leave");
 		break;
 	case NONE:
 		break;
@@ -358,16 +358,16 @@ void player_go(struct player *player, enum postype postype, void *pos)
 
 	switch (postype) {
 	case SECTOR:
-		cli_add_cmd(player->cli, "jump", cmd_jump, player, cmd_jump_help);
-		cli_add_cmd(player->cli, "dock", cmd_dock, player, cmd_dock_help);
-		cli_add_cmd(player->cli, "orbit", cmd_orbit, player, cmd_orbit_help);
+		cli_add_cmd(&player->cli, "jump", cmd_jump, player, cmd_jump_help);
+		cli_add_cmd(&player->cli, "dock", cmd_dock, player, cmd_dock_help);
+		cli_add_cmd(&player->cli, "orbit", cmd_orbit, player, cmd_orbit_help);
 		break;
 	case BASE:
-		cli_add_cmd(player->cli, "leave", cmd_leave_base, player, cmd_leave_base_help);
+		cli_add_cmd(&player->cli, "leave", cmd_leave_base, player, cmd_leave_base_help);
 		break;
 	case PLANET:
-		cli_add_cmd(player->cli, "dock", cmd_dock, player, cmd_dock_help);
-		cli_add_cmd(player->cli, "leave", cmd_leave_planet, player, cmd_leave_planet_help);
+		cli_add_cmd(&player->cli, "dock", cmd_dock, player, cmd_dock_help);
+		cli_add_cmd(&player->cli, "leave", cmd_leave_planet, player, cmd_leave_planet_help);
 		break;
 	case NONE:
 		/* Fall through to default as NONE can only valid right after init */
@@ -381,11 +381,11 @@ void player_init(struct player *player)
 	memset(player, 0, sizeof(*player));
 	player->name = names_generate(&univ->avail_player_names);
 	INIT_LIST_HEAD(&player->list);
-	player->cli = cli_tree_create();
+	INIT_LIST_HEAD(&player->cli);
 	player->postype = NONE;
 
-	cli_add_cmd(player->cli, "help", cmd_help, player, cmd_help_help);
-	cli_add_cmd(player->cli, "go", cmd_hyper, player, cmd_hyper_help);
-	cli_add_cmd(player->cli, "quit", cmd_quit, player, cmd_quit_help);
-	cli_add_cmd(player->cli, "look", cmd_look, player, cmd_look_help);
+	cli_add_cmd(&player->cli, "help", cmd_help, player, cmd_help_help);
+	cli_add_cmd(&player->cli, "go", cmd_hyper, player, cmd_hyper_help);
+	cli_add_cmd(&player->cli, "quit", cmd_quit, player, cmd_quit_help);
+	cli_add_cmd(&player->cli, "look", cmd_look, player, cmd_look_help);
 }

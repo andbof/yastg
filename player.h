@@ -16,7 +16,7 @@ struct player {
 	enum postype postype;
 	void *pos;
 	struct list_head list;
-	struct cli_tree *cli;
+	struct list_head cli;
 	struct connection *conn;
 };
 
