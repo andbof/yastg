@@ -75,7 +75,11 @@ struct sector* sector_load(struct config *ctree)
 			p = loadplanet(ctree->sub);
 			ptrlist_push(&s->planets, p);
 		} else if (strcmp(ctree->key, "BASE") == 0) {
-			b = loadbase(ctree->sub);
+			b = malloc(sizeof(*b));
+			if (!b)
+				goto err;
+
+			loadbase(b, ctree->sub);
 			ptrlist_push(&s->bases, b);
 		} else if (strcmp(ctree->key, "STAR") == 0) {
 			sol = loadstar(ctree->sub);
@@ -100,6 +104,10 @@ struct sector* sector_load(struct config *ctree)
 	s->hablow = star_gethablow(totlum);
 	s->habhigh = star_gethabhigh(totlum);
 	return s;
+
+err:
+	sector_free(s);
+	return NULL;
 }
 
 #define STELLAR_MUL_HAB -50

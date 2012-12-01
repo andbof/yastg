@@ -10,10 +10,8 @@
 #include "sarray.h"
 #include "universe.h"
 
-struct base* loadbase(struct config *ctree)
+struct base* loadbase(struct base *b, struct config *ctree)
 {
-	struct base *b;
-	MALLOC_DIE(b, sizeof(*b));
 	memset(b, 0, sizeof(*b));
 	ptrlist_init(&b->inventory);
 	ptrlist_init(&b->players);
@@ -41,14 +39,11 @@ void base_free(struct base *b)
 	free(b);
 }
 
-static struct base* base_create()
+static void base_init(struct base *base)
 {
-	struct base *base;
-	MALLOC_DIE(base, sizeof(*base));
 	memset(base, 0, sizeof(*base));
 	ptrlist_init(&base->inventory);
 	ptrlist_init(&base->players);
-	return base;
 }
 
 static void base_genesis(struct base *base, struct planet *planet)
@@ -75,11 +70,15 @@ void base_populate_planet(struct planet* planet)
 	pthread_rwlock_wrlock(&univ.basenames_lock);
 
 	for (int i = 0; i < num; i++) {
-		b = base_create();
+		b = malloc(sizeof(*b));
+		if (!b)
+			goto unlock;
+		base_init(b);
 		base_genesis(b, planet);
 		ptrlist_push(&planet->bases, b);
 		st_add_string(&univ.basenames, b->name, b);
 	}
 
+unlock:
 	pthread_rwlock_unlock(&univ.basenames_lock);
 }

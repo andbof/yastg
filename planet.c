@@ -27,24 +27,6 @@ struct planet* initplanet()
 	return p;
 }
 
-struct planet* loadplanet(struct config *ctree)
-{
-	struct base *b;
-	struct planet *p = initplanet();
-	while (ctree) {
-		if (strcmp(ctree->key, "NAME") == 0) {
-			p->name = strdup(ctree->data);
-		} else if (strcmp(ctree->key, "TYPE") == 0) {
-			p->type = ctree->data[0];
-		} else if (strcmp(ctree->key, "BASE") == 0) {
-			b = loadbase(ctree->sub);
-			ptrlist_push(&p->bases, b);
-		}
-		ctree = ctree->next;
-	}
-	return p;
-}
-
 void planet_free(struct planet *p)
 {
 	assert(p != NULL);
@@ -69,6 +51,33 @@ void planet_free(struct planet *p)
 		free(p->gname);
 	}
 	free(p);
+}
+
+struct planet* loadplanet(struct config *ctree)
+{
+	struct base *b;
+	struct planet *p = initplanet();
+	while (ctree) {
+		if (strcmp(ctree->key, "NAME") == 0) {
+			p->name = strdup(ctree->data);
+		} else if (strcmp(ctree->key, "TYPE") == 0) {
+			p->type = ctree->data[0];
+		} else if (strcmp(ctree->key, "BASE") == 0) {
+			b = malloc(sizeof(*b));
+			if (!b)
+				goto err;
+
+			loadbase(b, ctree->sub);
+			ptrlist_push(&p->bases, b);
+		}
+		ctree = ctree->next;
+	}
+
+	return p;
+
+err:
+	planet_free(p);
+	return NULL;
 }
 
 #define PLANET_MUL_ODDS 2
