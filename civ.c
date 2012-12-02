@@ -196,5 +196,4 @@ void civ_free(struct civ *civ)
 		free(c);
 	ptrlist_free(&civ->availnames);
 	free(civ->name);
-	free(civ);
 }
