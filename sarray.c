@@ -89,11 +89,11 @@ int sarray_add(struct sarray *a, void *e)
 		/* The last element of the array is used. This means we have to increase the allocated size
 		   for the array. */
 		if (!(ptr = realloc(a->array, (a->allocated+REALLOC_STEP)*a->element_size)))
-			die("realloc to %zu bytes failed", (a->allocated+REALLOC_STEP)*a->element_size);
+			die("realloc to %lu bytes failed", (a->allocated+REALLOC_STEP)*a->element_size);
 		a->array = ptr;
 		a->allocated += REALLOC_STEP;
 	} else if (a->elements > a->allocated) {
-		bug("sarray has more elements than memory allocated: elements = %zu, allocated = %zu", a->elements, a->allocated);
+		bug("sarray has more elements than memory allocated: elements = %lu, allocated = %lu", a->elements, a->allocated);
 	}
 
 	/* We now know there is room in the array for at least one more element.
@@ -121,7 +121,7 @@ int sarray_rmbypos(struct sarray *a, unsigned long pos) {
 	size_t len;
 
 	if (!(ptr = sarray_getbypos(a, pos)))
-		bug("tried to remove element %zu but failed", pos);
+		bug("tried to remove element %lu but failed", pos);
 
 	len = (a->elements - 1) * a->element_size - (ptr - a->array);
 	if (!(memmove(ptr, ptr+a->element_size, len)))
