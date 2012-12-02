@@ -14,14 +14,15 @@
  * Initializes a sorted array. Allocates memory and sets initial options.
  * esize is the element size and asize the initial array size.
  */
-struct sarray* sarray_init(unsigned long esize, unsigned long asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*))
+int sarray_init(struct sarray *a, unsigned long esize, unsigned long asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*))
 {
-	struct sarray *a;
-	MALLOC_DIE(a, sizeof(*a));
 	a->elements = 0;
 	a->element_size = esize;
 	if (asize > 0) {
-		MALLOC_DIE(a->array, asize*esize);
+		a->array = malloc(asize * esize);
+		if (!a->array)
+			return -1;
+
 		a->allocated = asize;
 	} else {
 		a->array = NULL;
@@ -30,7 +31,8 @@ struct sarray* sarray_init(unsigned long esize, unsigned long asize, int maxkey,
 	a->maxkey = maxkey;
 	(a->freefnc) = freefnc;
 	(a->sortfnc) = sortfnc;
-	return a;
+
+	return 0;
 }
 
 static void* sarray_bubblegetprev(struct sarray *a, void *key)
@@ -77,6 +79,8 @@ void* sarray_getbypos(struct sarray *a, unsigned long n)
 int sarray_add(struct sarray *a, void *e)
 {
 	void *ptr;
+	size_t len;
+
 	if (SIZE_MAX - a->elements < 2)
 		/* We reserve an element at the end to be able to loop through the array using a unsigned long */
 		die("sarray at %p is full", a);
@@ -100,7 +104,9 @@ int sarray_add(struct sarray *a, void *e)
 		bug("%s", "something went wrong when trying to find the previous element");
 
 	ptr += a->element_size;	/* ptr now points to the first element to be moved */
-	MEMMOVE_DIE(ptr+a->element_size, ptr, a->elements*a->element_size-(ptr-a->array));
+	len = a->elements * a->element_size - (ptr - a->array);
+	if (!memmove(ptr + a->element_size, ptr, len))
+		bug("%s", "memmove failed in sarray_add()");
 
 	/* We will now insert the element at the position specified by ptr, since the other
 	   data has been moved out of the way */
@@ -110,12 +116,19 @@ int sarray_add(struct sarray *a, void *e)
 	return 1;
 }
 
-void sarray_rmbypos(struct sarray *a, unsigned long pos) {
+int sarray_rmbypos(struct sarray *a, unsigned long pos) {
 	void *ptr;
+	size_t len;
+
 	if (!(ptr = sarray_getbypos(a, pos)))
 		bug("tried to remove element %zu but failed", pos);
-	MEMMOVE_DIE(ptr, ptr+a->element_size, (a->elements-1)*a->element_size-(ptr-a->array));
+
+	len = (a->elements - 1) * a->element_size - (ptr - a->array);
+	if (!(memmove(ptr, ptr+a->element_size, len)))
+		return -1;
+
 	a->elements--;
+	return 0;
 }
 
 void sarray_free(struct sarray *a) {

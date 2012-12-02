@@ -14,7 +14,7 @@ struct sarray {
 	void* array;
 };
 
-struct sarray* sarray_init(unsigned long esize, unsigned long asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*));
+int sarray_init(struct sarray *a, unsigned long esize, unsigned long asize, int maxkey, void (*freefnc)(void*), int (*sortfnc)(void*, void*));
 
 void* sarray_getbypos(struct sarray *a, unsigned long pos);
 

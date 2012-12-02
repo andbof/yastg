@@ -46,10 +46,8 @@ void universe_free(struct universe *u)
 	st_destroy(&u->sectornames, ST_DONT_FREE_DATA);
 	st_destroy(&u->planetnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->basenames, ST_DONT_FREE_DATA);
-	sarray_free(u->srad);
-	free(u->srad);
-	sarray_free(u->sphi);
-	free(u->sphi);
+	sarray_free(&u->srad);
+	sarray_free(&u->sphi);
 	if (u->name)
 		free(u->name);
 }
@@ -130,8 +128,8 @@ void universe_init(struct universe *u)
 	pthread_rwlock_init(&u->planetnames_lock, NULL);
 	INIT_LIST_HEAD(&u->basenames);
 	pthread_rwlock_init(&u->basenames_lock, NULL);
-	u->srad = sarray_init(sizeof(struct ulong_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
-	u->sphi = sarray_init(sizeof(struct double_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
+	sarray_init(&u->srad, sizeof(struct ulong_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
+	sarray_init(&u->sphi, sizeof(struct double_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
 }
 
 int universe_genesis(struct universe *univ, struct civ *civs)
