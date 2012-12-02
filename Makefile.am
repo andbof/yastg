@@ -16,10 +16,10 @@ ACLOCAL_AMFLAGS = -I m4
 
 CFLAGS = -g -O0 -Wall -Werror -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -ftrapv -Wno-unused-variable -Wno-unused-parameter -Wtype-limits -fstack-protector-all -fno-strict-aliasing
 
-TESTS = test/sarraytest test/stringtree_test
+TESTS = test/stringtree_test
 
 bin_PROGRAMS = yastg
-check_PROGRAMS = test/sarraytest test/stringtree_test test/conntest
+check_PROGRAMS = test/stringtree_test test/conntest
 check_LTLIBRARIES = test_module.la
 
 # optflags: -O3 -funroll-loops
@@ -72,12 +72,6 @@ yastg_SOURCES = base.c \
 		stringtree.h \
 		universe.c \
 		universe.h
-
-test_sarraytest_SOURCES = test/sarraytest.c \
-			  sarray.c \
-			  mt19937ar-cok.c \
-			  mtrandom.c \
-			  log.c
 
 test_conntest_SOURCES = test/conntest.c
 
