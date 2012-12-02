@@ -27,7 +27,7 @@ struct sector {
 void sector_init(struct sector *s);
 struct sector* sector_load(struct config *ctree);
 int sector_create(struct sector *s, char *name);
-void sector_free(void *ptr);
+void sector_free(struct sector *s);
 
 void sector_move(struct sector *s, long x, long y);
 

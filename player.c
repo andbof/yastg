@@ -22,9 +22,8 @@
 #define player_talk(PLAYER, ...)	\
 	conn_send(PLAYER->conn, __VA_ARGS__)
 
-void player_free(void *ptr)
+void player_free(struct player *player)
 {
-	struct player *player = (struct player*)ptr;
 	free(player->name);
 	cli_tree_destroy(&player->cli);
 	free(player);

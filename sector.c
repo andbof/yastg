@@ -26,10 +26,9 @@ void sector_init(struct sector *s)
 	INIT_LIST_HEAD(&s->list);
 }
 
-void sector_free(void *ptr) {
+void sector_free(struct sector *s) {
 	size_t st;
 	struct list_head *lh;
-	struct sector *s = ptr;
 	struct star *sol;
 	struct planet *planet;
 	struct base *base;

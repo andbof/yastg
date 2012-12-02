@@ -43,7 +43,7 @@ struct conn_worker_list {
 };
 
 struct connection* conn_create();
-void connection_free(void *ptr);
+void connection_free(struct connection *conn);
 void* conn_main(void *dataptr);
 void conn_send(struct connection *data, char *format, ...);
 void conn_cleanexit(struct connection *data);

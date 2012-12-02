@@ -69,18 +69,17 @@ static void conn_signalserver(struct connection *data, struct signal *msg, char 
  * This function needs to be very safe as it can be called on a
  * half-initialized connection structure if something went wrong.
  */
-void connection_free(void *ptr)
+void connection_free(struct connection *conn)
 {
-	struct connection *data = ptr;
-	if (data != NULL) {
-		if (data->peerfd)
-			close(data->peerfd);
-		if (data->rbuf)
-			free(data->rbuf);
-		if (data->sbuf)
-			free(data->sbuf);
-		if (data->pl)
-			player_free(data->pl);
+	if (conn != NULL) {
+		if (conn->peerfd)
+			close(conn->peerfd);
+		if (conn->rbuf)
+			free(conn->rbuf);
+		if (conn->sbuf)
+			free(conn->sbuf);
+		if (conn->pl)
+			player_free(conn->pl);
 	}
 }
 

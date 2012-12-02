@@ -21,7 +21,7 @@ struct player {
 };
 
 int player_init(struct player *player);
-void player_free();
+void player_free(struct player *player);
 void player_talk(struct player *player, char *format, ...);
 void player_go(struct player *player, enum postype postype, void *pos);
 
