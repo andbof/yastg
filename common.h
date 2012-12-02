@@ -86,30 +86,6 @@ extern const char* roman[ROMAN_N];
 		exit(EXIT_FAILURE);				\
 	} while(0)
 
-#define MALLOC_DIE(VAR, SIZE)					\
-	do {							\
-		if (!(VAR = malloc(SIZE)))			\
-			die("malloc %zu bytes failed", SIZE);	\
-	} while(0)
-
-#define REALLOC_DIE(VAR, SIZE)					\
-	do {							\
-		if (!(VAR = realloc(VAR, SIZE)))		\
-			die("realloc %zu bytes failed", SIZE);	\
-	} while(0)
-
-#define MEMMOVE_DIE(DEST, ORIG, SIZE)				\
-	do {							\
-		if (!(memmove(DEST, ORIG, SIZE)))		\
-			die("memmove %zu bytes from %p to %p failed", SIZE, ORIG, DEST);	\
-	} while(0)
-
-#define MEMCPY_DIE(DEST, ORIG, SIZE)				\
-	do {							\
-		if (!(memcpy(DEST, ORIG, SIZE)))		\
-			die("memcpy %zu bytes from %p to %p failed", SIZE, ORIG, DEST);	\
-	} while(0)
-
 #define XYTORAD(x, y)			\
 	(unsigned long)sqrt((double)x*x+y*y)
 

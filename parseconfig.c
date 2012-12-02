@@ -6,6 +6,18 @@
 #include "log.h"
 #include "parseconfig.h"
 
+#define MALLOC_DIE(VAR, SIZE)					\
+	do {							\
+		if (!(VAR = malloc(SIZE)))			\
+			die("malloc %zu bytes failed", SIZE);	\
+	} while(0)
+
+#define REALLOC_DIE(VAR, SIZE)					\
+	do {							\
+		if (!(VAR = realloc(VAR, SIZE)))		\
+			die("realloc %zu bytes failed", SIZE);	\
+	} while(0)
+
 /*
  * Duplicates a string but removes whitespace from the beginning and end of the string.
  * If the string consists of just whitespace, an empty string is returned.
