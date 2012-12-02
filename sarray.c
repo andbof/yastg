@@ -113,7 +113,7 @@ int sarray_add(struct sarray *a, void *e)
 	a->elements++;
 	memcpy(ptr, e, a->element_size);
 
-	return 1;
+	return 0;
 }
 
 int sarray_rmbypos(struct sarray *a, unsigned long pos) {

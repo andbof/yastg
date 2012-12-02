@@ -22,7 +22,7 @@ struct ptr_num* sarray_getlnbyid(struct sarray *a, void *key);
 
 int sarray_add(struct sarray *a, void *e);
 
-void sarray_rmbypos(struct sarray *a, unsigned long pos);
+int sarray_rmbypos(struct sarray *a, unsigned long pos);
 
 void sarray_free(struct sarray *a);
 
