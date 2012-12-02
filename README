@@ -1,0 +1,13 @@
+YASTG is Yet Another Space Trading Game, a text-based multiplayer space trading
+game. While inspired by games such as Trade Wars, David Braben's Elite series
+and the like, it ultimately stands on its own feet.
+
+The project has a few (very long-term) goals:
+	- Massively multiplayable, for a certain definition of "massively"
+	- Extendable
+	- Both human and computer controlled players
+	- Fun for me!
+
+The game is playable in the sense that you can connect and move around, but no
+other stuff has been implemented. The rest will come when the Time is
+Right(tm).
