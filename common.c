@@ -16,7 +16,7 @@ const char* roman[ROMAN_N] = {
 
 /* upper case letter to corresponding lower case
  * letter, all invalid letters underscores */
-const char capital_to_lower[256] = {
+static const char capital_to_lower[256] = {
 	 95,  95,  95,  95,  95,  95,  95,  95,
 	 95,  95,  95,  95,  95,  95,  95,  95,
 	 95,  95,  95,  95,  95,  95,  95,  95,
@@ -50,3 +50,25 @@ const char capital_to_lower[256] = {
 	 95,  95,  95,  95,  95,  95,  95,  95,
 	 95,  95,  95,  95,  95,  95,  95,  95
 };
+
+/*
+ * Transform a given string to just lowercase letters,
+ * with invalid letters replaced by underscores
+ */
+void downcase_valid(char *c)
+{
+	unsigned char *s = (unsigned char*)c;
+	unsigned int i;
+	for (i = 0; s[i] != '\0'; i++)
+		s[i] = capital_to_lower[s[i]];
+}
+
+/*
+ * Removes trailing newlines from a string, if any exists.
+ */
+void chomp(char* s)
+{
+	for (unsigned int len = strlen(s);
+			len > 0 && (s[len - 1] == '\n' || s[len - 1] == '\r');
+			s[len - 1] = '\0', len--);
+}
