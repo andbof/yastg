@@ -196,11 +196,21 @@ static int cmd_memstat(void *ptr, char *param)
 
 static int cmd_stats(void *ptr, char *param)
 {
+	struct tm t;
+	char created[32];
+	memset(created, 0, sizeof(created));
+
+	localtime_r(&univ.created, &t);
+	strftime(created, sizeof(created), "%c", &t);
+
 	mprintf("Statistics:\n"
 	        "  Size of universe:          %lu sectors\n"
+		"  Universe created:          %s\n"
 	        "  Number of users known:     %s\n"
 	        "  Number of users connected: %s\n",
-		ptrlist_len(&univ.sectors), "FIXME", "FIXME");
+		ptrlist_len(&univ.sectors),
+		created,
+		"FIXME", "FIXME");
 	return 0;
 }
 

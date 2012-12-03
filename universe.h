@@ -9,7 +9,7 @@
 struct universe {
 	size_t id;			/* ID of the universe (or the game?) */
 	char* name;			/* The name of the universe (or the game?) */
-	struct tm *created;		/* When the universe was created */
+	time_t created;			/* When the universe was created */
 	size_t numsector;
 	struct ptrlist sectors;
 	struct list_head sectornames;

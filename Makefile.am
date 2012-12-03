@@ -14,7 +14,7 @@ MAINTAINERCLEANFILES = Makefile.in \
 
 ACLOCAL_AMFLAGS = -I m4
 
-CFLAGS = -g -O0 -Wall -Werror -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -ftrapv -Wno-unused-variable -Wno-unused-parameter -Wtype-limits -fstack-protector-all -fno-strict-aliasing
+CFLAGS = -g -O0 -Wall -Werror -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -ftrapv -Wno-unused-variable -Wno-unused-parameter -Wtype-limits -fstack-protector-all -fno-strict-aliasing -Wno-format-y2k
 
 TESTS = test/stringtree_test
 

@@ -113,6 +113,7 @@ size_t countneighbours(struct sector *s, unsigned long dist)
 
 void universe_init(struct universe *u)
 {
+	time(&u->created);
 	u->id = 0;
 	u->name = NULL;
 	u->numsector = 0;
