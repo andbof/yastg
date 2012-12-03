@@ -37,7 +37,7 @@
  */
 
 #define NEIGHBOUR_CHANCE 5		/* The higher the value, the more neighbours a system will have */
-#define NEIGHBOUR_DISTANCE_LY (50 * TICK_PER_LY)
+#define NEIGHBOUR_DISTANCE_LY (25 * TICK_PER_LY)
 
 struct universe univ;
 
@@ -214,7 +214,6 @@ void universe_init(struct universe *u)
 	time(&u->created);
 	u->id = 0;
 	u->name = NULL;
-	u->numsector = 0;
 	ptrlist_init(&u->sectors);
 	INIT_LIST_HEAD(&u->sectornames);
 	pthread_rwlock_init(&u->sectornames_lock, NULL);

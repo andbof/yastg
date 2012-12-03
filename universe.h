@@ -11,7 +11,7 @@ struct universe {
 	size_t id;			/* ID of the universe (or the game?) */
 	char* name;			/* The name of the universe (or the game?) */
 	time_t created;			/* When the universe was created */
-	size_t numsector;
+	unsigned long inhabited_sectors;
 	struct ptrlist sectors;
 	struct rb_root x_rbtree;
 	struct list_head sectornames;

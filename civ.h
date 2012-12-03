@@ -14,7 +14,9 @@ struct civ {
 	struct ptrlist presectors;
 	struct ptrlist availnames;
 	struct ptrlist sectors;
+	struct ptrlist border_sectors;
 	struct list_head list;
+	struct list_head growing;
 };
 
 void loadciv(struct civ *c, struct config *ctree);
