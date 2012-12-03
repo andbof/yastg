@@ -50,7 +50,6 @@ int addconstellation(char* cname)
 	char *string;
 	struct sector *fs, *s;
 	struct ptrlist work;
-	unsigned long x, y;
 	double phi;
 	unsigned long r;
 
@@ -89,9 +88,8 @@ int addconstellation(char* cname)
 			fs = s;
 			if (ptrlist_len(&univ.sectors) == 1) {
 				/* The first constellation always goes in (0, 0) */
-				x = 0;
-				y = 0;
-				sector_move(s, x, y);
+				s->x = 0;
+				s->y = 0;
 			} else {
 				/* All others are randomly distributed */
 				phi = mtrandom_uint(UINT_MAX) / (double)UINT_MAX*2*M_PI;
@@ -99,9 +97,8 @@ int addconstellation(char* cname)
 				do {
 					r += mtrandom_ulong(CONSTELLATION_RANDOM_DISTANCE);
 					phi += mtrandom_double(CONSTELLATION_PHI_RANDOM);
-					x = POLTOX(phi, r);
-					y = POLTOY(phi, r);
-					sector_move(s, x, y);
+					s->x = POLTOX(phi, r);
+					s->y = POLTOY(phi, r);
 					i = countneighbours(s, CONSTELLATION_MIN_DISTANCE);
 				} while (i > 0);
 			}

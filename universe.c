@@ -46,8 +46,6 @@ void universe_free(struct universe *u)
 	st_destroy(&u->sectornames, ST_DONT_FREE_DATA);
 	st_destroy(&u->planetnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->basenames, ST_DONT_FREE_DATA);
-	sarray_free(&u->srad);
-	sarray_free(&u->sphi);
 	if (u->name)
 		free(u->name);
 }
@@ -63,13 +61,12 @@ int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsi
 	unsigned long x, y;
 
 	if (max > min) {
-		x = min + mtrandom_ulong(max - min) + s1->x;
-		y = min + mtrandom_ulong(max - min) + s1->y;
+		s2->x = min + mtrandom_ulong(max - min) + s1->x;
+		s2->y = min + mtrandom_ulong(max - min) + s1->y;
 	} else {
-		x = mtrandom_ulong(NEIGHBOUR_DISTANCE)*2 - NEIGHBOUR_DISTANCE + s1->x;
-		y = mtrandom_ulong(NEIGHBOUR_DISTANCE)*2 - NEIGHBOUR_DISTANCE + s1->y;
+		s2->x = mtrandom_ulong(NEIGHBOUR_DISTANCE) * 2 - NEIGHBOUR_DISTANCE + s1->x;
+		s2->y = mtrandom_ulong(NEIGHBOUR_DISTANCE) * 2 - NEIGHBOUR_DISTANCE + s1->y;
 	}
-	sector_move(s2, x, y);
 
 	return 0;
 	/*
@@ -80,7 +77,7 @@ int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsi
 
 /*
  * Returns an array of all neighbouring systems within dist ly
- * FIXME: This really needs a more efficient implementation, perhaps using u->srad or the like.
+ * FIXME: This really needs a more efficient implementation.
  */
 struct ptrlist* getneighbours(struct sector *s, unsigned long dist)
 {
@@ -128,8 +125,6 @@ void universe_init(struct universe *u)
 	pthread_rwlock_init(&u->planetnames_lock, NULL);
 	INIT_LIST_HEAD(&u->basenames);
 	pthread_rwlock_init(&u->basenames_lock, NULL);
-	sarray_init(&u->srad, sizeof(struct ulong_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_ulong);
-	sarray_init(&u->sphi, sizeof(struct double_ptr), 0, SARRAY_ALLOW_MULTIPLE, NULL, &sort_double);
 }
 
 int universe_genesis(struct universe *univ, struct civ *civs)
