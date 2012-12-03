@@ -17,6 +17,7 @@ void sector_init(struct sector *s)
 	memset(s, 0, sizeof(*s));
 	s->phi = 0.0;
 
+	rb_init_node(&s->x_rbtree);
 	ptrlist_init(&s->stars);
 	ptrlist_init(&s->planets);
 	ptrlist_init(&s->bases);
@@ -162,9 +163,12 @@ int sector_create(struct sector *s, char *name)
 	return 0;
 }
 
-unsigned long sector_distance(struct sector *a, struct sector *b) {
-	long result = sqrt( (double)(b->x - a->x)*(b->x - a->x) + (double)(b->y - a->y)*(b->y - a->y) );
+unsigned long sector_distance(const struct sector * const a, const struct sector * const b) {
+	long result = sqrt( (double)(b->x - a->x)*(b->x - a->x) +
+			(double)(b->y - a->y)*(b->y - a->y) );
+
 	if (result < 0)
 		return -result;
+
 	return result;
 }

@@ -87,19 +87,19 @@ int addconstellation(char* cname)
 			fs = s;
 			if (ptrlist_len(&univ.sectors) == 1) {
 				/* The first constellation always goes in (0, 0) */
-				s->x = 0;
-				s->y = 0;
+				if (sector_move(s, 0, 0))
+					bug("%s", "Error when placing first sector at (0,0)");
 			} else {
 				/* All others are randomly distributed */
 				phi = mtrandom_uint(UINT_MAX) / (double)UINT_MAX*2*M_PI;
 				r = 0;
-				do {
+				i = 2;
+				while (i > 1) {
 					r += mtrandom_ulong(CONSTELLATION_RANDOM_DISTANCE);
 					phi += mtrandom_double(CONSTELLATION_PHI_RANDOM);
-					s->x = POLTOX(phi, r);
-					s->y = POLTOY(phi, r);
-					i = countneighbours(s, CONSTELLATION_MIN_DISTANCE);
-				} while (i > 0);
+					if (!sector_move(s, POLTOX(phi, r), POLTOY(phi, r)))
+						i = count_neighbouring_systems(s, CONSTELLATION_MIN_DISTANCE);
+				}
 			}
 			ptrlist_push(&work, s);
 		} else if (ptrlist_len(&work) == 0) {

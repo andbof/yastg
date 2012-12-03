@@ -23,6 +23,7 @@ void ptrlist_free(struct ptrlist *l)
 	assert(l != NULL);
 	struct ptrlist *e;
 	struct list_head *p, *q;
+
 	list_for_each_safe(p, q, &l->list) {
 		e = list_entry(p, struct ptrlist, list);
 		list_del(p);

@@ -2,6 +2,7 @@
 #define _HAS_SECTOR_H
 
 #include "list.h"
+#include "rbtree.h"
 #include "ptrlist.h"
 
 struct universe;
@@ -13,6 +14,7 @@ struct sector {
 	struct civ *owner;
 	char *gname;
 	long x, y;
+	struct rb_node x_rbtree;
 	unsigned long r;
 	double phi;
 	int hab;
@@ -29,6 +31,6 @@ struct sector* sector_load(struct config *ctree);
 int sector_create(struct sector *s, char *name);
 void sector_free(struct sector *s);
 
-unsigned long sector_distance(struct sector *a, struct sector *b);
+unsigned long sector_distance(const struct sector * const a, const struct sector * const b);
 
 #endif

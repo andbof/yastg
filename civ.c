@@ -18,23 +18,26 @@
 static void growciv(struct universe *u, struct civ *c)
 {
 	struct sector *s, *t;
-	struct ptrlist *neigh;
+	struct ptrlist neigh;
 	struct list_head *lh;
 	size_t i;
 	unsigned long rad = CIV_GROW_MIN_LY;
 	t = ptrlist_random(&c->sectors);
 	do {
+		ptrlist_init(&neigh);
 		s = NULL;
-		neigh = getneighbours(t, rad);
-		ptrlist_for_each_entry(s, neigh, lh) {
+
+		get_neighbouring_systems(&neigh, t, rad);
+		ptrlist_for_each_entry(s, &neigh, lh) {
 			if (!s->owner)
 				break;
 		}
 		if ((s == NULL) || (s->owner))
 			rad += CIV_GROW_STEP_LY;
-		ptrlist_free(neigh);
-		free(neigh);
+
+		ptrlist_free(&neigh);
 	} while ((s == NULL) || (s->owner));
+
 	s->owner = c;
 	linksectors(s, t);
 	ptrlist_push(&c->sectors, s);
@@ -47,8 +50,10 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 	size_t i, j, k;
 	unsigned long chab, nhab, tpow;
 	struct sector *s;
-	struct ptrlist *neigh;
+	struct ptrlist neigh;
 	struct civ *c;
+	ptrlist_init(&neigh);
+
 	nhab = ptrlist_len(&u->sectors) * UNIVERSE_CIV_FRAC;
 	/* Calculate total civilization power (we need this to be able
 	   to get their relative values) */
@@ -63,17 +68,19 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 			k = 1;
 			s = ptrlist_random(&u->sectors);
 			if (!s->owner) {
-				neigh = getneighbours(s, UNIVERSE_MIN_INTERCIV_DISTANCE_LY);
+				ptrlist_init(&neigh);
+
+				get_neighbouring_systems(&neigh, s, UNIVERSE_MIN_INTERCIV_DISTANCE_LY);
 				struct sector *t;
 				struct list_head *lh;
-				ptrlist_for_each_entry(t, neigh, lh) {
+				ptrlist_for_each_entry(t, &neigh, lh) {
 					if (t->owner != 0) {
 						k = 0;
 						break;
 					}
 				}
-				ptrlist_free(neigh);
-				free(neigh);
+
+				ptrlist_free(&neigh);
 			} else {
 				k = 0;
 			}

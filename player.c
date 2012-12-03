@@ -87,21 +87,20 @@ static void player_showsector(struct player *player, struct sector *sector)
 		player_talk(player, "This sector does not have any hyperspace links.\n");
 	}
 
-	player_talk(player, "Sectors within 50 lys are:\n");
+	struct ptrlist neigh;
+	ptrlist_init(&neigh);
 
-	/* FIXME: getneighbours() is awful */
-	struct ptrlist *neigh = getneighbours(sector, 50 * TICK_PER_LY);
-	if (!list_empty(&neigh->list)) {
-		ptrlist_for_each_entry(t, neigh, lh) {
+	player_talk(player, "Sectors within 50 lys are:\n");
+	get_neighbouring_systems(&neigh, sector, 50 * TICK_PER_LY);
+	if (!list_empty(&neigh.list)) {
+		ptrlist_for_each_entry(t, &neigh, lh) {
 			if (t != sector)
 				player_talk(player, "  %s at %.1f ly\n", t->name,
 						sector_distance(sector, t) / (double)TICK_PER_LY);
 		}
-	} else {
-		player_talk(player, "No sectors within 50 lys.\n");
 	}
-	ptrlist_free(neigh);
-	free(neigh);
+
+	ptrlist_free(&neigh);
 
 	if (sector->owner != NULL) {
 		player_talk(player, "This sector is owned by civ %s\n", sector->owner->name);
