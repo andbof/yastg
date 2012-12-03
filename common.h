@@ -64,6 +64,7 @@ extern const char* roman[ROMAN_N];
 #define GM_PER_AU 150			/* gigameters per astronomical unit */
 #define AU_PER_LY 63241			/* Astronomical units per light year */
 #define GM_PER_LY (GM_PER_AU * AU_PER_LY)
+#define TICK_PER_LY 10000		/* Resolution of all coordinates (1/TICK_PER_LY lightyears) */
 /* The "real" values here should be habitable zone from 0.95 to 1.37 AU and snow line (i.e. the upper limit
  * for rocky planetary formation) at 2.7 AU in a sol like system.
  * For simplicity, we assume habend == snowline and change the values somewhat. */

@@ -90,11 +90,12 @@ static void player_showsector(struct player *player, struct sector *sector)
 	player_talk(player, "Sectors within 50 lys are:\n");
 
 	/* FIXME: getneighbours() is awful */
-	struct ptrlist *neigh = getneighbours(sector, 50);
+	struct ptrlist *neigh = getneighbours(sector, 50 * TICK_PER_LY);
 	if (!list_empty(&neigh->list)) {
 		ptrlist_for_each_entry(t, neigh, lh) {
 			if (t != sector)
-				player_talk(player, "  %s at %lu ly\n", t->name, sector_distance(sector, t));
+				player_talk(player, "  %s at %.1f ly\n", t->name,
+						sector_distance(sector, t) / (double)TICK_PER_LY);
 		}
 	} else {
 		player_talk(player, "No sectors within 50 lys.\n");

@@ -13,15 +13,15 @@
 #include "universe.h"
 #include "list.h"
 
-#define CIV_GROW_MIN 10
-#define CIV_GROW_STEP 10
+#define CIV_GROW_MIN_LY (10 * TICK_PER_LY)
+#define CIV_GROW_STEP_LY (10 * TICK_PER_LY)
 static void growciv(struct universe *u, struct civ *c)
 {
 	struct sector *s, *t;
 	struct ptrlist *neigh;
 	struct list_head *lh;
 	size_t i;
-	unsigned long rad = CIV_GROW_MIN;
+	unsigned long rad = CIV_GROW_MIN_LY;
 	t = ptrlist_random(&c->sectors);
 	do {
 		s = NULL;
@@ -31,7 +31,7 @@ static void growciv(struct universe *u, struct civ *c)
 				break;
 		}
 		if ((s == NULL) || (s->owner))
-			rad += CIV_GROW_STEP;
+			rad += CIV_GROW_STEP_LY;
 		ptrlist_free(neigh);
 		free(neigh);
 	} while ((s == NULL) || (s->owner));
@@ -41,7 +41,7 @@ static void growciv(struct universe *u, struct civ *c)
 }
 
 #define UNIVERSE_CIV_FRAC 0.4
-#define UNIVERSE_MIN_INTERCIV_DISTANCE 100
+#define UNIVERSE_MIN_INTERCIV_DISTANCE_LY (100 * TICK_PER_LY)
 void civ_spawncivs(struct universe *u, struct civ *civs)
 {
 	size_t i, j, k;
@@ -63,7 +63,7 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 			k = 1;
 			s = ptrlist_random(&u->sectors);
 			if (!s->owner) {
-				neigh = getneighbours(s, UNIVERSE_MIN_INTERCIV_DISTANCE);
+				neigh = getneighbours(s, UNIVERSE_MIN_INTERCIV_DISTANCE_LY);
 				struct sector *t;
 				struct list_head *lh;
 				ptrlist_for_each_entry(t, neigh, lh) {

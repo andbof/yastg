@@ -34,7 +34,7 @@
  */
 
 #define NEIGHBOUR_CHANCE 5		/* The higher the value, the more neighbours a system will have */
-#define NEIGHBOUR_DISTANCE 50
+#define NEIGHBOUR_DISTANCE_LY (50 * TICK_PER_LY)
 
 struct universe univ;
 
@@ -62,8 +62,8 @@ int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsi
 		s2->x = min + mtrandom_ulong(max - min) + s1->x;
 		s2->y = min + mtrandom_ulong(max - min) + s1->y;
 	} else {
-		s2->x = mtrandom_ulong(NEIGHBOUR_DISTANCE) * 2 - NEIGHBOUR_DISTANCE + s1->x;
-		s2->y = mtrandom_ulong(NEIGHBOUR_DISTANCE) * 2 - NEIGHBOUR_DISTANCE + s1->y;
+		s2->x = mtrandom_ulong(NEIGHBOUR_DISTANCE_LY) * 2 - NEIGHBOUR_DISTANCE_LY + s1->x;
+		s2->y = mtrandom_ulong(NEIGHBOUR_DISTANCE_LY) * 2 - NEIGHBOUR_DISTANCE_LY + s1->y;
 	}
 
 	return 0;
