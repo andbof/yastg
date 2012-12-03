@@ -17,7 +17,6 @@
 #include "log.h"
 #include "mtrandom.h"
 #include "cli.h"
-#include "sarray.h"
 #include "ptrlist.h"
 #include "server.h"
 #include "sector.h"

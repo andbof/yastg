@@ -7,7 +7,6 @@
 #include "log.h"
 #include "parseconfig.h"
 #include "planet.h"
-#include "sarray.h"
 #include "universe.h"
 
 struct base* loadbase(struct base *b, struct config *ctree)

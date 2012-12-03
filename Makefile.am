@@ -60,8 +60,6 @@ yastg_SOURCES = base.c \
 		ptrarray.h \
 		ptrlist.c \
 		ptrlist.h \
-		sarray.c \
-		sarray.h \
 		sector.c \
 		sector.h \
 		server.c \

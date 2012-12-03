@@ -7,7 +7,6 @@
 #include "common.h"
 #include "log.h"
 #include "universe.h"
-#include "sarray.h"
 #include "ptrlist.h"
 #include "planet.h"
 #include "base.h"
@@ -17,7 +16,6 @@
 #include "constellation.h"
 #include "stringtree.h"
 #include "mtrandom.h"
-#include "sarray.h"
 
 /*
  * The universe consists of a number of sectors. These sectors are grouped in constellations,

@@ -3,7 +3,6 @@
 
 #include "list.h"
 #include "civ.h"
-#include "sarray.h"
 #include "sector.h"
 #include "names.h"
 

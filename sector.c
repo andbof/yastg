@@ -9,7 +9,6 @@
 #include "planet.h"
 #include "base.h"
 #include "ptrlist.h"
-#include "sarray.h"
 #include "parseconfig.h"
 #include "star.h"
 

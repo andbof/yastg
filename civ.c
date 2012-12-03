@@ -9,7 +9,6 @@
 #include "civ.h"
 #include "ptrlist.h"
 #include "sector.h"
-#include "sarray.h"
 #include "parseconfig.h"
 #include "universe.h"
 #include "list.h"

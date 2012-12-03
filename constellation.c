@@ -10,7 +10,6 @@
 #include "constellation.h"
 #include "sector.h"
 #include "star.h"
-#include "sarray.h"
 #include "ptrlist.h"
 #include "stringtree.h"
 
