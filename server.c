@@ -431,7 +431,7 @@ void* server_main(void* p)
 	signfdr = *(int*)p;
 	signfdw = *((int*)p + 1);
 
-	if (conn_init(&conn_data))
+	if (conndata_init(&conn_data))
 		die("%s", "failed initializing connection data structures");
 
 	initialize_server_sockets(&sockets);

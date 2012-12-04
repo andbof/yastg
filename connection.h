@@ -53,7 +53,7 @@ int conn_fulfixinit(struct connection *data);
 
 void conn_do_work(struct conn_data *data, struct connection *conn);
 
-int conn_init(struct conn_data *data);
+int conndata_init(struct conn_data *data);
 void conn_shutdown(struct conn_data *data);
 void conn_destroy(struct conn_data *data);
 

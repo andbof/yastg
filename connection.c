@@ -224,7 +224,7 @@ err:
 	return -1;
 }       
 
-int conn_init(struct conn_data *data)
+int conndata_init(struct conn_data *data)
 {
 	memset(data, 0, sizeof(*data));
 	if (pthread_mutex_init(&data->workers_lock, NULL))
