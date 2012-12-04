@@ -42,7 +42,7 @@ struct conn_worker_list {
 	struct list_head list;
 };
 
-struct connection* conn_create();
+int conn_init(struct connection *conn);
 void connection_free(struct connection *conn);
 void* conn_main(void *dataptr);
 void conn_send(struct connection *data, char *format, ...);

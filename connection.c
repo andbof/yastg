@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -30,29 +31,31 @@
 #include "player.h"
 #include "mtrandom.h"
 
-struct connection* conn_create()
+int conn_init(struct connection *conn)
 {
-	struct connection *data;
-	int r = 1;
-	data = malloc(sizeof(*data));
-	if (data != NULL) {
-		memset(data, 0, sizeof(*data));
-		data->id = mtrandom_uint(UINT32_MAX);
-		data->rbufs = CONN_BUFSIZE;
-		if ((data->rbuf = malloc(data->rbufs)) == NULL) {
-			log_printfn("connection", "failed allocating receive buffer for connection");
-			connection_free(data);
-			return NULL;
-		}
-		data->sbufs = CONN_MAXBUFSIZE;
-		if ((data->sbuf = malloc(data->sbufs)) == NULL) {
-			log_printfn("connection", "failed allocating send buffer for connection");
-			connection_free(data);
-			return NULL;
-		}
-		INIT_LIST_HEAD(&data->list);
+	assert(conn);
+
+	memset(conn, 0, sizeof(*conn));
+	conn->id = mtrandom_uint(UINT32_MAX);
+	conn->rbufs = CONN_BUFSIZE;
+
+	if ((conn->rbuf = malloc(conn->rbufs)) == NULL) {
+		log_printfn("connection", "failed allocating receive buffer for connection");
+		connection_free(conn);
+		return 1;
 	}
-	return data;
+
+	conn->sbufs = CONN_MAXBUFSIZE;
+
+	if ((conn->sbuf = malloc(conn->sbufs)) == NULL) {
+		log_printfn("connection", "failed allocating send buffer for connection");
+		connection_free(conn);
+		return 1;
+	}
+
+	INIT_LIST_HEAD(&conn->list);
+
+	return 0;
 }
 
 static void conn_signalserver(struct connection *data, struct signal *msg, char *msgdata)
@@ -71,16 +74,17 @@ static void conn_signalserver(struct connection *data, struct signal *msg, char 
  */
 void connection_free(struct connection *conn)
 {
-	if (conn != NULL) {
-		if (conn->peerfd)
-			close(conn->peerfd);
-		if (conn->rbuf)
-			free(conn->rbuf);
-		if (conn->sbuf)
-			free(conn->sbuf);
-		if (conn->pl)
-			player_free(conn->pl);
-	}
+	if (!conn)
+		return;
+
+	if (conn->peerfd)
+		close(conn->peerfd);
+	if (conn->rbuf)
+		free(conn->rbuf);
+	if (conn->sbuf)
+		free(conn->sbuf);
+	if (conn->pl)
+		player_free(conn->pl);
 }
 
 void conn_cleanexit(struct connection *data)

@@ -287,11 +287,12 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 	struct sockaddr_storage peer_addr;
 	socklen_t sin_size = sizeof(peer_addr);
 
-	cd = conn_create();
-	if (cd == NULL) {
+	cd = malloc(sizeof(*cd));
+	if (!cd) {
 		log_printfn("server", "failed creating connection data structure");
 		return -1;
 	}
+	conn_init(cd);
 
 	cd->serverfd = signfdw;
 	cd->peerfd = accept(fd, (struct sockaddr*)&peer_addr, &sin_size);
