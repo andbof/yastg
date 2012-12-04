@@ -32,11 +32,8 @@ struct universe* universe_create();
 void universe_init(struct universe *u);
 int universe_genesis(struct universe *univ, struct civ *civs);
 
-struct ptrlist* get_neighbouring_systems(struct ptrlist * const neighbours,
+unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
 		const struct sector * const origin, const long max_distance);
-
-size_t count_neighbouring_systems(const struct sector * const origin,
-		const unsigned long max_distance);
 
 int sector_move(struct sector * const s, const long x, const long y);
 int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsigned long max);

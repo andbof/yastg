@@ -99,7 +99,7 @@ int addconstellation(char* cname)
 					r += mtrandom_ulong(CONSTELLATION_RANDOM_DISTANCE);
 					phi += mtrandom_double(CONSTELLATION_PHI_RANDOM);
 					if (!sector_move(s, POLTOX(phi, r), POLTOY(phi, r)))
-						i = count_neighbouring_systems(s, CONSTELLATION_MIN_DISTANCE);
+						i = get_neighbouring_systems(NULL, s, CONSTELLATION_MIN_DISTANCE);
 				}
 			}
 			ptrlist_push(&work, s);

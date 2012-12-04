@@ -101,13 +101,14 @@ static struct sector* get_first_sector_after_x(const struct rb_root * const root
 	return rb_entry(parent, struct sector, x_rbtree);
 }
 
-struct ptrlist* get_neighbouring_systems(struct ptrlist * const neighbours,
+unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
 		const struct sector * const origin, const long max_distance)
 {
 	struct sector *sector;
 	long min_x, max_x;
 	long min_y, max_y;
 	struct rb_node *node;
+	unsigned long neighbour_count = 0;
 
 	min_x = origin->x - max_distance;
 	max_x = origin->x + max_distance;
@@ -118,52 +119,25 @@ struct ptrlist* get_neighbouring_systems(struct ptrlist * const neighbours,
 
 	/*
 	 * The extra y-coordinate comparison before the call to
-	 * sector_distance() is an optimization as we have to traverse a _lot_
-	 * of systems and sector_distance() is quite slow. Hopefully it does
-	 * what is intended.
+	 * sector_distance() improves performance quite considerably when
+	 * measured (with perf and gcc -O3) as sector_distance() is quite slow.
 	 */
 	while (node && rb_entry(node, struct sector, x_rbtree)->x <= max_x) {
 
 		sector = rb_entry(node, struct sector, x_rbtree);
 
 		if (sector->y >= min_y && sector->y <= max_y &&
-			(sector_distance(origin, sector) < max_distance))
-			ptrlist_push(neighbours, sector);
+			(sector_distance(origin, sector) < max_distance)) {
+
+			neighbour_count++;
+			if (neighbours)
+				ptrlist_push(neighbours, sector);
+		}
 
 		node = rb_next(node);
 	}
 
-	return neighbours;
-}
-
-size_t count_neighbouring_systems(const struct sector * const origin,
-		const unsigned long max_distance)
-{
-	struct sector *sector;
-	long min_x, max_x;
-	long min_y, max_y;
-	struct rb_node *node;
-	size_t count = 0;
-
-	min_x = origin->x - max_distance;
-	max_x = origin->x + max_distance;
-	min_y = origin->y - max_distance;
-	max_y = origin->y + max_distance;
-	sector = get_first_sector_after_x(&univ.x_rbtree, min_x);
-	node = &sector->x_rbtree;
-
-	while (node && rb_entry(node, struct sector, x_rbtree)->x <= max_x) {
-
-		sector = rb_entry(node, struct sector, x_rbtree);
-
-		if (sector->y >= min_y && sector->y <= max_y &&
-			(sector_distance(origin, sector) < max_distance))
-			count++;
-
-		node = rb_next(node);
-	}
-
-	return count;
+	return neighbour_count;
 }
 
 static struct sector* get_sector_at_x(const long x)
