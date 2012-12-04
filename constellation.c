@@ -3,6 +3,7 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
+#include <pthread.h>
 #include "common.h"
 #include "log.h"
 #include "mtrandom.h"

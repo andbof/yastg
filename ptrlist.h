@@ -2,14 +2,12 @@
 #define _HAS_PTRLIST_H
 
 #include <stdio.h>
-#include <pthread.h>
 #include "list.h"
 #include "mtrandom.h"
 
 struct ptrlist {
 	void *data;
 	struct list_head list;
-	pthread_rwlock_t lock;
 	unsigned long len;
 };
 

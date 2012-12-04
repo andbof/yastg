@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include "base.h"
 #include "common.h"
 #include "data.h"

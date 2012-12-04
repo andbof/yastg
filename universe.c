@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <string.h>
 #include <math.h>
+#include <pthread.h>
 #include "common.h"
 #include "log.h"
 #include "universe.h"

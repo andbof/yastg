@@ -13,7 +13,6 @@ int ptrlist_init(struct ptrlist *l)
 	memset(l, 0, sizeof(*l));
 
 	INIT_LIST_HEAD(&l->list);
-	pthread_rwlock_init(&l->lock, NULL);
 
 	return 0;
 }
@@ -27,10 +26,8 @@ void ptrlist_free(struct ptrlist *l)
 	list_for_each_safe(p, q, &l->list) {
 		e = list_entry(p, struct ptrlist, list);
 		list_del(p);
-		pthread_rwlock_destroy(&e->lock);
 		free(e);
 	}
-	pthread_rwlock_destroy(&l->lock);
 }
 
 int ptrlist_push(struct ptrlist *l, void *e)
