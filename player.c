@@ -7,6 +7,7 @@
 #include "base.h"
 #include "cli.h"
 #include "common.h"
+#include "server.h"
 #include "connection.h"
 #include "data.h"
 #include "stringtree.h"
@@ -178,7 +179,7 @@ static int cmd_quit(void *ptr, char *param)
 {
 	struct player *player = ptr;
 	player_talk(player, "Bye!\n");
-	conn_cleanexit(player->conn);
+	server_disconnect_nicely(player->conn);
 	return 0;
 }
 static char cmd_quit_help[] = "Log off and terminate connection";

@@ -14,9 +14,10 @@
 
 struct connection {
 	uint32_t id;
-	ev_io watcher;
+	ev_io data_watcher;
+	ev_async kill_watcher;
 	fd_set rfds;
-	int peerfd, serverfd;
+	int peerfd;
 	struct sockaddr_storage sock;
 	char peer[INET6_ADDRSTRLEN + 7];
 	struct player *pl;
@@ -25,7 +26,10 @@ struct connection {
 	char *rbuf;
 	char *sbuf;
 	int paused;
+	int terminate;
 	struct list_head list, work;
+	volatile int worker;
+	pthread_mutex_t worker_lock;
 };
 
 struct conn_data {

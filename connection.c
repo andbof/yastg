@@ -36,6 +36,7 @@ int conn_init(struct connection *conn)
 	assert(conn);
 
 	memset(conn, 0, sizeof(*conn));
+	pthread_mutex_init(&conn->worker_lock, NULL);
 	conn->id = mtrandom_uint(UINT32_MAX);
 	conn->rbufs = CONN_BUFSIZE;
 
@@ -59,16 +60,6 @@ int conn_init(struct connection *conn)
 	return 0;
 }
 
-static void conn_signalserver(struct connection *data, struct signal *msg, char *msgdata)
-{
-	if (write(data->serverfd, msg, sizeof(*msg)) < 1)
-		bug("server signalling fd seems closed when sending signal: error %d (%s)", errno, strerror(errno));
-	if (msg->cnt > 0) {
-		if (write(data->serverfd, msgdata, msg->cnt) < msg->cnt)
-			bug("server signalling fd seems closed when seems closed when sending data: error %d (%s)", errno, strerror(errno));
-	}
-}
-
 /*
  * This function needs to be very safe as it can be called on a
  * half-initialized connection structure if something went wrong.
@@ -77,6 +68,8 @@ void connection_free(struct connection *conn)
 {
 	if (!conn)
 		return;
+
+	pthread_mutex_destroy(&conn->worker_lock);
 
 	if (conn->peerfd)
 		close(conn->peerfd);
@@ -88,20 +81,13 @@ void connection_free(struct connection *conn)
 		player_free(conn->pl);
 }
 
-void conn_cleanexit(struct connection *data)
-{
-	log_printfn("connection", "connection %x is terminating", data->id);
-	struct signal msg = {
-		.cnt = sizeof(data->id),
-		.type = MSG_RM,
-	};
-	conn_signalserver(data, &msg, (char*)&data->id);
-}
-
 void conn_send(struct connection *data, char *format, ...)
 {
 	va_list ap;
 	size_t len;
+
+	if (data->terminate)
+		return;
 
 	va_start(ap, format);
 	len = vsnprintf(data->sbuf, data->sbufs, format, ap);
@@ -116,7 +102,7 @@ void conn_send(struct connection *data, char *format, ...)
 		i = send(data->peerfd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
 		if (i < 1) {
 			log_printfn("connection", "send error (connection %x), terminating connection", data->id);
-			conn_cleanexit(data);
+			server_disconnect_nicely(data);
 		}
 		sb += i;
 	} while (sb < len);
@@ -129,7 +115,7 @@ void conn_error(struct connection *data, char *format, ...)
 	va_start(ap, format);
 	conn_send(data, "Oops! An internal error occured: %s.\nYour current state is NOT saved and you are being forcibly disconnected.\nSorry!", format, ap);
 	va_end(ap);
-	conn_cleanexit(data);
+	server_disconnect_nicely(data);
 }
 
 #define PROMPT "yastg> "
@@ -138,28 +124,55 @@ void* connection_worker(void *_w)
 	struct conn_worker_list *w = _w;
 	struct conn_data *data = w->conn_data;
 	struct connection *conn;
+	void *ptr;
 
 	do {
+		/*
+		 * Remember: The locking here need to be synchronized with
+		 * the locking in disconnect_peer() to avoid nasty races
+		 * in case a connection is terminated when work is about to start.
+		 */
 		pthread_mutex_lock(&data->workers_lock);
 
 		while (list_empty(&data->work_items) && !w->terminate)
 			pthread_cond_wait(&data->workers_cond, &data->workers_lock);
 
-		if (!list_empty(&data->work_items)) {
-			conn = list_first_entry(&data->work_items, struct connection, work);
-			list_del_init(&conn->work);
-		} else {
-			conn = NULL;
+		if (w->terminate) {
+			pthread_mutex_unlock(&data->workers_lock);
+			break;
 		}
 
+		conn = list_first_entry(&data->work_items, struct connection, work);
+		list_del_init(&conn->work);
+
+		/*
+		 * This needs to be in this order to avoid a race when
+		 * server_disconnect_cb() is running _now_.
+		 */
+		pthread_mutex_lock(&conn->worker_lock);
 		pthread_mutex_unlock(&data->workers_lock);
 
-		if (w->terminate)
-			break;
+		if (conn->terminate) {
+			pthread_mutex_unlock(&conn->worker_lock);
+			continue;
+		}
+
+		if (conn->worker) {
+			pthread_mutex_unlock(&conn->worker_lock);
+			log_printfn("connection", "Got new data too fast -- old worker is still busy");
+			continue;
+		}
+		conn->worker = 1;
+		pthread_mutex_unlock(&conn->worker_lock);
 
 		if (conn->rbuf[0] != '\0' && cli_run_cmd(&conn->pl->cli, conn->rbuf) < 0)
 			conn_send(conn, "Unknown command or syntax error: \"%s\"\n", conn->rbuf);
 		conn_send(conn, PROMPT);
+
+		pthread_mutex_lock(&conn->worker_lock);
+		conn->worker = 0;
+		pthread_mutex_unlock(&conn->worker_lock);
+
 	} while(1);
 
 	return NULL;

@@ -21,6 +21,7 @@
 #include "connection.h"
 
 static int sockfd, signfdw, signfdr;
+static struct ev_loop *loop;
 
 static struct conn_data conn_data;
 static struct list_head conn_list;
@@ -37,13 +38,62 @@ struct watcher_list {
 	struct list_head list;
 };
 
-static void disconnect_peers()
+static void disconnect_peer(struct ev_loop *loop, struct connection *conn)
+{
+	struct connection *c, *_c;
+	log_printfn("server", "now terminating connection %x", conn->id);
+
+	ev_io_stop(loop, &conn->data_watcher);
+	ev_async_stop(loop, &conn->kill_watcher);
+
+	/*
+	 * Remember: The locking in this function needs to be synchronized
+	 * with the locking in connection_worker() to avoid nasty races in case
+	 * a connection is terminated when connection_worker() is just starting.
+	 */
+
+	pthread_mutex_lock(&conn_data.workers_lock);
+	list_for_each_entry_safe(c, _c, &conn_data.work_items, work) {
+		if (c == conn)
+			list_del_init(&c->work);
+	}
+	pthread_mutex_unlock(&conn_data.workers_lock);
+
+	while (conn->worker);
+	pthread_mutex_lock(&conn->worker_lock);
+
+	pthread_rwlock_wrlock(&conn_list_lock);
+	list_del(&conn->list);
+	pthread_rwlock_unlock(&conn_list_lock);
+
+	log_printfn("server", "connection %x successfully terminated", conn->id);
+	connection_free(conn);
+	free(conn);
+}
+
+void server_disconnect_cb(struct ev_loop *loop, struct ev_async *w, int revents)
+{
+	struct connection *conn = w->data;
+	disconnect_peer(loop, conn);
+}
+
+void server_disconnect_nicely(struct connection *conn)
+{
+	if (conn->terminate)
+		return;
+
+	log_printfn("server", "asking nicely to terminate connection %x", conn->id);
+	conn->terminate = 1;
+	ev_async_send(loop, &conn->kill_watcher);
+}
+
+static void disconnect_peers(struct ev_loop *loop)
 {
 	struct connection *cd, *_cd;
 
 	list_for_each_entry_safe(cd, _cd, &conn_list, list) {
 		conn_send(cd, "Server is shutting down, you are being disconnected.\n");
-		conn_cleanexit(cd);
+		disconnect_peer(loop, cd);
 	}
 }
 
@@ -55,21 +105,6 @@ static void server_handlesignal(struct ev_loop *loop, struct signal *msg, char *
 	case MSG_TERM:
 		/* This will break all event loops, especially the main server loop in server_main() */
 		ev_unloop(EV_A_ EVUNLOOP_ALL);
-		break;
-	case MSG_RM:
-		pthread_rwlock_wrlock(&conn_list_lock);
-		list_for_each_entry_safe(cd, p, &conn_list, list) {
-			if (cd->id == *(uint32_t*)data) {
-				log_printfn("server", "thread %x is terminating, cleaning up", cd->id);
-				ev_io_stop(loop, &cd->watcher);
-				list_del(&cd->list);
-				connection_free(cd);
-				free(cd);
-				cd = NULL;
-				break;
-			}
-		}
-		pthread_rwlock_unlock(&conn_list_lock);
 		break;
 	case MSG_WALL:
 		log_printfn("server", "walling all users: %s", data);
@@ -84,7 +119,7 @@ static void server_handlesignal(struct ev_loop *loop, struct signal *msg, char *
 		log_printfn("server", "pausing the entire universe");
 		pthread_rwlock_rdlock(&conn_list_lock);
 		list_for_each_entry(cd, &conn_list, list) {
-			ev_io_stop(loop, &cd->watcher);
+			ev_io_stop(loop, &cd->data_watcher);
 			conn_send(cd, "\nYou have been paused by God. This might mean the whole universe is currently on hold\n"
 					"or just you. Anything you enter at the prompt will queue up until you are resumed.\n");
 		}
@@ -95,7 +130,7 @@ static void server_handlesignal(struct ev_loop *loop, struct signal *msg, char *
 		log_printfn("server", "universe continuing");
 		pthread_rwlock_rdlock(&conn_list_lock);
 		list_for_each_entry(cd, &conn_list, list) {
-			ev_io_start(loop, &cd->watcher);
+			ev_io_start(loop, &cd->data_watcher);
 			conn_send(cd, "\nYou have been resumed, feel free to play away!\n");
 		}
 		pthread_rwlock_unlock(&conn_list_lock);
@@ -235,17 +270,15 @@ static void receive_peer_data(struct connection *data)
 {
 	void *ptr;
 
-	/* FIXME: Check if a worker is working on the data already, if so drop new data */
-
 	data->rbufi += recv(data->peerfd, data->rbuf + data->rbufi, data->rbufs - data->rbufi, 0);
 	if (data->rbufi< 1) {
 		log_printfn("server", "peer %s disconnected, terminating connection %x", data->peer, data->id);
-		conn_cleanexit(data);
+		server_disconnect_nicely(data);
 	}
 	if ((data->rbufi == data->rbufs) && (data->rbuf[data->rbufi - 1] != '\n')) {
 		if (data->rbufs == CONN_MAXBUFSIZE) {
 			log_printfn("server", "peer sent more data than allowed (%u), connection %x terminated", CONN_MAXBUFSIZE, data->id);
-			conn_cleanexit(data);
+			server_disconnect_nicely(data);
 		}
 		data->rbufs <<= 1;
 		if (data->rbufs > CONN_MAXBUFSIZE)
@@ -253,7 +286,7 @@ static void receive_peer_data(struct connection *data)
 		if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
 			data->rbufs >>= 1;
 			log_printfn("server", "unable to increase receive buffer size, connection %x terminated", data->id);
-			conn_cleanexit(data);
+			server_disconnect_nicely(data);
 		} else {
 			data->rbuf = ptr;
 		}
@@ -291,7 +324,6 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 	}
 	conn_init(cd);
 
-	cd->serverfd = signfdw;
 	cd->peerfd = accept(fd, (struct sockaddr*)&peer_addr, &sin_size);
 	if (cd->peerfd < 0) {
 		r = errno;
@@ -312,12 +344,14 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 	pthread_rwlock_wrlock(&conn_list_lock);
 
 	list_add_tail(&cd->list, &conn_list);
-	ev_io_init(&cd->watcher, got_new_peer_data, cd->peerfd, EV_READ);
-	cd->watcher.data = cd;
+	ev_io_init(&cd->data_watcher, got_new_peer_data, cd->peerfd, EV_READ);
+	ev_async_init(&cd->kill_watcher, server_disconnect_cb);
+	cd->data_watcher.data = cd;
+	cd->kill_watcher.data = cd;
 
 	pthread_rwlock_unlock(&conn_list_lock);
 
-	ev_io_start(loop, &cd->watcher);
+	ev_async_start(loop, &cd->kill_watcher);
 
 	log_printfn("server", "serving new connection %x", cd->id);
 	if (conn_fulfixinit(cd)) {
@@ -326,12 +360,14 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 		goto err_stop;
 	}
 
+	ev_io_start(loop, &cd->data_watcher);
+
 	return 0;
 
 err_stop:
 	pthread_rwlock_wrlock(&conn_list_lock);
 	list_del(&cd->list);
-	ev_io_stop(loop, &cd->watcher);
+	ev_async_stop(loop, &cd->kill_watcher);
 	close(cd->peerfd);
 	pthread_rwlock_unlock(&conn_list_lock);
 
@@ -418,7 +454,7 @@ err:
 void* server_main(void* p)
 {
 	ev_io msg_watcher;
-	struct ev_loop *loop = EV_DEFAULT;
+	loop = EV_DEFAULT;
 	LIST_HEAD(sockets);
 	LIST_HEAD(watchers);
 
@@ -449,7 +485,7 @@ void* server_main(void* p)
 
 	ev_io_stop(loop, &msg_watcher);
 
-	disconnect_peers();
+	disconnect_peers(loop);
 	stop_and_free_server_watchers(&watchers, loop);
 	close_and_free_sockets(&sockets);
 
