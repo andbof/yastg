@@ -39,9 +39,9 @@ struct watcher_list {
 
 static void disconnect_peers()
 {
-	struct connection *cd;
+	struct connection *cd, *_cd;
 
-	list_for_each_entry(cd, &conn_list, list) {
+	list_for_each_entry_safe(cd, _cd, &conn_list, list) {
 		conn_send(cd, "Server is shutting down, you are being disconnected.\n");
 		conn_cleanexit(cd);
 	}

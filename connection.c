@@ -54,6 +54,7 @@ int conn_init(struct connection *conn)
 	}
 
 	INIT_LIST_HEAD(&conn->list);
+	INIT_LIST_HEAD(&conn->work);
 
 	return 0;
 }
@@ -141,9 +142,15 @@ void* connection_worker(void *_w)
 	do {
 		pthread_mutex_lock(&data->workers_lock);
 
-		while (ptrlist_empty(&data->work_items) && !w->terminate)
+		while (list_empty(&data->work_items) && !w->terminate)
 			pthread_cond_wait(&data->workers_cond, &data->workers_lock);
-		conn = ptrlist_pull(&data->work_items);
+
+		if (!list_empty(&data->work_items)) {
+			conn = list_first_entry(&data->work_items, struct connection, work);
+			list_del_init(&conn->work);
+		} else {
+			conn = NULL;
+		}
 
 		pthread_mutex_unlock(&data->workers_lock);
 
@@ -182,7 +189,7 @@ int conn_fulfixinit(struct connection *data)
 void conn_do_work(struct conn_data *data, struct connection *conn)
 {
 	pthread_mutex_lock(&data->workers_lock);
-	ptrlist_push(&data->work_items, conn);
+	list_add_tail(&conn->work, &data->work_items);
 	pthread_cond_signal(&data->workers_cond);
 	pthread_mutex_unlock(&data->workers_lock);
 }
@@ -231,19 +238,17 @@ err:
 int conndata_init(struct conn_data *data)
 {
 	memset(data, 0, sizeof(*data));
+	INIT_LIST_HEAD(&data->work_items);
+
 	if (pthread_mutex_init(&data->workers_lock, NULL))
 		return -1;
 	if (pthread_cond_init(&data->workers_cond, NULL))
 		goto err_mutex;
 	if (initialize_workers(data))
 		goto err_cond;
-	if (ptrlist_init(&data->work_items))
-		goto err_workers;
 
 	return 0;
 
-err_workers:
-	ptrlist_free(&data->work_items);
 err_cond:
 	pthread_cond_destroy(&data->workers_cond);
 err_mutex:

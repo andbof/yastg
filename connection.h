@@ -32,7 +32,7 @@ struct conn_data {
 	struct list_head workers;
 	pthread_mutex_t workers_lock;
 	pthread_cond_t workers_cond;
-	struct ptrlist work_items;
+	struct list_head work_items;
 };
 
 struct conn_worker_list {
