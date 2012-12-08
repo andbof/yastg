@@ -173,8 +173,10 @@ int conn_fulfixinit(struct connection *data)
 	if (!data->pl)
 		return -1;
 
-	if (player_init(data->pl))
+	if (player_init(data->pl)) {
+		free(data->pl);
 		return -1;
+	}
 
 	data->pl->conn = data;
 	player_go(data->pl, SECTOR, ptrlist_entry(&univ.sectors, 0));
