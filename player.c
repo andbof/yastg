@@ -31,13 +31,7 @@ void player_free(struct player *player)
 
 static char* hundreths(unsigned long l, char *buf, size_t len)
 {
-	int mod = l % 100;
-
-	if (mod < 10) {
-		snprintf(buf, len, "%lu.0%lu", l / 100, l % 100);
-	} else {
-		snprintf(buf, len, "%lu.0%lu", l / 100, l % 100);
-	}
+	snprintf(buf, len, "%lu.0%lu", l / 100, l % 100);
 
 	return buf;
 }
@@ -293,7 +287,6 @@ static int cmd_orbit(void *ptr, char *param)
 	struct player *player = ptr;
 	assert(player->postype == SECTOR);
 	struct sector *sector = player->pos;
-	struct list_head *lh;
 
 	struct planet *planet;
 	pthread_rwlock_rdlock(&univ.planetnames_lock);

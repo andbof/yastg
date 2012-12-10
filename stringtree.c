@@ -128,8 +128,7 @@ static void* get_the_only_child(const struct list_head * const root)
 
 static struct st_node* find_node(const struct list_head * const root, const char * const string, const int exact_match_only)
 {
-	struct st_node *node, *unique;
-	int i;
+	struct st_node *node;
 
 	list_for_each_entry(node, root, list) {
 		if (node->c < string[0])

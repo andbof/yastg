@@ -160,7 +160,6 @@ static void _cmd_rmmod(struct module *m)
 static int cmd_rmmod(void *ptr, char *name)
 {
 	struct module *m;
-	int r;
 
 	if (!name) {
 		mprintf("usage: rmmod <module>\n");
@@ -321,10 +320,8 @@ static void kill_server_thread(struct server * const server)
 int main(int argc, char **argv)
 {
 	char *line = malloc(256); /* FIXME */
-	struct config *ctree;
 	struct civ *cv;
-	struct sector *s, *t;
-	size_t st, su;
+	struct sector *s;
 	struct civ civs;
 	struct server server;
 	LIST_HEAD(cli_root);

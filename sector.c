@@ -27,7 +27,6 @@ void sector_init(struct sector *s)
 }
 
 void sector_free(struct sector *s) {
-	size_t st;
 	struct list_head *lh;
 	struct star *sol;
 	struct planet *planet;
@@ -62,7 +61,6 @@ struct sector* sector_load(struct config *ctree)
 	struct planet *p;
 	struct base *b;
 	struct star *sol;
-	size_t i;
 	int haspos = 0;
 
 	s = malloc(sizeof(*s));

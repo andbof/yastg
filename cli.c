@@ -142,8 +142,6 @@ static void __cli_print_help(FILE *f, struct list_head *root, char *buf, size_t 
 #define MAX_CMD_LEN 64
 void cli_print_help(FILE *f, struct list_head *root)
 {
-	struct st_node *node;
-	struct cli_data *cli;
 	char buf[MAX_CMD_LEN];
 	memset(buf, 0, sizeof(buf));
 

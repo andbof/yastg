@@ -50,8 +50,6 @@ static void disconnect_peers()
 static void server_handlesignal(struct ev_loop *loop, struct signal *msg, char *data)
 {
 	struct connection *cd, *p;
-	int i, j;
-	size_t st;
 	log_printfn("server", "received signal %d", msg->type);
 	switch (msg->type) {
 	case MSG_TERM:
@@ -173,7 +171,6 @@ static int initialize_server_sockets(struct list_head *sockets)
 	struct addrinfo *servinfo, *p;
 	server_preparesocket(&servinfo);
 	int fd;
-	int yes = 1;
 	struct socket_list *s;
 
 	/* We want to bind to all valid combinations returned by getaddrinfo()
@@ -222,7 +219,8 @@ static void server_msg_cb(struct ev_loop * const loop, ev_io * const w, const in
 {
 	struct signal msg;
 	char *data;
-	int r = read(signfdr, &msg, sizeof(msg));
+
+	read(signfdr, &msg, sizeof(msg));
 	if (msg.cnt > 0) {
 		data = alloca(msg.cnt);
 		read(signfdr, data, msg.cnt);	/* FIXME: Validate the number of bytes */
@@ -281,9 +279,8 @@ static void got_new_peer_data(struct ev_loop * const loop, ev_io * const w, cons
 
 int server_accept_connection(struct ev_loop * const loop, int fd)
 {
-	int i, r;
+	int r;
 	struct connection *cd;
-	size_t st;
 	struct sockaddr_storage peer_addr;
 	socklen_t sin_size = sizeof(peer_addr);
 
@@ -420,8 +417,7 @@ err:
 
 void* server_main(void* p)
 {
-	int i;
-	ev_io msg_watcher, accept_watcher;
+	ev_io msg_watcher;
 	struct ev_loop *loop = EV_DEFAULT;
 	LIST_HEAD(sockets);
 	LIST_HEAD(watchers);

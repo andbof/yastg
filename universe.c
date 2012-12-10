@@ -225,13 +225,6 @@ void universe_init(struct universe *u)
 
 int universe_genesis(struct universe *univ, struct civ *civs)
 {
-	int i;
-	int power = 0;
-	struct civ *c;
-
-	list_for_each_entry(c, &civs->list, list)
-		power += c->power;
-
 	/*
 	 * 1. Decide number of constellations in universe.
 	 * 2. For each constellation, create a number of sectors, grouping them together.

@@ -144,7 +144,6 @@ static void grow_all_civs(struct universe *u, struct civ *civs)
 {
 	unsigned long goal_hab, total_power;
 	struct civ *c, *_c;
-	struct list_head *lh;
 
 	mprintf("Growing civilizations ...\n");
 
@@ -203,7 +202,6 @@ void civ_init(struct civ *c)
 
 void loadciv(struct civ *c, struct config *ctree)
 {
-	struct sector *s;
 	char *st;
 	civ_init(c);
 
@@ -274,7 +272,6 @@ close:
 
 void civ_free(struct civ *civ)
 {
-	size_t st;
 	char *c;
 	struct list_head *lh;
 	ptrlist_free(&civ->sectors);
