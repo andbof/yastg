@@ -14,9 +14,6 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])    # Fixes automake 1.12 (where -Wall impli
 AC_LANG_C
 AC_PROG_LIBTOOL
 
-AC_CHECK_LIB([mcheck],[mcheck],
-             [],
-             [AC_MSG_WARN([cc not accepting -lmcheck, not compiling with memory checks])])
 AC_CHECK_LIB([m],[floor],
              [],
              [AC_MSG_ERROR([libm not found])])
