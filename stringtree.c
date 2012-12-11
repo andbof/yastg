@@ -75,6 +75,9 @@ int st_add_string(struct list_head * const root, char *_string, void *data)
 		return -1;
 
 	string = strdup(_string);
+	if (!string)
+		return -1;
+
 	downcase_valid(string);
 
 	r = _st_add_string(root, string, data);
@@ -159,6 +162,9 @@ void* st_lookup_string(const struct list_head * const root, const char * const _
 		return NULL;
 
 	string = strdup(_string);
+	if (!string)
+		return NULL;
+
 	downcase_valid(string);
 
 	node = find_node(root, string, 0);
@@ -180,6 +186,9 @@ void* st_lookup_exact(const struct list_head * const root, const char * const _s
 		return NULL;
 
 	string = strdup(_string);
+	if (!string)
+		return NULL;
+
 	downcase_valid(string);
 
 	node = find_node(root, string, 1);
@@ -207,6 +216,9 @@ void* st_rm_string(struct list_head * const root, const char * const _string)
 		return NULL;
 
 	string = strdup(_string);
+	if (!string)
+		return NULL;
+
 	downcase_valid(string);
 
 	node = find_node(root, string, 1);
