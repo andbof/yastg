@@ -5,10 +5,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-/* Global compiler directives */
-
-#define _GNU_SOURCE
-
 /* Global struct definitions */
 
 struct ulong_ptr {

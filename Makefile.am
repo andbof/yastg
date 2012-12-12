@@ -14,6 +14,7 @@ MAINTAINERCLEANFILES = Makefile.in \
 
 ACLOCAL_AMFLAGS = -I m4
 
+AM_CPPFLAGS = -D_GNU_SOURCE
 AM_CFLAGS = -g -O0 -Wall -Werror -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -ftrapv -Wno-unused-variable -Wno-unused-parameter -Wtype-limits -fstack-protector-all -fno-strict-aliasing -Wno-format-y2k
 
 TESTS = test/stringtree_test
