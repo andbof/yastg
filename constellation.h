@@ -5,7 +5,7 @@
 #define CONSTELLATION_MIN_DISTANCE (150 * TICK_PER_LY)
 #define CONSTELLATION_RANDOM_DISTANCE (500 * TICK_PER_LY)
 #define CONSTELLATION_PHI_RANDOM 1.0
-#define CONSTELLATION_MAXNUM 3
+#define CONSTELLATION_MAXNUM 128
 
 int loadconstellations();
 int addconstellation(char* cname);
