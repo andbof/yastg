@@ -18,17 +18,9 @@ int ptrlist_push(struct ptrlist *l, void *e);
 void* ptrlist_pull(struct ptrlist * const l);
 struct ptrlist* ptrlist_get(const struct ptrlist * const l, const unsigned long n);
 void* ptrlist_entry(const struct ptrlist * const l, const unsigned long n);
+unsigned long ptrlist_len(const struct ptrlist * const l);
+void* ptrlist_random(const struct ptrlist * const l);
 void ptrlist_rm(struct ptrlist *l, const unsigned long n);
-
-static inline unsigned long ptrlist_len(const struct ptrlist * const l)
-{
-	return l->len;
-}
-
-static inline void* ptrlist_random(const struct ptrlist * const l)
-{
-	return ptrlist_entry(l, mtrandom_ulong(ptrlist_len(l)));
-}
 
 #define ptrlist_data(pos)	\
 	list_entry((pos), struct ptrlist, list)->data

@@ -84,6 +84,16 @@ void* ptrlist_entry(const struct ptrlist * const l, const unsigned long n)
 	return ptrlist_get(l, n)->data;
 }
 
+unsigned long ptrlist_len(const struct ptrlist * const l)
+{
+	return l->len;
+}
+
+void* ptrlist_random(const struct ptrlist * const l)
+{
+	return ptrlist_entry(l, mtrandom_ulong(ptrlist_len(l)));
+}
+
 void ptrlist_rm(struct ptrlist *l, const unsigned long n)
 {
 	struct ptrlist *e;
