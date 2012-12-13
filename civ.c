@@ -158,7 +158,7 @@ static void grow_all_civs(struct universe *u, struct civ *civs)
 
 	struct list_head growing_civs = LIST_HEAD_INIT(growing_civs);
 	list_for_each_entry(c, &civs->list, list)
-		list_add(&growing_civs, &c->growing);
+		list_add(&c->growing, &growing_civs);
 
 	while (univ.inhabited_sectors < goal_hab && !list_empty(&growing_civs)) {
 		list_for_each_entry_safe(c, _c, &growing_civs, growing) {
