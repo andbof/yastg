@@ -77,6 +77,8 @@ static int grow_civ(struct universe *u, struct civ *c)
 	if (!is_border_sector(t, c))
 		ptrlist_rm(&c->border_sectors, 0);
 
+	printf("Growing civ %s into %s at %ldx%ld\n", c->name, s->name, s->x, s->y);
+
 	return 0;
 }
 
