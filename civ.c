@@ -8,22 +8,22 @@
 #include "mtrandom.h"
 #include "civ.h"
 #include "ptrlist.h"
-#include "sector.h"
+#include "system.h"
 #include "parseconfig.h"
 #include "universe.h"
 #include "list.h"
 
 #define CIV_MIN_BORDER_WIDTH (200 * TICK_PER_LY)
-static int is_border_sector(struct sector *sector, struct civ *c)
+static int is_border_system(struct system *system, struct civ *c)
 {
 	struct ptrlist neigh;
 	struct list_head *lh;
-	struct sector *s;
+	struct system *s;
 	int is_border = 0;
 
 	ptrlist_init(&neigh);
 
-	get_neighbouring_systems(&neigh, sector, CIV_MIN_BORDER_WIDTH);
+	get_neighbouring_systems(&neigh, system, CIV_MIN_BORDER_WIDTH);
 	ptrlist_for_each_entry(s, &neigh, lh) {
 		if (!s->owner) {
 			is_border = 1;
@@ -42,15 +42,15 @@ static int is_border_sector(struct sector *sector, struct civ *c)
 #define CIV_GROW_STEP_LY (10 * TICK_PER_LY)
 static int grow_civ(struct universe *u, struct civ *c)
 {
-	struct sector *s, *t;
+	struct system *s, *t;
 	struct ptrlist neigh;
 	struct list_head *lh;
 	unsigned long radius;
 
-	if (ptrlist_len(&c->border_sectors) == 0)
+	if (ptrlist_len(&c->border_systems) == 0)
 		return 1;
 
-	t = ptrlist_entry(&c->border_sectors, 0);
+	t = ptrlist_entry(&c->border_systems, 0);
 	radius = CIV_GROW_MIN_LY;
 
 	do {
@@ -69,13 +69,13 @@ static int grow_civ(struct universe *u, struct civ *c)
 	} while ((s == NULL) || (s->owner));
 
 	s->owner = c;
-	linksectors(s, t);
-	ptrlist_push(&c->sectors, s);
+	linksystems(s, t);
+	ptrlist_push(&c->systems, s);
 
-	if (is_border_sector(s, c))
-		ptrlist_push(&c->border_sectors, s);
-	if (!is_border_sector(t, c))
-		ptrlist_rm(&c->border_sectors, 0);
+	if (is_border_system(s, c))
+		ptrlist_push(&c->border_systems, s);
+	if (!is_border_system(t, c))
+		ptrlist_rm(&c->border_systems, 0);
 
 	printf("Growing civ %s into %s at %ldx%ld\n", c->name, s->name, s->x, s->y);
 
@@ -86,7 +86,7 @@ static int grow_civ(struct universe *u, struct civ *c)
 static void spawn_civilizations(struct universe *u, struct civ *civs)
 {
 	struct civ *c;
-	struct sector *s;
+	struct system *s;
 	int success, tries;
 	struct ptrlist neigh;
 	struct list_head *lh;
@@ -96,12 +96,12 @@ static void spawn_civilizations(struct universe *u, struct civ *civs)
 		do {
 			tries++;
 			success = 1;
-			s = ptrlist_random(&u->sectors);
+			s = ptrlist_random(&u->systems);
 			if (!s->owner) {
 				ptrlist_init(&neigh);
 
 				get_neighbouring_systems(&neigh, s, INITIAL_MIN_INTERCIV_DISTANCE_LY);
-				struct sector *t;
+				struct system *t;
 				ptrlist_for_each_entry(t, &neigh, lh) {
 					if (t->owner != 0) {
 						success = 0;
@@ -121,9 +121,9 @@ static void spawn_civilizations(struct universe *u, struct civ *civs)
 		mprintf("Chose %s as home system for %s\n", s->name, c->name);
 		s->owner = c;
 		c->home = s;
-		ptrlist_push(&c->sectors, s);
-		ptrlist_push(&c->border_sectors, s);
-		univ.inhabited_sectors++;
+		ptrlist_push(&c->systems, s);
+		ptrlist_push(&c->border_systems, s);
+		univ.inhabited_systems++;
 	}
 }
 
@@ -149,7 +149,7 @@ static void grow_all_civs(struct universe *u, struct civ *civs)
 
 	mprintf("Growing civilizations ...\n");
 
-	goal_hab = ptrlist_len(&u->sectors) * UNIVERSE_CIV_FRAC;
+	goal_hab = ptrlist_len(&u->systems) * UNIVERSE_CIV_FRAC;
 
 	total_power = 0;
 	list_for_each_entry(c, &civs->list, list) {
@@ -160,13 +160,13 @@ static void grow_all_civs(struct universe *u, struct civ *civs)
 	list_for_each_entry(c, &civs->list, list)
 		list_add(&c->growing, &growing_civs);
 
-	while (univ.inhabited_sectors < goal_hab && !list_empty(&growing_civs)) {
+	while (univ.inhabited_systems < goal_hab && !list_empty(&growing_civs)) {
 		list_for_each_entry_safe(c, _c, &growing_civs, growing) {
 			if (mtrandom_ulong(total_power) >= c->power)
 				continue;
 
 			if (!grow_civ(u, c))
-				univ.inhabited_sectors++;
+				univ.inhabited_systems++;
 			else
 				list_del(&c->growing);
 		}
@@ -187,17 +187,17 @@ void civ_spawncivs(struct universe *u, struct civ *civs)
 
 	mprintf("Civilization stats:\n");
 	list_for_each_entry(c, &civs->list, list)
-		mprintf("  %s has %lu sectors (%.2f%%) with power %u\n", c->name, ptrlist_len(&c->sectors), ptrlist_len(&c->sectors)/(float)univ.inhabited_sectors*100, c->power);
-	mprintf("%lu sectors of %lu are inhabited (%.2f%%)\n", univ.inhabited_sectors, ptrlist_len(&u->sectors), univ.inhabited_sectors/(float)ptrlist_len(&u->sectors)*100);
+		mprintf("  %s has %lu systems (%.2f%%) with power %u\n", c->name, ptrlist_len(&c->systems), ptrlist_len(&c->systems)/(float)univ.inhabited_systems*100, c->power);
+	mprintf("%lu systems of %lu are inhabited (%.2f%%)\n", univ.inhabited_systems, ptrlist_len(&u->systems), univ.inhabited_systems/(float)ptrlist_len(&u->systems)*100);
 }
 
 void civ_init(struct civ *c)
 {
 	memset(c, 0, sizeof(*c));
-	ptrlist_init(&c->presectors);
+	ptrlist_init(&c->presystems);
 	ptrlist_init(&c->availnames);
-	ptrlist_init(&c->sectors);
-	ptrlist_init(&c->border_sectors);
+	ptrlist_init(&c->systems);
+	ptrlist_init(&c->border_systems);
 	INIT_LIST_HEAD(&c->list);
 	INIT_LIST_HEAD(&c->growing);
 }
@@ -214,10 +214,8 @@ void loadciv(struct civ *c, struct config *ctree)
 		} else if (strcmp(ctree->key, "HOME") == 0) {
 		} else if (strcmp(ctree->key, "POWER") == 0) {
 			sscanf(ctree->data, "%d", &c->power);
-		} else if (strcmp(ctree->key, "SECTOR") == 0) {
-			/*	FIXME: We won't do this now as we don't support it
-			        s = sector_load(ctree->sub);
-			        ptrlist_push(c->presectors, s); */
+		} else if (strcmp(ctree->key, "SYSTEM") == 0) {
+			printf("FIXME: SYSTEM is not supported\n");
 		} else if (strcmp(ctree->key, "SNAME") == 0) {
 			st = strdup(ctree->data);
 			ptrlist_push(&c->availnames, st);
@@ -276,9 +274,9 @@ void civ_free(struct civ *civ)
 {
 	char *c;
 	struct list_head *lh;
-	ptrlist_free(&civ->sectors);
-	ptrlist_free(&civ->border_sectors);
-	ptrlist_free(&civ->presectors);
+	ptrlist_free(&civ->systems);
+	ptrlist_free(&civ->border_systems);
+	ptrlist_free(&civ->presystems);
 	ptrlist_for_each_entry(c, &civ->availnames, lh)
 		free(c);
 	ptrlist_free(&civ->availnames);

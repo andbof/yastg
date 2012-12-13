@@ -9,12 +9,12 @@ struct universe;
 
 struct civ {
 	char* name;
-	struct sector* home;
+	struct system* home;
 	int power;
-	struct ptrlist presectors;
+	struct ptrlist presystems;
 	struct ptrlist availnames;
-	struct ptrlist sectors;
-	struct ptrlist border_sectors;
+	struct ptrlist systems;
+	struct ptrlist border_systems;
 	struct list_head list;
 	struct list_head growing;
 };

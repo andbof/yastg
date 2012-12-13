@@ -6,7 +6,7 @@
 
 enum postype {
 	NONE,
-	SECTOR,
+	SYSTEM,
 	BASE,
 	PLANET
 };

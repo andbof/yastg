@@ -63,8 +63,8 @@ yastg_SOURCES = base.c \
 		ptrlist.h \
 		rbtree.c \
 		rbtree.h \
-		sector.c \
-		sector.h \
+		system.c \
+		system.h \
 		server.c \
 		server.h \
 		star.c \

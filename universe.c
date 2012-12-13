@@ -13,7 +13,7 @@
 #include "ptrlist.h"
 #include "planet.h"
 #include "base.h"
-#include "sector.h"
+#include "system.h"
 #include "civ.h"
 #include "star.h"
 #include "constellation.h"
@@ -21,10 +21,10 @@
 #include "mtrandom.h"
 
 /*
- * The universe consists of a number of sectors. These sectors are grouped in constellations,
+ * The universe consists of a number of systems. These systems are grouped in constellations,
  * with the constellations having limited access between one another.
  *
- * Example: (. is a sector, -|\/ are valid travel routes)
+ * Example: (. is a system, -|\/ are valid travel routes)
  * 
  * .-.-.     .-.-.
  *  \  |    /  | |
@@ -43,21 +43,21 @@ struct universe univ;
 
 void universe_free(struct universe *u)
 {
-	ptrlist_free(&u->sectors);
-	st_destroy(&u->sectornames, ST_DONT_FREE_DATA);
+	ptrlist_free(&u->systems);
+	st_destroy(&u->systemnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->planetnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->basenames, ST_DONT_FREE_DATA);
 	if (u->name)
 		free(u->name);
 }
 
-void linksectors(struct sector *s1, struct sector *s2)
+void linksystems(struct system *s1, struct system *s2)
 {
 	ptrlist_push(&s1->links, s2);
 	ptrlist_push(&s2->links, s1);
 }
 
-int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsigned long max)
+int makeneighbours(struct system *s1, struct system *s2, unsigned long min, unsigned long max)
 {
 	unsigned long x, y;
 
@@ -70,7 +70,7 @@ int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsi
 			y = mtrandom_ulong(NEIGHBOUR_DISTANCE_LY) * 2 - NEIGHBOUR_DISTANCE_LY + s1->y;
 		}
 
-	} while (sector_move(s2, x, y));
+	} while (system_move(s2, x, y));
 
 	return 0;
 	/*
@@ -79,32 +79,32 @@ int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsi
 	 */
 }
 
-static struct sector* get_first_sector_after_x(const struct rb_root * const root, const long x)
+static struct system* get_first_system_after_x(const struct rb_root * const root, const long x)
 {
-	struct sector *sector;
+	struct system *system;
 	struct rb_node *parent = NULL;
 	struct rb_node *node;
 
 	node = root->rb_node;
 	while (node) {
 		parent = node;
-		sector = rb_entry(node, struct sector, x_rbtree);
+		system = rb_entry(node, struct system, x_rbtree);
 
-		if (x < sector->x)
+		if (x < system->x)
 			node = node->rb_left;
-		else if (x > sector->x)
+		else if (x > system->x)
 			node = node->rb_right;
 		else
-			return rb_entry(node, struct sector, x_rbtree);
+			return rb_entry(node, struct system, x_rbtree);
 	}
 
-	return rb_entry(parent, struct sector, x_rbtree);
+	return rb_entry(parent, struct system, x_rbtree);
 }
 
 unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
-		const struct sector * const origin, const long max_distance)
+		const struct system * const origin, const long max_distance)
 {
-	struct sector *sector;
+	struct system *system;
 	long min_x, max_x;
 	long min_y, max_y;
 	struct rb_node *node;
@@ -114,24 +114,24 @@ unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
 	max_x = origin->x + max_distance;
 	min_y = origin->y - max_distance;
 	max_y = origin->y + max_distance;
-	sector = get_first_sector_after_x(&univ.x_rbtree, min_x);
-	node = &sector->x_rbtree;
+	system = get_first_system_after_x(&univ.x_rbtree, min_x);
+	node = &system->x_rbtree;
 
 	/*
 	 * The extra y-coordinate comparison before the call to
-	 * sector_distance() improves performance quite considerably when
-	 * measured (with perf and gcc -O3) as sector_distance() is quite slow.
+	 * system_distance() improves performance quite considerably when
+	 * measured (with perf and gcc -O3) as system_distance() is quite slow.
 	 */
-	while (node && rb_entry(node, struct sector, x_rbtree)->x <= max_x) {
+	while (node && rb_entry(node, struct system, x_rbtree)->x <= max_x) {
 
-		sector = rb_entry(node, struct sector, x_rbtree);
+		system = rb_entry(node, struct system, x_rbtree);
 
-		if (sector->y >= min_y && sector->y <= max_y &&
-			(sector_distance(origin, sector) < max_distance)) {
+		if (system->y >= min_y && system->y <= max_y &&
+			(system_distance(origin, system) < max_distance)) {
 
 			neighbour_count++;
 			if (neighbours)
-				ptrlist_push(neighbours, sector);
+				ptrlist_push(neighbours, system);
 		}
 
 		node = rb_next(node);
@@ -140,71 +140,71 @@ unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
 	return neighbour_count;
 }
 
-static struct sector* get_sector_at_x(const long x)
+static struct system* get_system_at_x(const long x)
 {
 	struct rb_node *node = univ.x_rbtree.rb_node;
-	struct sector *sector;
+	struct system *system;
 
 	while (node) {
-		sector = rb_entry(node, struct sector, x_rbtree);
+		system = rb_entry(node, struct system, x_rbtree);
 
-		if (x < sector->x)
+		if (x < system->x)
 			node = node->rb_left;
-		else if (x > sector->x)
+		else if (x > system->x)
 			node = node->rb_right;
 		else
-			return rb_entry(node, struct sector, x_rbtree);
+			return rb_entry(node, struct system, x_rbtree);
 	}
 
 	return NULL;
 }
 
-static void insert_sector_into_rbtree(struct sector * const s)
+static void insert_system_into_rbtree(struct system * const s)
 {
 	struct rb_node **link = &univ.x_rbtree.rb_node;
 	struct rb_node *parent = NULL;
-	struct sector *sector;
+	struct system *system;
 
 	while (*link) {
 		parent = *link;
-		sector = rb_entry(parent, struct sector, x_rbtree);
+		system = rb_entry(parent, struct system, x_rbtree);
 
-		if (s->x < sector->x)
+		if (s->x < system->x)
 			link = &(*link)->rb_left;
-		else if (s->x > sector->x)
+		else if (s->x > system->x)
 			link = &(*link)->rb_right;
 		else
-			bug("Sector %s already inserted at %ldx%ld",
-					sector->name, sector->x, sector->y);
+			bug("System %s already inserted at %ldx%ld",
+					system->name, system->x, system->y);
 	}
 
 	rb_link_node(&s->x_rbtree, parent, link);
 	rb_insert_color(&s->x_rbtree, &univ.x_rbtree);
 }
 
-int sector_move(struct sector * const s, const long x, const long y)
+int system_move(struct system * const s, const long x, const long y)
 {
-	struct sector *prev;
+	struct system *prev;
 
 	/*
-	 * All sectors need to have unique x coordinates or there will be tree
+	 * All systems need to have unique x coordinates or there will be tree
 	 * collisions. This is the most sane place to do that check.
 	 */
-	if ((prev = get_sector_at_x(x)))
+	if ((prev = get_system_at_x(x)))
 		return 1;
 
 	/*
 	 * This function is also used to set a position for freshly created
-	 * sectors which don't exist in the tree yet.
+	 * systems which don't exist in the tree yet.
 	 */
-	prev = get_sector_at_x(s->x);
+	prev = get_system_at_x(s->x);
 	if (prev)
 		rb_erase(&prev->x_rbtree, &univ.x_rbtree);
 
 	s->x = x;
 	s->y = y;
 
-	insert_sector_into_rbtree(s);
+	insert_system_into_rbtree(s);
 
 	return 0;
 }
@@ -214,9 +214,9 @@ void universe_init(struct universe *u)
 	time(&u->created);
 	u->id = 0;
 	u->name = NULL;
-	ptrlist_init(&u->sectors);
-	INIT_LIST_HEAD(&u->sectornames);
-	pthread_rwlock_init(&u->sectornames_lock, NULL);
+	ptrlist_init(&u->systems);
+	INIT_LIST_HEAD(&u->systemnames);
+	pthread_rwlock_init(&u->systemnames_lock, NULL);
 	INIT_LIST_HEAD(&u->planetnames);
 	pthread_rwlock_init(&u->planetnames_lock, NULL);
 	INIT_LIST_HEAD(&u->basenames);
@@ -227,7 +227,7 @@ int universe_genesis(struct universe *univ, struct civ *civs)
 {
 	/*
 	 * 1. Decide number of constellations in universe.
-	 * 2. For each constellation, create a number of sectors, grouping them together.
+	 * 2. For each constellation, create a number of systems, grouping them together.
 	 */
 	if (loadconstellations(univ))
 		return -1;

@@ -1,7 +1,7 @@
 #ifndef _HAS_STAR_H
 #define _HAS_STAR_H
 
-#include "sector.h"
+#include "system.h"
 #include "parseconfig.h"
 
 #define STELLAR_LUM_N 9
@@ -22,7 +22,7 @@ int star_load(struct star *sol, struct config *ctree);
 unsigned long star_gethablow(unsigned int lumval);
 unsigned long star_gethabhigh(unsigned int lumval);
 
-int star_populate_sector(struct sector *sector);
+int star_populate_system(struct system *system);
 void star_free(struct star *s);
 
 #endif

@@ -1,7 +1,7 @@
 #ifndef _HAS_PLANET_H
 #define _HAS_PLANET_H
 
-#include "sector.h"
+#include "system.h"
 #include "parseconfig.h"
 #include "list.h"
 #include "data.h"
@@ -18,13 +18,13 @@ struct planet {
 	struct ptrlist stations;
 	struct ptrlist moons;
 	struct ptrlist players;
-	struct sector *sector;
+	struct system *system;
 	struct list_head list;
 };
 
 int planet_load(struct planet *p, struct config *ctree);
 void planet_free(struct planet *p);
 struct planet* createplanet();
-int planet_populate_sector(struct sector* sector);
+int planet_populate_system(struct system* system);
 
 #endif

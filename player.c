@@ -15,7 +15,7 @@
 #include "planet.h"
 #include "player.h"
 #include "ptrlist.h"
-#include "sector.h"
+#include "system.h"
 #include "star.h"
 #include "universe.h"
 #include "names.h"
@@ -37,21 +37,21 @@ static char* hundreths(unsigned long l, char *buf, size_t len)
 	return buf;
 }
 
-static void player_showsector(struct player *player, struct sector *sector)
+static void player_showsystem(struct player *player, struct system *system)
 {
-	struct sector *t;
+	struct system *t;
 	struct list_head *lh;
 	struct star *sol;
 	struct planet *planet;
 	char buf[10];
 
 	player_talk(player,
-		"Sector %s (coordinates %ldx%ld), habitability %d\n"
+		"System %s (coordinates %ldx%ld), habitability %d\n"
 		"Habitable zone is from %lu to %lu Gm\n",
-		sector->name, sector->x, sector->y, sector->hab, sector->hablow, sector->habhigh);
+		system->name, system->x, system->y, system->hab, system->hablow, system->habhigh);
 
 	player_talk(player, "Stars:\n");
-	ptrlist_for_each_entry(sol, &sector->stars, lh)
+	ptrlist_for_each_entry(sol, &system->stars, lh)
 		player_talk(player,
 			"  %s: Class %c %s\n"
 			"    Surface temperature: %dK, habitability modifier: %d, luminosity: %s\n",
@@ -59,9 +59,9 @@ static void player_showsector(struct player *player, struct sector *sector)
 			stellar_lum[sol->lum], sol->temp, sol->hab,
 			hundreths(sol->lumval, buf, sizeof(buf)));
 
-	if (!list_empty(&sector->planets.list)) {
+	if (!list_empty(&system->planets.list)) {
 		player_talk(player, "Planets:\n");
-		ptrlist_for_each_entry(planet, &sector->planets, lh) {
+		ptrlist_for_each_entry(planet, &system->planets, lh) {
 			struct planet_type *type = &planet_types[planet->type];
 			player_talk(player,
 				"  %s: Class %c (%s)\n"
@@ -71,36 +71,36 @@ static void player_showsector(struct player *player, struct sector *sector)
 				type->atmo, planet_life_desc[planet->life]);
 		}
 	} else {
-		player_talk(player, "Sector does not have any planets.\n");
+		player_talk(player, "System does not have any planets.\n");
 	}
 
-	if (!list_empty(&sector->links.list)) {
-		player_talk(player, "This sector has hyperspace links to\n");
-		ptrlist_for_each_entry(t, &sector->links, lh)
+	if (!list_empty(&system->links.list)) {
+		player_talk(player, "This system has hyperspace links to\n");
+		ptrlist_for_each_entry(t, &system->links, lh)
 			player_talk(player, "  %s\n", t->name);
 	} else {
-		player_talk(player, "This sector does not have any hyperspace links.\n");
+		player_talk(player, "This system does not have any hyperspace links.\n");
 	}
 
 	struct ptrlist neigh;
 	ptrlist_init(&neigh);
 
-	player_talk(player, "Sectors within 50 lys are:\n");
-	get_neighbouring_systems(&neigh, sector, 50 * TICK_PER_LY);
+	player_talk(player, "Systems within 50 lys are:\n");
+	get_neighbouring_systems(&neigh, system, 50 * TICK_PER_LY);
 	if (!list_empty(&neigh.list)) {
 		ptrlist_for_each_entry(t, &neigh, lh) {
-			if (t != sector)
+			if (t != system)
 				player_talk(player, "  %s at %.1f ly\n", t->name,
-						sector_distance(sector, t) / (double)TICK_PER_LY);
+						system_distance(system, t) / (double)TICK_PER_LY);
 		}
 	}
 
 	ptrlist_free(&neigh);
 
-	if (sector->owner != NULL) {
-		player_talk(player, "This sector is owned by civ %s\n", sector->owner->name);
+	if (system->owner != NULL) {
+		player_talk(player, "This system is owned by civ %s\n", system->owner->name);
 	} else {
-		player_talk(player, "This sector is not part of any civilization\n");
+		player_talk(player, "This system is not part of any civilization\n");
 	}
 }
 
@@ -110,7 +110,7 @@ static void player_showbase(struct player *player, struct base *base)
 	if (base->planet)
 		o = base->planet->name;
 	else
-		o = base->sector->name;
+		o = base->system->name;
 	struct base_type *type = &base_types[base->type];
 
 	player_talk(player,
@@ -131,11 +131,11 @@ static void player_showplanet(struct player *player, struct planet *planet)
 	struct base *base;
 	struct list_head *lh;
 	if (planet->gname)
-		player_talk(player, "Planet %s (%s) in sector %s",
-			planet->gname, planet->name, planet->sector->name);
+		player_talk(player, "Planet %s (%s) in system %s",
+			planet->gname, planet->name, planet->system->name);
 	else
-		player_talk(player, "Planet %s in sector %s",
-			planet->name, planet->sector->name);
+		player_talk(player, "Planet %s in system %s",
+			planet->name, planet->system->name);
 	player_talk(player,
 		", class %c (%s).\n"
 		"  Diameter: %u km, distance from main star: %u Gm, atmosphere: %s. %s.\n",
@@ -188,8 +188,8 @@ static int cmd_look(void *ptr, char *param)
 {
 	struct player *player = ptr;
 	switch (player->postype) {
-	case SECTOR:
-		player_showsector(player, player->pos);
+	case SYSTEM:
+		player_showsystem(player, player->pos);
 		break;
 	case BASE:
 		player_showbase(player, player->pos);
@@ -207,32 +207,32 @@ static char cmd_look_help[] = "Look around";
 static int cmd_hyper(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	assert(player->postype == SECTOR);
+	assert(player->postype == SYSTEM);
 
-	struct sector *sector;
-	pthread_rwlock_rdlock(&univ.sectornames_lock);
-	sector = st_lookup_string(&univ.sectornames, param);
-	pthread_rwlock_unlock(&univ.sectornames_lock);
+	struct system *system;
+	pthread_rwlock_rdlock(&univ.systemnames_lock);
+	system = st_lookup_string(&univ.systemnames, param);
+	pthread_rwlock_unlock(&univ.systemnames_lock);
 
-	if (sector == NULL) {
-		player_talk(player, "Sector not found.\n");
+	if (system == NULL) {
+		player_talk(player, "System not found.\n");
 		return 1;
 	}
 
 	int ok = 0;
-	struct sector *tmp;
-	struct sector *pos = player->pos;
+	struct system *tmp;
+	struct system *pos = player->pos;
 	struct list_head *lh;
 	ptrlist_for_each_entry(tmp, &pos->links, lh) {
-		if (tmp == sector) {
+		if (tmp == system) {
 			ok = 1;
 			break;
 		}
 	}
 
 	if (ok) {
-		player_talk(player, "Entering %s\n", sector->name);
-		player_go(player, SECTOR, sector);
+		player_talk(player, "Entering %s\n", system->name);
+		player_go(player, SYSTEM, system);
 		return 0;
 	} else {
 		player_talk(player, "No hyperspace link found.\n");
@@ -240,27 +240,27 @@ static int cmd_hyper(void *ptr, char *param)
 	}
 
 }
-static char cmd_hyper_help[] = "Travel by hyperspace to sector";
+static char cmd_hyper_help[] = "Travel by hyperspace to system";
 
 static int cmd_jump(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	struct sector *sector;
+	struct system *system;
 
-	pthread_rwlock_rdlock(&univ.sectornames_lock);
-	sector = st_lookup_string(&univ.sectornames, param);
-	pthread_rwlock_unlock(&univ.sectornames_lock);
+	pthread_rwlock_rdlock(&univ.systemnames_lock);
+	system = st_lookup_string(&univ.systemnames, param);
+	pthread_rwlock_unlock(&univ.systemnames_lock);
 
-	if (sector != NULL) {
-		player_talk(player, "Jumping to %s\n", sector->name);
-		player_go(player, SECTOR, sector);
+	if (system != NULL) {
+		player_talk(player, "Jumping to %s\n", system->name);
+		player_go(player, SYSTEM, system);
 		return 0;
 	}
 
-	player_talk(player, "Sector not found.\n");
+	player_talk(player, "System not found.\n");
 	return 1;
 }
-static char cmd_jump_help[] = "Travel by jumpdrive to sector";
+static char cmd_jump_help[] = "Travel by jumpdrive to system";
 
 static int cmd_dock(void *ptr, char *param)
 {
@@ -272,7 +272,7 @@ static int cmd_dock(void *ptr, char *param)
 	pthread_rwlock_unlock(&univ.basenames_lock);
 
 	if (base && ((player->postype == PLANET && base->planet == player->pos)
-		|| (player->postype == SECTOR && base->sector == player->pos))) {
+		|| (player->postype == SYSTEM && base->system == player->pos))) {
 			player_talk(player, "Docking at %s\n", base->name);
 			player_go(player, BASE, base);
 			return 0;
@@ -286,21 +286,21 @@ static char cmd_dock_help[] = "Dock at spacedock or base";
 static int cmd_orbit(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	assert(player->postype == SECTOR);
-	struct sector *sector = player->pos;
+	assert(player->postype == SYSTEM);
+	struct system *system = player->pos;
 
 	struct planet *planet;
 	pthread_rwlock_rdlock(&univ.planetnames_lock);
 	planet = st_lookup_string(&univ.planetnames, param);
 	pthread_rwlock_unlock(&univ.planetnames_lock);
 
-	if (planet && planet->sector == sector) {
+	if (planet && planet->system == system) {
 		player_talk(player, "Entering orbit around %s\n", planet->name);
 		player_go(player, PLANET, planet);
 		return 0;
 	}
 
-	player_talk(player, "No such planet found in this sector.\n");
+	player_talk(player, "No such planet found in this system.\n");
 	return 1;
 }
 static char cmd_orbit_help[] = "Enter orbit around planet";
@@ -312,8 +312,8 @@ static int cmd_leave_base(void *ptr, char *param)
 	struct base *base = player->pos;
 	if (base->planet)
 		player_go(player, PLANET, base->planet);
-	else if (base->sector)
-		player_go(player, SECTOR, base->sector);
+	else if (base->system)
+		player_go(player, SYSTEM, base->system);
 	else
 		bug("%s", "base %s does not have any positional information");
 
@@ -326,9 +326,9 @@ static int cmd_leave_planet(void *ptr, char *param)
 	struct player *player = ptr;
 	assert(player->postype == PLANET);
 	struct planet *planet = player->pos;
-	assert(planet->sector);
+	assert(planet->system);
 	player_talk(player, "Leaving orbit around %s\n", planet->name);
-	player_go(player, SECTOR, planet->sector);
+	player_go(player, SYSTEM, planet->system);
 	return 0;
 }
 static char cmd_leave_planet_help[] = "Leave planet orbit";
@@ -336,7 +336,7 @@ static char cmd_leave_planet_help[] = "Leave planet orbit";
 void player_go(struct player *player, enum postype postype, void *pos)
 {
 	switch (player->postype) {
-	case SECTOR:
+	case SYSTEM:
 		cli_rm_cmd(&player->cli, "jump");
 		cli_rm_cmd(&player->cli, "dock");
 		cli_rm_cmd(&player->cli, "orbit");
@@ -359,7 +359,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 	cmd_look(player, NULL);
 
 	switch (postype) {
-	case SECTOR:
+	case SYSTEM:
 		cli_add_cmd(&player->cli, "jump", cmd_jump, player, cmd_jump_help);
 		cli_add_cmd(&player->cli, "dock", cmd_dock, player, cmd_dock_help);
 		cli_add_cmd(&player->cli, "orbit", cmd_orbit, player, cmd_orbit_help);

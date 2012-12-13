@@ -5,14 +5,14 @@
 #include "log.h"
 #include "universe.h"
 #include "civ.h"
-#include "sector.h"
+#include "system.h"
 #include "planet.h"
 #include "base.h"
 #include "ptrlist.h"
 #include "parseconfig.h"
 #include "star.h"
 
-void sector_init(struct sector *s)
+void system_init(struct system *s)
 {
 	memset(s, 0, sizeof(*s));
 	s->phi = 0.0;
@@ -26,7 +26,7 @@ void sector_init(struct sector *s)
 	INIT_LIST_HEAD(&s->list);
 }
 
-void sector_free(struct sector *s) {
+void system_free(struct system *s) {
 	struct list_head *lh;
 	struct star *sol;
 	struct planet *planet;
@@ -54,9 +54,9 @@ void sector_free(struct sector *s) {
 	free(s);
 }
 
-struct sector* sector_load(struct config *ctree)
+struct system* system_load(struct config *ctree)
 {
-	struct sector *s;
+	struct system *s;
 	struct list_head *lh;
 	struct planet *p;
 	struct base *b;
@@ -66,10 +66,10 @@ struct sector* sector_load(struct config *ctree)
 	s = malloc(sizeof(*s));
 	if (!s)
 		return NULL;
-	sector_init(s);
+	system_init(s);
 
 	while (ctree) {
-		if (strcmp(ctree->key, "SECTOR") == 0) {
+		if (strcmp(ctree->key, "SYSTEM") == 0) {
 
 			s->name = NULL;
 
@@ -115,30 +115,30 @@ struct sector* sector_load(struct config *ctree)
 		totlum += sol->lumval;
 	}
 	if (!s->gname)
-		die("%s", "required attribute missing in predefined sector: gname");
+		die("%s", "required attribute missing in predefined system: gname");
 	if (!haspos)
-		die("required attribute missing in predefined sector %s: position", s->name);
+		die("required attribute missing in predefined system %s: position", s->name);
 
 	s->hablow = star_gethablow(totlum);
 	s->habhigh = star_gethabhigh(totlum);
 	return s;
 
 err:
-	sector_free(s);
+	system_free(s);
 	return NULL;
 }
 
 #define STELLAR_MUL_HAB -50
-int sector_create(struct sector *s, char *name)
+int system_create(struct system *s, char *name)
 {
 	struct star *sol;
 	struct list_head *lh;
 
-	sector_init(s);
+	system_init(s);
 
 	s->name = strdup(name);
 
-	if (star_populate_sector(s)) {
+	if (star_populate_system(s)) {
 		free(s->name);
 		return -1;
 	}
@@ -153,7 +153,7 @@ int sector_create(struct sector *s, char *name)
 	s->hablow = star_gethablow(totlum);
 	s->habhigh = star_gethabhigh(totlum);
 
-	if (planet_populate_sector(s))
+	if (planet_populate_system(s))
 		return -1;
 
 	printf("  Number of planets: %lu\n", ptrlist_len(&s->planets));
@@ -161,7 +161,7 @@ int sector_create(struct sector *s, char *name)
 	return 0;
 }
 
-unsigned long sector_distance(const struct sector * const a, const struct sector * const b) {
+unsigned long system_distance(const struct system * const a, const struct system * const b) {
 	long result = sqrt( (double)(b->x - a->x)*(b->x - a->x) +
 			(double)(b->y - a->y)*(b->y - a->y) );
 

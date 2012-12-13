@@ -12,7 +12,7 @@
 #include "parseconfig.h"
 #include "planet.h"
 #include "ptrlist.h"
-#include "sector.h"
+#include "system.h"
 #include "universe.h"
 
 static void planet_init(struct planet *p)
@@ -91,9 +91,9 @@ static int planet_gennum()
 #define PLANET_ECO_ODDS 5
 #define PLANET_COLD_ODDS 10
 #define PLANET_DIST_MAX (100 * GM_PER_AU)	/* Based on sol system */
-static void planet_genesis(struct planet *planet, struct sector *sector)
+static void planet_genesis(struct planet *planet, struct system *system)
 {
-	planet->sector = sector;
+	planet->system = system;
 	unsigned int tmp = mtrandom_uint(PLANET_HOT_ODDS + PLANET_ECO_ODDS + PLANET_COLD_ODDS);
 	enum planet_zone zone;
 	if (tmp <= PLANET_HOT_ODDS)
@@ -114,14 +114,14 @@ static void planet_genesis(struct planet *planet, struct sector *sector)
 
 	switch (zone) {
 	case HOT:
-		planet->dist = mtrandom_uint(sector->hablow);
+		planet->dist = mtrandom_uint(system->hablow);
 		break;
 	case ECO:
-		planet->dist = mtrandom_uint(sector->habhigh - sector->hablow) + sector->hablow;
+		planet->dist = mtrandom_uint(system->habhigh - system->hablow) + system->hablow;
 		break;
 	case COLD:
 		/* FIXME: Some kind of logarithmic function ... ? */
-		planet->dist = mtrandom_uint(PLANET_DIST_MAX - sector->habhigh) + sector->habhigh;
+		planet->dist = mtrandom_uint(PLANET_DIST_MAX - system->habhigh) + system->habhigh;
 		break;
 	default:
 		bug("%s", "illegal execution point");
@@ -130,7 +130,7 @@ static void planet_genesis(struct planet *planet, struct sector *sector)
 	base_populate_planet(planet);
 }
 
-int planet_populate_sector(struct sector* sector)
+int planet_populate_system(struct system* system)
 {
 	struct planet *p;
 	int num = planet_gennum();
@@ -143,16 +143,16 @@ int planet_populate_sector(struct sector* sector)
 			return -1;
 
 		planet_init(p);
-		planet_genesis(p, sector);
+		planet_genesis(p, system);
 
-		p->name = malloc(strlen(sector->name) + ROMAN_LEN + 2);
+		p->name = malloc(strlen(system->name) + ROMAN_LEN + 2);
 		if (!p->name) {
 			free(p);
 			return -1;
 		}
 
-		sprintf(p->name, "%s %s", sector->name, roman[i]);	/* FIXME: Wait with naming until all are made, sort on mean distance from sun. */
-		ptrlist_push(&sector->planets, p);
+		sprintf(p->name, "%s %s", system->name, roman[i]);	/* FIXME: Wait with naming until all are made, sort on mean distance from sun. */
+		ptrlist_push(&system->planets, p);
 		st_add_string(&univ.planetnames, p->name, p);
 		if (p->gname)
 			st_add_string(&univ.planetnames, p->gname, p);

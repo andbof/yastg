@@ -24,7 +24,7 @@
 #include "ptrlist.h"
 #include "cli.h"
 #include "universe.h"
-#include "sector.h"
+#include "system.h"
 #include "star.h"
 #include "base.h"
 #include "planet.h"
@@ -192,7 +192,7 @@ int conn_fulfixinit(struct connection *data)
 	}
 
 	data->pl->conn = data;
-	player_go(data->pl, SECTOR, ptrlist_entry(&univ.sectors, 0));
+	player_go(data->pl, SYSTEM, ptrlist_entry(&univ.systems, 0));
 
 	conn_send(data, PROMPT);
 

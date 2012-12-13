@@ -19,7 +19,7 @@
 #include "cli.h"
 #include "ptrlist.h"
 #include "server.h"
-#include "sector.h"
+#include "system.h"
 #include "base.h"
 #include "inventory.h"
 #include "player.h"
@@ -203,11 +203,11 @@ static int cmd_stats(void *ptr, char *param)
 	strftime(created, sizeof(created), "%c", &t);
 
 	mprintf("Statistics:\n"
-	        "  Size of universe:          %lu sectors\n"
+		"  Size of universe:          %lu systems\n"
 		"  Universe created:          %s\n"
 	        "  Number of users known:     %s\n"
 	        "  Number of users connected: %s\n",
-		ptrlist_len(&univ.sectors),
+		ptrlist_len(&univ.systems),
 		created,
 		"FIXME", "FIXME");
 	return 0;
@@ -321,7 +321,7 @@ int main(int argc, char **argv)
 {
 	char *line = malloc(256); /* FIXME */
 	struct civ *cv;
-	struct sector *s;
+	struct system *s;
 	struct civ civs;
 	struct server server;
 	LIST_HEAD(cli_root);
@@ -345,7 +345,7 @@ int main(int argc, char **argv)
 		die("%s", "Could not start server thread");
 
 	mprintf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
-	mprintf("Universe has %lu sectors in total\n", ptrlist_len(&univ.sectors));
+	mprintf("Universe has %lu systems in total\n", ptrlist_len(&univ.systems));
 
 	while (server.running) {
 		mprintf("console> ");
@@ -365,8 +365,8 @@ int main(int argc, char **argv)
 	mprintf("Cleaning up ... ");
 
 	struct list_head *p, *q;
-	ptrlist_for_each_entry(s, &univ.sectors, p) {
-		sector_free(s);
+	ptrlist_for_each_entry(s, &univ.systems, p) {
+		system_free(s);
 	}
 
 	list_for_each_safe(p, q, &civs.list) {

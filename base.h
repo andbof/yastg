@@ -9,7 +9,7 @@ struct base {
 	unsigned int type;
 	int docks;
 	struct planet *planet;
-	struct sector *sector;
+	struct system *system;
 	struct ptrlist inventory;
 	struct ptrlist players;
 };

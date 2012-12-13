@@ -6,7 +6,7 @@
 #include "list.h"
 #include "log.h"
 #include "ptrlist.h"
-#include "sector.h"
+#include "system.h"
 
 int ptrlist_init(struct ptrlist *l)
 {

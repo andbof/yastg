@@ -1,5 +1,5 @@
-#ifndef _HAS_SECTOR_H
-#define _HAS_SECTOR_H
+#ifndef _HAS_SYSTEM_H
+#define _HAS_SYSTEM_H
 
 #include "list.h"
 #include "rbtree.h"
@@ -9,7 +9,7 @@ struct universe;
 struct ptrlist;
 struct config;
 
-struct sector {
+struct system {
 	char *name;
 	struct civ *owner;
 	char *gname;
@@ -26,11 +26,11 @@ struct sector {
 	struct list_head list;
 };
 
-void sector_init(struct sector *s);
-struct sector* sector_load(struct config *ctree);
-int sector_create(struct sector *s, char *name);
-void sector_free(struct sector *s);
+void system_init(struct system *s);
+struct system* system_load(struct config *ctree);
+int system_create(struct system *s, char *name);
+void system_free(struct system *s);
 
-unsigned long sector_distance(const struct sector * const a, const struct sector * const b);
+unsigned long system_distance(const struct system * const a, const struct system * const b);
 
 #endif

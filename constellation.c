@@ -9,7 +9,7 @@
 #include "mtrandom.h"
 #include "universe.h"
 #include "constellation.h"
-#include "sector.h"
+#include "system.h"
 #include "star.h"
 #include "ptrlist.h"
 #include "stringtree.h"
@@ -48,7 +48,7 @@ int addconstellation(char* cname)
 {
 	unsigned long nums, numc, i;
 	char *string;
-	struct sector *fs, *s;
+	struct system *fs, *s;
 	struct ptrlist work;
 	double phi;
 	unsigned long r;
@@ -59,37 +59,37 @@ int addconstellation(char* cname)
 
 	ptrlist_init(&work);
 
-	/* Determine number of sectors in constellation */
+	/* Determine number of systems in constellation */
 	nums = mtrandom_uint(GREEK_N);
 	if (nums == 0)
 		nums = 1;
 
-	mprintf("addconstellation: will create %lu sectors (universe has %lu so far)\n", nums, ptrlist_len(&univ.sectors));
+	mprintf("addconstellation: will create %lu systems (universe has %lu so far)\n", nums, ptrlist_len(&univ.systems));
 
-	pthread_rwlock_wrlock(&univ.sectornames_lock);
+	pthread_rwlock_wrlock(&univ.systemnames_lock);
 
 	fs = NULL;
 	for (numc = 0; numc < nums; numc++) {
 
-		/* Create a new sector and put it in s */
+		/* Create a new system and put it in s */
 		s = malloc(sizeof(*s));
 		if (!s)
 			goto err;
 		sprintf(string, "%s %s", greek[numc], cname);
-		if (sector_create(s, string))
+		if (system_create(s, string))
 			goto err;
 
-		ptrlist_push(&univ.sectors, s);
-		st_add_string(&univ.sectornames, s->name, s);
+		ptrlist_push(&univ.systems, s);
+		st_add_string(&univ.systemnames, s->name, s);
 
 		if (fs == NULL) {
-			/* This was the first sector generated for this constellation
+			/* This was the first system generated for this constellation
 			   We need to place this at a suitable point in the universe */
 			fs = s;
-			if (ptrlist_len(&univ.sectors) == 1) {
+			if (ptrlist_len(&univ.systems) == 1) {
 				/* The first constellation always goes in (0, 0) */
-				if (sector_move(s, 0, 0))
-					bug("%s", "Error when placing first sector at (0,0)");
+				if (system_move(s, 0, 0))
+					bug("%s", "Error when placing first system at (0,0)");
 			} else {
 				/* All others are randomly distributed */
 				phi = mtrandom_uint(UINT_MAX) / (double)UINT_MAX*2*M_PI;
@@ -98,18 +98,18 @@ int addconstellation(char* cname)
 				while (i > 1) {
 					r += mtrandom_ulong(CONSTELLATION_RANDOM_DISTANCE);
 					phi += mtrandom_double(CONSTELLATION_PHI_RANDOM);
-					if (!sector_move(s, POLTOX(phi, r), POLTOY(phi, r)))
+					if (!system_move(s, POLTOX(phi, r), POLTOY(phi, r)))
 						i = get_neighbouring_systems(NULL, s, CONSTELLATION_MIN_DISTANCE);
 				}
 			}
 			ptrlist_push(&work, s);
 		} else if (ptrlist_len(&work) == 0) {
-			/* This isn't the first sector but no sectors are left in work
-			   Put this close to the first sector */
+			/* This isn't the first system but no systems are left in work
+			   Put this close to the first system */
 			ptrlist_push(&work, s);
 			makeneighbours(fs, s, 0, 0);
 		} else {
-			/* We have sectors in work, put this close to work[0] and add this one to work */
+			/* We have systems in work, put this close to work[0] and add this one to work */
 			ptrlist_push(&work, s);
 			makeneighbours(ptrlist_entry(&work, 0), s, 0, 0);
 			/* Determine if work[0] has enough neighbours, if so remove it */
@@ -121,7 +121,7 @@ int addconstellation(char* cname)
 
 	}
 
-	pthread_rwlock_unlock(&univ.sectornames_lock);
+	pthread_rwlock_unlock(&univ.systemnames_lock);
 
 	free(string);
 	ptrlist_free(&work);
@@ -129,6 +129,6 @@ int addconstellation(char* cname)
 	return 0;
 
 err:
-	pthread_rwlock_unlock(&univ.sectornames_lock);
+	pthread_rwlock_unlock(&univ.systemnames_lock);
 	return -1;
 }

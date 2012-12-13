@@ -4,18 +4,18 @@
 #include "list.h"
 #include "rbtree.h"
 #include "civ.h"
-#include "sector.h"
+#include "system.h"
 #include "names.h"
 
 struct universe {
 	size_t id;			/* ID of the universe (or the game?) */
 	char* name;			/* The name of the universe (or the game?) */
 	time_t created;			/* When the universe was created */
-	unsigned long inhabited_sectors;
-	struct ptrlist sectors;
+	unsigned long inhabited_systems;
+	struct ptrlist systems;
 	struct rb_root x_rbtree;
-	struct list_head sectornames;
-	pthread_rwlock_t sectornames_lock;
+	struct list_head systemnames;
+	pthread_rwlock_t systemnames_lock;
 	struct list_head planetnames;
 	pthread_rwlock_t planetnames_lock;
 	struct list_head basenames;
@@ -33,10 +33,10 @@ void universe_init(struct universe *u);
 int universe_genesis(struct universe *univ, struct civ *civs);
 
 unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
-		const struct sector * const origin, const long max_distance);
+		const struct system * const origin, const long max_distance);
 
-int sector_move(struct sector * const s, const long x, const long y);
-int makeneighbours(struct sector *s1, struct sector *s2, unsigned long min, unsigned long max);
-void linksectors(struct sector *s1, struct sector *s2);
+int system_move(struct system * const s, const long x, const long y);
+int makeneighbours(struct system *s1, struct system *s2, unsigned long min, unsigned long max);
+void linksystems(struct system *s1, struct system *s2);
 
 #endif

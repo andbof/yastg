@@ -195,7 +195,7 @@ static void star_init(struct star *s)
 }
 
 #define STELLAR_MUL_MAX 4
-int star_populate_sector(struct sector *sector)
+int star_populate_system(struct system *system)
 {
 	struct star *sol;
 
@@ -204,12 +204,12 @@ int star_populate_sector(struct sector *sector)
 		goto err;
 	star_init(sol);
 
-	sol->name = malloc(strlen(sector->name) + 3);
+	sol->name = malloc(strlen(system->name) + 3);
 	if (!sol->name)
 		goto err;
 
-	sprintf(sol->name, "%s A", sector->name);
-	ptrlist_push(&sector->stars, sol);
+	sprintf(sol->name, "%s A", system->name);
+	ptrlist_push(&system->stars, sol);
 
 	unsigned int mulodds = stellar_clsmul[sol->cls];
 	for (int i = 1; star_generate_more(mulodds) && i < STELLAR_MUL_MAX; i++) {
@@ -218,14 +218,14 @@ int star_populate_sector(struct sector *sector)
 			goto err;
 		star_init(sol);
 
-		sol->name = malloc(strlen(sector->name) + 4);
+		sol->name = malloc(strlen(system->name) + 4);
 		if (!sol->name)
 			goto err;
 
-		sprintf(sol->name, "%s %c", sector->name, i + 65);
+		sprintf(sol->name, "%s %c", system->name, i + 65);
 		if (stellar_clsmul[sol->cls] < mulodds)
 			mulodds = stellar_clsmul[sol->cls];
-		ptrlist_push(&sector->stars, sol);
+		ptrlist_push(&system->stars, sol);
 	}
 
 	return 0;
