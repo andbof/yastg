@@ -1,17 +1,17 @@
 #ifndef _HAS_PARSECONFIG_H
 #define _HAS_PARSECONFIG_H
 
-#include <stdio.h>
+#include "list.h"
 
 struct config {
 	char *key;
 	char *data;
-	struct config *sub;
-	struct config *next;
+	struct list_head children;
+	struct list_head list;
 };
 
-struct config* parseconfig(char *fname);
-struct config* recparseconfig(FILE *f, char *fname);
-void destroyctree(struct config *ctree);
+int parse_config_mmap(char *begin, const off_t size, struct list_head * const root);
+int parse_config_file(const char * const fname, struct list_head * const root);
+void destroy_config(struct list_head * const root);
 
 #endif

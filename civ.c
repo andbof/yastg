@@ -202,25 +202,24 @@ void civ_init(struct civ *c)
 	INIT_LIST_HEAD(&c->growing);
 }
 
-void loadciv(struct civ *c, struct config *ctree)
+void loadciv(struct civ *c, const struct list_head * const config_root)
 {
+	struct config *conf;
 	char *st;
 	civ_init(c);
 
-	ctree = ctree->sub;
-	while (ctree) {
-		if (strcmp(ctree->key, "NAME") == 0) {
-			c->name = strdup(ctree->data);
-		} else if (strcmp(ctree->key, "HOME") == 0) {
-		} else if (strcmp(ctree->key, "POWER") == 0) {
-			sscanf(ctree->data, "%d", &c->power);
-		} else if (strcmp(ctree->key, "SYSTEM") == 0) {
+	list_for_each_entry(conf, config_root, list) {
+		if (strcmp(conf->key, "NAME") == 0) {
+			c->name = strdup(conf->data);
+		} else if (strcmp(conf->key, "HOME") == 0) {
+		} else if (strcmp(conf->key, "POWER") == 0) {
+			sscanf(conf->data, "%d", &c->power);
+		} else if (strcmp(conf->key, "SYSTEM") == 0) {
 			printf("FIXME: SYSTEM is not supported\n");
-		} else if (strcmp(ctree->key, "SNAME") == 0) {
-			st = strdup(ctree->data);
+		} else if (strcmp(conf->key, "SNAME") == 0) {
+			st = strdup(conf->data);
 			ptrlist_push(&c->availnames, st);
 		}
-		ctree = ctree->next;
 	}
 }
 
@@ -228,8 +227,8 @@ int civ_load_all(struct civ *civs)
 {
 	DIR *dirp;
 	struct dirent *de;
-	struct config *ctree;
 	struct civ *cv;
+	struct list_head conf = LIST_HEAD_INIT(conf);
 	char* path = NULL;
 	int pathlen = 0;
 	int r = 0;
@@ -248,7 +247,11 @@ int civ_load_all(struct civ *civs)
 			}
 
 			sprintf(path, "%s/%s", "civs", de->d_name);
-			ctree = parseconfig(path);
+			if (parse_config_file(path, &conf)) {
+				destroy_config(&conf);
+				r = -1;
+				goto close;
+			}
 
 			cv = malloc(sizeof(*cv));
 			if (!cv) {
@@ -256,8 +259,8 @@ int civ_load_all(struct civ *civs)
 				goto close;
 			}
 
-			loadciv(cv, ctree);
-			destroyctree(ctree);
+			loadciv(cv, &conf);
+			destroy_config(&conf);
 			list_add_tail(&(cv->list), &(civs->list));
 		}
 	}

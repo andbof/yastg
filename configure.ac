@@ -13,6 +13,8 @@ AM_PROG_CC_C_O
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])    # Fixes automake 1.12 (where -Wall implies portability warnings), but automake <= 1.11 does not recognize it
 AC_LANG_C
 AC_PROG_LIBTOOL
+AC_PROG_YACC
+AM_PROG_LEX
 
 AC_CHECK_LIB([m],[floor],
              [],

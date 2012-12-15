@@ -14,7 +14,7 @@ struct base {
 	struct ptrlist players;
 };
 
-struct base* loadbase(struct base *b, struct config *ctree);
+struct base* loadbase(struct base *b, const struct list_head * const config_root);
 void base_populate_planet(struct planet* planet);
 
 void base_free(struct base *b);

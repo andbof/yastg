@@ -10,22 +10,24 @@
 #include "planet.h"
 #include "universe.h"
 
-struct base* loadbase(struct base *b, struct config *ctree)
+struct base* loadbase(struct base *b, const struct list_head * const config_root)
 {
+	struct config *conf;
+
 	memset(b, 0, sizeof(*b));
 	ptrlist_init(&b->inventory);
 	ptrlist_init(&b->players);
 
 	b->docks = 0;
-	while (ctree) {
-		if (strcmp(ctree->key, "NAME") == 0)
-			b->name = strdup(ctree->data);
-		else if (strcmp(ctree->key, "TYPE") == 0)
-			b->type = ctree->data[0];
-		else if (strcmp(ctree->key, "DOCKS") == 0)
-			sscanf(ctree->data, "%d", &(b->docks));
+
+	list_for_each_entry(conf, config_root, list) {
+		if (strcmp(conf->key, "NAME") == 0)
+			b->name = strdup(conf->data);
+		else if (strcmp(conf->key, "TYPE") == 0)
+			b->type = conf->data[0];
+		else if (strcmp(conf->key, "DOCKS") == 0)
+			sscanf(conf->data, "%d", &(b->docks));
 		/* FIXME: inventory + players */
-		ctree = ctree->next;
 	}
 	return b;
 }

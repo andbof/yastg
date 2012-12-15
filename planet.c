@@ -51,24 +51,24 @@ void planet_free(struct planet *p)
 	free(p);
 }
 
-int planet_load(struct planet *p, struct config *ctree)
+int planet_load(struct planet *p, const struct list_head * const config_root)
 {
 	struct base *b;
+	struct config *conf;
 
-	while (ctree) {
-		if (strcmp(ctree->key, "NAME") == 0) {
-			p->name = strdup(ctree->data);
-		} else if (strcmp(ctree->key, "TYPE") == 0) {
-			p->type = ctree->data[0];
-		} else if (strcmp(ctree->key, "BASE") == 0) {
+	list_for_each_entry(conf, config_root, list) {
+		if (strcmp(conf->key, "NAME") == 0) {
+			p->name = strdup(conf->data);
+		} else if (strcmp(conf->key, "TYPE") == 0) {
+			p->type = conf->data[0];
+		} else if (strcmp(conf->key, "BASE") == 0) {
 			b = malloc(sizeof(*b));
 			if (!b)
 				return -1;
 
-			loadbase(b, ctree->sub);
+			loadbase(b, &conf->children);
 			ptrlist_push(&p->bases, b);
 		}
-		ctree = ctree->next;
 	}
 
 	return 0;

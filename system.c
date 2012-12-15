@@ -54,8 +54,9 @@ void system_free(struct system *s) {
 	free(s);
 }
 
-struct system* system_load(struct config *ctree)
+struct system* system_load(const struct list_head * const config_root)
 {
+	struct config *conf;
 	struct system *s;
 	struct list_head *lh;
 	struct planet *p;
@@ -68,45 +69,44 @@ struct system* system_load(struct config *ctree)
 		return NULL;
 	system_init(s);
 
-	while (ctree) {
-		if (strcmp(ctree->key, "SYSTEM") == 0) {
+	list_for_each_entry(conf, config_root, list) {
+		if (strcmp(conf->key, "SYSTEM") == 0) {
 
 			s->name = NULL;
 
-		} else if (strcmp(ctree->key, "PLANET") == 0) {
+		} else if (strcmp(conf->key, "PLANET") == 0) {
 
 			p = malloc(sizeof(*p));
 			if (!p)
 				goto err;
 
-			planet_load(p, ctree->sub);
+			planet_load(p, &conf->children);
 			ptrlist_push(&s->planets, p);
 
-		} else if (strcmp(ctree->key, "BASE") == 0) {
+		} else if (strcmp(conf->key, "BASE") == 0) {
 
 			b = malloc(sizeof(*b));
 			if (!b)
 				goto err;
 
-			loadbase(b, ctree->sub);
+			loadbase(b, &conf->children);
 			ptrlist_push(&s->bases, b);
 
-		} else if (strcmp(ctree->key, "STAR") == 0) {
+		} else if (strcmp(conf->key, "STAR") == 0) {
 
 			sol = malloc(sizeof(*sol));
 			if (!sol)
 				goto err;
 
-			star_load(sol, ctree->sub);
+			star_load(sol, &conf->children);
 			ptrlist_push(&s->stars, sol);
 
-		} else if (strcmp(ctree->key, "POS") == 0) {
+		} else if (strcmp(conf->key, "POS") == 0) {
 
-			sscanf(ctree->data, "%lu %lu", &s->x, &s->y);
+			sscanf(conf->data, "%lu %lu", &s->x, &s->y);
 			haspos = 1;
 
 		}
-		ctree = ctree->next;
 	}
 
 	unsigned int totlum = 0;

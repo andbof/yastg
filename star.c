@@ -94,8 +94,9 @@ static int star_genlumval(struct star *star)
  * Parses a configuration tree and loads the information
  * into the supplied struct star*
  */
-int star_load(struct star *sol, struct config *ctree)
+int star_load(struct star *sol, const struct list_head * const config_root)
 {
+	struct config *conf;
 	int i;
 	int habset = 0;
 	int tempset = 0;
@@ -106,44 +107,43 @@ int star_load(struct star *sol, struct config *ctree)
 	sol->temp = 0;
 	sol->hab = 0;
 	sol->name = NULL;
-	while (ctree) {
-		if (strcmp(ctree->key, "NAME") == 0) {
-			sol->name = strdup(ctree->data);
-		} else if (strcmp(ctree->key, "CLASS") == 0) {
-			if (strlen(ctree->data) != 1)
-				die("invalid stellar class in configuration file: %s\n", ctree->data);
+	list_for_each_entry(conf, config_root, list) {
+		if (strcmp(conf->key, "NAME") == 0) {
+			sol->name = strdup(conf->data);
+		} else if (strcmp(conf->key, "CLASS") == 0) {
+			if (strlen(conf->data) != 1)
+				die("invalid stellar class in configuration file: %s\n", conf->data);
 			for (i = 0; i < STELLAR_CLS_N; i++) {
-				if (ctree->data[0] == stellar_cls[i]) {
+				if (conf->data[0] == stellar_cls[i]) {
 					sol->cls = i;
 					clsset = 1;
 					break;
 				}
 			}
 			if (!clsset)
-				die("invalid stellar class in configuration file: %s\n", ctree->data);
-		} else if (strcmp(ctree->key, "LUM") == 0) {
+				die("invalid stellar class in configuration file: %s\n", conf->data);
+		} else if (strcmp(conf->key, "LUM") == 0) {
 			for (i = 0; i < STELLAR_LUM_N; i++) {
-				if (strcmp(ctree->data, stellar_lum[i]) == 0) {
+				if (strcmp(conf->data, stellar_lum[i]) == 0) {
 					sol->lum = i;
 					lumset = 1;
 					break;
 				}
 			}
 			if (!lumset)
-				die("invalid stellar luminosity in configuration file: %s\n", ctree->data);
-		} else if (strcmp(ctree->key, "LUMVAL") == 0) {
-			sscanf(ctree->data, "%u", &(sol->lumval));
+				die("invalid stellar luminosity in configuration file: %s\n", conf->data);
+		} else if (strcmp(conf->key, "LUMVAL") == 0) {
+			sscanf(conf->data, "%u", &(sol->lumval));
 			lumvalset = 1;
-		} else if (strcmp(ctree->key, "TEMP") == 0) {
-			sscanf(ctree->data, "%u", &(sol->temp));
+		} else if (strcmp(conf->key, "TEMP") == 0) {
+			sscanf(conf->data, "%u", &(sol->temp));
 			tempset = 1;
-		} else if (strcmp(ctree->key, "HAB") == 0) {
-			sscanf(ctree->data, "%u", &(sol->hab));
+		} else if (strcmp(conf->key, "HAB") == 0) {
+			sscanf(conf->data, "%u", &(sol->hab));
 			habset = 1;
 		} else {
-			printf("warning: invalid entry in configuration file: %s %s\n", ctree->key, ctree->data);
+			printf("warning: invalid entry in configuration file: %s %s\n", conf->key, conf->data);
 		}
-		ctree = ctree->next;
 	}
 	if (!habset)
 		sol->hab = 0;

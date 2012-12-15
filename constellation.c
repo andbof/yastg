@@ -16,31 +16,31 @@
 
 int loadconstellations()
 {
-	struct config *ctree, *e;
+	struct config *conf;
+	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	unsigned int ncons = 0;
 
-	ctree = parseconfig("data/constellations");
-	e = ctree->sub;
+	if (parse_config_file("data/constellations", &conf_root)) {
+		destroy_config(&conf_root);
+		return -1;
+	}
 
-	if (!e->next)
-		die("%s contained no useful data", e->key);
+	list_for_each_entry(conf, &conf_root, list) {
+		if (ncons >= CONSTELLATION_MAXNUM)
+			break;
 
-	e = e->next;
-
-	while ((e) && (ncons < CONSTELLATION_MAXNUM)) {
-		printf("Adding constellation %s\n", e->key);
-		if (addconstellation(e->key))
+		printf("Adding constellation %s\n", conf->key);
+		if (addconstellation(conf->key))
 			goto err;
 
-		e = e->next;
 		ncons++;
 	}
 
-	destroyctree(ctree);
+	destroy_config(&conf_root);
 	return 0;
 
 err:
-	destroyctree(ctree);
+	destroy_config(&conf_root);
 	return -1;
 }
 

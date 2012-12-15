@@ -19,7 +19,7 @@ struct civ {
 	struct list_head growing;
 };
 
-void loadciv(struct civ *c, struct config *ctree);
+void loadciv(struct civ *c, const struct list_head * const config_root);
 void civ_init(struct civ *c);
 int civ_load_all(struct civ *civs);
 

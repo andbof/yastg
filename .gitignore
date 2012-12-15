@@ -21,6 +21,9 @@ LICENSE
 *.scan
 *.sub
 .libs
+parseconfig-yacc.c
+parseconfig-yacc.h
+parseconfig-lex.c
 yastg-*.tar.gz
 .dirstamp
 configure
@@ -34,7 +37,9 @@ missing
 stamp-h1
 libtool
 ltmain.sh
+ylwrap
 autom4te.cache
+test/config_test
 test/conntest
 test/stringtree_test
 TODO
