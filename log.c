@@ -20,10 +20,18 @@ void log_init(const char * const name)
 		die("Failed creating or opening log file %s", name);
 }
 
+void log_init_stdout()
+{
+	if (pthread_mutex_init(&log_mutex, NULL) != 0)
+		die("%s", "Failed initializing log mutex");
+	log_fd = stdout;
+}
+
 void log_close()
 {
 	pthread_mutex_lock(&log_mutex);
-	fclose(log_fd);
+	if (log_fd != stdout)
+		fclose(log_fd);
 	log_fd = NULL;
 	pthread_mutex_unlock(&log_mutex);
 	pthread_mutex_destroy(&log_mutex);
