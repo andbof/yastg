@@ -20,6 +20,7 @@ LICENSE
 *.status
 *.scan
 *.sub
+.libs
 yastg-*.tar.gz
 .dirstamp
 configure
@@ -35,4 +36,5 @@ libtool
 ltmain.sh
 autom4te.cache
 test/conntest
+test/stringtree_test
 TODO
