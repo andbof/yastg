@@ -12,18 +12,19 @@ static pthread_mutex_t log_mutex;
 static FILE *log_fd;
 static char log_timestr[CTIME_LEN];
 
-void log_init()
+void log_init(const char * const name)
 {
 	if (pthread_mutex_init(&log_mutex, NULL) != 0)
 		die("%s", "Failed initializing log mutex");
-	if ((log_fd = fopen(LOG_NAME, "a+")) == NULL)
-		die("Failed creating or opening log file %s", LOG_NAME);
+	if ((log_fd = fopen(name, "a+")) == NULL)
+		die("Failed creating or opening log file %s", name);
 }
 
 void log_close()
 {
 	pthread_mutex_lock(&log_mutex);
 	fclose(log_fd);
+	log_fd = NULL;
 	pthread_mutex_unlock(&log_mutex);
 	pthread_mutex_destroy(&log_mutex);
 }
@@ -35,6 +36,9 @@ void log_printfn(const char *subsys, const char *format, ...)
 	va_list ap;
 	time_t now = time(NULL);
 	int i = -1;
+
+	if (!log_fd)
+		return;
 
 	pthread_mutex_lock(&log_mutex);
 

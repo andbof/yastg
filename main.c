@@ -223,7 +223,7 @@ static int cmd_quit(void *_server, char *param)
 
 static void open_log_file()
 {
-	log_init();
+	log_init("yastg.log");
 	log_printfn("main", "YASTG initializing");
 	log_printfn("main", "This is %s, built %s %s", PACKAGE_VERSION, __DATE__, __TIME__);
 }
