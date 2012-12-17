@@ -108,3 +108,10 @@ load_close:
 load_return:
 	return a;
 }
+
+void* ptrarray_get(struct ptrarray *a, unsigned int idx) {
+	if (idx >= a->used)
+		return NULL;
+
+	return a->array[idx];
+}
