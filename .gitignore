@@ -16,6 +16,7 @@ LICENSE
 *.log
 *.in
 *.m4
+!ax*.m4
 *.guess
 *.status
 *.scan
