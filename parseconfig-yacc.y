@@ -4,6 +4,7 @@
 #include "parseconfig-rename.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -33,8 +34,7 @@ static void yyerror(void *yyscanner, const char * const msg)
 
 static void init_config(struct config * const config)
 {
-	config->key = NULL;
-	config->data = NULL;
+	memset(config, 0, sizeof(*config));
 	INIT_LIST_HEAD(&config->children);
 	INIT_LIST_HEAD(&config->list);
 }
@@ -86,13 +86,16 @@ static int pop_state(void *yyscanner)
 
 %union {
 	char *str;
+	long l;
 }
 
 %token	EOL
+%token	NUMBER
 %token	WORD
 %left 	LEFTCURLY
 %left 	RIGHTCURLY
 
+%type	<l>	NUMBER
 %type	<str>	WORD
 
 %%
@@ -117,7 +120,18 @@ line:	EOL
 			YYABORT;
 		}
 		c->key = $1;
-		c->data = $2;
+		c->str = $2;
+		c->type = CONFIG_STRING;
+	}
+    |	WORD NUMBER EOL {
+		struct config *c = insert_new_element(yyget_extra(yyscanner));
+		if (!c) {
+			yyerror(yyscanner, "out of memory");
+			YYABORT;
+		}
+		c->key = $1;
+		c->l = $2;
+		c->type = CONFIG_LONG;
 	}
     |	WORD LEFTCURLY EOL {
 		struct config *c = insert_new_element(yyget_extra(yyscanner));
@@ -138,7 +152,8 @@ line:	EOL
 			YYABORT;
 		}
 		c->key = $1;
-		c->data = $2;
+		c->str = $2;
+		c->type = CONFIG_STRING;
 		if (push_state(&c->children, yyscanner)) {
 			yyerror(yyscanner, "out of memory");
 			YYABORT;
@@ -237,8 +252,8 @@ void destroy_config(struct list_head * const root)
 		destroy_config(&c->children);
 		list_del(&c->list);
 		free(c->key);
-		if (c->data);
-			free(c->data);
+		if (c->str);
+			free(c->str);
 		free(c);
 	}
 }

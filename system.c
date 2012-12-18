@@ -103,7 +103,13 @@ struct system* system_load(const struct list_head * const config_root)
 
 		} else if (strcmp(conf->key, "POS") == 0) {
 
-			sscanf(conf->data, "%lu %lu", &s->x, &s->y);
+			struct config *child;
+			list_for_each_entry(child, &conf->children, list) {
+				if (strcmp(child->key, "x") == 0)
+					s->x = child->l;
+				else if (strcmp(child->key, "y") == 0)
+					s->y = child->l;
+			}
 			haspos = 1;
 
 		}

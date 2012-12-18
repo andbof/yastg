@@ -210,15 +210,16 @@ void loadciv(struct civ *c, const struct list_head * const config_root)
 
 	list_for_each_entry(conf, config_root, list) {
 		if (strcmp(conf->key, "NAME") == 0) {
-			c->name = strdup(conf->data);
+			c->name = strdup(conf->str);
 		} else if (strcmp(conf->key, "HOME") == 0) {
 		} else if (strcmp(conf->key, "POWER") == 0) {
-			sscanf(conf->data, "%d", &c->power);
+			c->power = limit_long_to_int(conf->l);
 		} else if (strcmp(conf->key, "SYSTEM") == 0) {
 			printf("FIXME: SYSTEM is not supported\n");
 		} else if (strcmp(conf->key, "SNAME") == 0) {
-			st = strdup(conf->data);
-			ptrlist_push(&c->availnames, st);
+			st = strdup(conf->str);
+			if (st)
+				ptrlist_push(&c->availnames, st);
 		}
 	}
 }

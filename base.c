@@ -22,11 +22,11 @@ struct base* loadbase(struct base *b, const struct list_head * const config_root
 
 	list_for_each_entry(conf, config_root, list) {
 		if (strcmp(conf->key, "NAME") == 0)
-			b->name = strdup(conf->data);
+			b->name = strdup(conf->str);
 		else if (strcmp(conf->key, "TYPE") == 0)
-			b->type = conf->data[0];
+			b->type = conf->str[0];
 		else if (strcmp(conf->key, "DOCKS") == 0)
-			sscanf(conf->data, "%d", &(b->docks));
+			b->docks = limit_long_to_int(conf->l);
 		/* FIXME: inventory + players */
 	}
 	return b;

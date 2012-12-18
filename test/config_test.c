@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
+#include <limits.h>
 #include "parseconfig.h"
 #include "list.h"
 #include "log.h"
@@ -26,12 +27,21 @@ char test_data[] =
 	"	key6.1 \"key6 has no data\"\n"
 	"}\n"
 	"key7\n"
+	"hex 0x128\n"
+	"dec 128\n"
+	"sci 128e3\n"
+	"neg -64\n"
+	"negsci -64e3\n"
+	"maxsci  2e400\n"
+	"max     91385098193531095109350931531656587632875687326587465874369874368764876\n"
+	"min    -98739579831365187365873165315876318756318757316875631875631876587136587\n"
+	"minsci -2e400\n"
 	"#comment at end of file\n"
 	"#another comment at the end of file"
 	"\0";
 
-#define NUM_TESTS 61
-#define NUM_CONFIG_KEYS 7
+#define NUM_TESTS 113
+#define NUM_CONFIG_KEYS 16
 
 static unsigned int verify_comments(const struct list_head * const root)
 {
@@ -43,9 +53,9 @@ static unsigned int verify_comments(const struct list_head * const root)
 		assert(strstr(config->key, "comment") == NULL);
 		tests++;
 
-		if (config->data) {
-			assert(strchr(config->data, '#') == NULL);
-			assert(strstr(config->data, "comment") == NULL);
+		if (config->str) {
+			assert(strchr(config->str, '#') == NULL);
+			assert(strstr(config->str, "comment") == NULL);
 			tests++;
 		}
 
@@ -81,9 +91,9 @@ static unsigned int verify_whitespace(const struct list_head * const root)
 		assert(!isspace(config->key[strlen(config->key) - 1]));
 		tests++;
 
-		if (config->data) {
-			assert(!isspace(config->data[0]));
-			assert(!isspace(config->data[strlen(config->data) - 1]));
+		if (config->str) {
+			assert(!isspace(config->str[0]));
+			assert(!isspace(config->str[strlen(config->str) - 1]));
 			tests++;
 		}
 
@@ -97,10 +107,56 @@ static unsigned int verify_children(const struct list_head * const root)
 {
 	unsigned int tests = 0;
 	struct config *config;
-	int children[NUM_CONFIG_KEYS] = {0, 0, 0, 0, 3, 1, 0};
+	int children[NUM_CONFIG_KEYS] = {0, 0, 0, 0, 3, 1, 0, 0, 0, 0, 0, 0};
 
 	list_for_each_entry(config, root, list) {
 		assert(list_len(&config->children) == children[tests]);
+		tests++;
+	}
+
+	return tests;
+}
+
+static unsigned int verify_data(const struct list_head * const root)
+{
+	unsigned int tests = 0;
+	struct config *config;
+
+	char* keys[NUM_CONFIG_KEYS] = {
+		"key",		"key2",		"key3",		"key4",
+		"key5",		"key6",		"key7",		"hex",
+		"dec",		"sci",		"neg",		"negsci",
+		"maxsci",	"max",		"min",		"minsci",
+	};
+
+
+	char* strings[NUM_CONFIG_KEYS] = {
+		"this is a data string",	"anotherdatastring",
+		"whitespace test",		"tab test",
+		"data string",
+		NULL,		NULL,		NULL,		NULL,
+		NULL,		NULL,		NULL,		NULL,
+		NULL,		NULL,		NULL,
+	};
+
+
+	long numbers[NUM_CONFIG_KEYS] = {
+		0,		0,		0,		0,
+		0,		0,		0,		0x128,
+		128,		128000,		-64,		-64000,
+		LONG_MAX,	LONG_MAX,	LONG_MIN,	LONG_MIN,
+	};
+
+	list_for_each_entry(config, root, list) {
+		assert(!strcmp(config->key, keys[tests]));
+
+		if (strings[tests])
+			assert(!strcmp(config->str, strings[tests]));
+		else
+			assert(config->str == NULL);
+
+		assert(config->l == numbers[tests]);
+
 		tests++;
 	}
 
@@ -125,6 +181,7 @@ int main(int argc, char* argv[])
 	tests += verify_no_empty_rows(&root);
 	tests += verify_whitespace(&root);
 	tests += verify_children(&root);
+	tests += verify_data(&root);
 
 	destroy_config(&root);
 	tests++;

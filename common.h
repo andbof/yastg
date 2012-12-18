@@ -112,5 +112,7 @@ extern const char* roman[ROMAN_N];
 
 void downcase_valid(char *c);
 void chomp(char *s);
+int limit_long_to_int(const long l);
+unsigned int limit_long_to_uint(const long l);
 
 #endif

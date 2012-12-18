@@ -3,9 +3,17 @@
 
 #include "list.h"
 
+enum config_data {
+	CONFIG_NONE = 0,
+	CONFIG_STRING,
+	CONFIG_LONG,
+};
+
 struct config {
 	char *key;
-	char *data;
+	enum config_data type;
+	char *str;
+	long l;
 	struct list_head children;
 	struct list_head list;
 };

@@ -58,9 +58,9 @@ int planet_load(struct planet *p, const struct list_head * const config_root)
 
 	list_for_each_entry(conf, config_root, list) {
 		if (strcmp(conf->key, "NAME") == 0) {
-			p->name = strdup(conf->data);
+			p->name = strdup(conf->str);
 		} else if (strcmp(conf->key, "TYPE") == 0) {
-			p->type = conf->data[0];
+			p->type = conf->str[0];
 		} else if (strcmp(conf->key, "BASE") == 0) {
 			b = malloc(sizeof(*b));
 			if (!b)

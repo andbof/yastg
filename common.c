@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "common.h"
 
 const char* greek[GREEK_N] = {
@@ -71,4 +72,24 @@ void chomp(char* s)
 	for (unsigned int len = strlen(s);
 			len > 0 && (s[len - 1] == '\n' || s[len - 1] == '\r');
 			s[len - 1] = '\0', len--);
+}
+
+int limit_long_to_int(const long l)
+{
+	if (l < INT_MIN)
+		return INT_MIN;
+	else if (l > INT_MAX)
+		return INT_MAX;
+	else
+		return l;
+}
+
+unsigned int limit_long_to_uint(const long l)
+{
+	if (l < 0)
+		return 0;
+	else if (l > UINT_MAX)
+		return UINT_MAX;
+	else
+		return l;
 }

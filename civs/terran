@@ -4,8 +4,8 @@ POWER 10
 SECTOR {
 	GNAME Sol
 	POS {
-		x 10000
-		y 10000
+		x 1e4
+		y 1e4
 	}
 	STAR {
 		NAME Sol
