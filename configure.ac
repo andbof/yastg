@@ -26,6 +26,9 @@ AC_CHECK_LIB([pthread],[pthread_create],
 AC_CHECK_LIB([ev],[ev_now],
 	     [],
 	     [AC_MSG_ERROR([libev not found])])
+AC_CHECK_FUNC([ev_run],
+	      [],
+	      [AC_DEFINE([ev_run], [ev_loop], [in libev3 in contrast to libev4, ev_run is called ev_loop])])
 
 AC_CHECK_LIB([dl],[dlopen],
 	     [],
