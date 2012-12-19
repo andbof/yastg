@@ -22,6 +22,7 @@
 #include "system.h"
 #include "base.h"
 #include "inventory.h"
+#include "item.h"
 #include "player.h"
 #include "universe.h"
 #include "parseconfig.h"
@@ -89,6 +90,17 @@ static int cmd_insmod(void *ptr, char *param)
 		mprintf("Error inserting module: %s\n",
 				(r == MODULE_DL_ERROR ? dlerror() : module_strerror(r))
 		       );
+
+	return 0;
+}
+
+static int cmd_items(void *ptr, char *param)
+{
+	struct item *i;
+
+	mprintf("%-24s %-8s\n", "Name", "Weight");
+	list_for_each_entry(i, &univ.items, list)
+		mprintf("%-24.24s %-8u\n", i->name, i->weight);
 
 	return 0;
 }
@@ -241,6 +253,8 @@ static int register_console_commands(struct list_head * const cli_root, struct s
 		return -1;
 	if (cli_add_cmd(cli_root, "insmod", cmd_insmod, NULL, "Insert a loadable module"))
 		return -1;
+	if (cli_add_cmd(cli_root, "items", cmd_items, NULL, "List available items"))
+		return -1;
 	if (cli_add_cmd(cli_root, "lsmod", cmd_lsmod, NULL, "List modules currently loaded"))
 		return -1;
 	if (cli_add_cmd(cli_root, "wall", cmd_wall, server, "Send a message to all connected players"))
@@ -279,6 +293,11 @@ static int create_universe(struct universe * const u, struct civ * const civs)
 {
 	printf("Creating universe\n");
 	universe_init(u);
+
+	printf("Loading items ... ");
+	if (load_all_items(&u->items))
+		return -1;
+	printf("done, %lu items loaded\n", list_len(&u->items));
 
 	printf("Loading names ... ");
 	names_init(&u->avail_base_names);

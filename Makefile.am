@@ -41,6 +41,8 @@ yastg_SOURCES = base.c \
 		data.c \
 		data.h \
 		inventory.h \
+		item.c \
+		item.h \
 		list.h \
 		log.c \
 		log.h \

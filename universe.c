@@ -8,6 +8,7 @@
 #include "common.h"
 #include "log.h"
 #include "universe.h"
+#include "item.h"
 #include "list.h"
 #include "rbtree.h"
 #include "ptrlist.h"
@@ -44,6 +45,14 @@ struct universe univ;
 void universe_free(struct universe *u)
 {
 	ptrlist_free(&u->systems);
+
+	struct item *i, *_i;
+	list_for_each_entry_safe(i, _i, &u->items, list) {
+		list_del(&i->list);
+		item_free(i);
+		free(i);
+	}
+
 	st_destroy(&u->systemnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->planetnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->basenames, ST_DONT_FREE_DATA);
@@ -215,6 +224,7 @@ void universe_init(struct universe *u)
 	u->id = 0;
 	u->name = NULL;
 	ptrlist_init(&u->systems);
+	INIT_LIST_HEAD(&u->items);
 	INIT_LIST_HEAD(&u->systemnames);
 	pthread_rwlock_init(&u->systemnames_lock, NULL);
 	INIT_LIST_HEAD(&u->planetnames);
