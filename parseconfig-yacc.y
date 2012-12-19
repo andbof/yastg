@@ -121,7 +121,6 @@ line:	EOL
 		}
 		c->key = $1;
 		c->str = $2;
-		c->type = CONFIG_STRING;
 	}
     |	WORD NUMBER EOL {
 		struct config *c = insert_new_element(yyget_extra(yyscanner));
@@ -131,7 +130,16 @@ line:	EOL
 		}
 		c->key = $1;
 		c->l = $2;
-		c->type = CONFIG_LONG;
+	}
+    |	WORD NUMBER WORD EOL {
+		struct config *c = insert_new_element(yyget_extra(yyscanner));
+		if (!c) {
+			yyerror(yyscanner, "out of memory");
+			YYABORT;
+		}
+		c->key = $1;
+		c->l = $2;
+		c->str = $3;
 	}
     |	WORD LEFTCURLY EOL {
 		struct config *c = insert_new_element(yyget_extra(yyscanner));
@@ -153,7 +161,6 @@ line:	EOL
 		}
 		c->key = $1;
 		c->str = $2;
-		c->type = CONFIG_STRING;
 		if (push_state(&c->children, yyscanner)) {
 			yyerror(yyscanner, "out of memory");
 			YYABORT;
