@@ -43,7 +43,7 @@ struct planet_type {
 	int zones[PLANET_ZONE_NUM];
 	unsigned int mindia, maxdia;	/* In hundreds of kilometres */
 	enum planet_life minlife, maxlife;
-	int bases[BASE_TYPE_N];
+	struct ptrlist base_types;
 	struct list_head list;
 };
 

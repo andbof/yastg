@@ -5,6 +5,7 @@
 #include <string.h>
 #include <assert.h>
 #include "base.h"
+#include "base_type.h"
 #include "cli.h"
 #include "common.h"
 #include "server.h"
@@ -111,13 +112,12 @@ static void player_showbase(struct player *player, struct base *base)
 		o = base->planet->name;
 	else
 		o = base->system->name;
-	struct base_type *type = &base_types[base->type];
 
 	player_talk(player,
 		"Station %s, orbiting %s. %s\n"
 		"%s\n",
-		base->name, o, type->name,
-		type->desc);
+		base->name, o, base->type->name,
+		base->type->desc);
 }
 
 static void player_describe_base(struct player *player, struct base *base)

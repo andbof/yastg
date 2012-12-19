@@ -28,6 +28,8 @@ check_LTLIBRARIES = test_module.la
 # optflags: -O3 -funroll-loops
 yastg_SOURCES = base.c \
 		base.h \
+		base_type.c \
+		base_type.h \
 		civ.c \
 		civ.h \
 		cli.c \

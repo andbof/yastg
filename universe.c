@@ -61,6 +61,15 @@ void universe_free(struct universe *u)
 		free(pt);
 	}
 
+	struct base_type *bt, *_bt;
+	list_for_each_entry_safe(bt, _bt, &u->base_types, list) {
+		list_del(&bt->list);
+		base_type_free(bt);
+		free(bt);
+	}
+
+	st_destroy(&u->base_type_names, ST_DONT_FREE_DATA);
+	st_destroy(&u->item_names, ST_DONT_FREE_DATA);
 	st_destroy(&u->systemnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->planetnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->basenames, ST_DONT_FREE_DATA);
@@ -233,7 +242,10 @@ void universe_init(struct universe *u)
 	u->name = NULL;
 	ptrlist_init(&u->systems);
 	INIT_LIST_HEAD(&u->items);
+	INIT_LIST_HEAD(&u->base_types);
+	INIT_LIST_HEAD(&u->base_type_names);
 	INIT_LIST_HEAD(&u->planet_types);
+	INIT_LIST_HEAD(&u->item_names);
 	INIT_LIST_HEAD(&u->systemnames);
 	pthread_rwlock_init(&u->systemnames_lock, NULL);
 	INIT_LIST_HEAD(&u->planetnames);

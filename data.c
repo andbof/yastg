@@ -8,13 +8,6 @@
  * https://en.wikipedia.org/wiki/Class_M_planet
  * http://www.sttff.net/planetaryclass.html */
 
-struct base_type base_types[BASE_TYPE_N] = {
-	{
-		.name    = "Mining colony",
-		.desc    = "Long description",
-		.zones   = {0, 1, 0, 0},
-	},
-};
 /*
  * Other base types:
  * Settlement, Oceanic city, City, Religious reprieve(?), Military installation,

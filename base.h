@@ -1,12 +1,14 @@
 #ifndef _HAS_BASE_H
 #define _HAS_BASE_H
 
+#include "data.h"
 #include "ptrlist.h"
 #include "parseconfig.h"
+#include "base_type.h"
 
 struct base {
 	char *name;
-	unsigned int type;
+	struct base_type *type;
 	int docks;
 	struct planet *planet;
 	struct system *system;

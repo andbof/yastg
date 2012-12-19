@@ -6,8 +6,8 @@
 #include "data.h"
 #include "stringtree.h"
 #include "log.h"
-#include "parseconfig.h"
 #include "planet.h"
+#include "planet_type.h"
 #include "universe.h"
 
 void base_free(struct base *b)
@@ -28,10 +28,10 @@ static void base_init(struct base *base)
 
 static void base_genesis(struct base *base, struct planet *planet)
 {
-	base->planet = planet;
-	base->type = 0; /* FIXME */
+	unsigned int i, j;
 
-	struct base_type *type = &base_types[base->type];
+	base->planet = planet;
+	base->type = ptrlist_random(&planet->type->base_types);
 	base->docks = 1; /* FIXME */
 
 	/* FIXME: limit loop */
@@ -45,7 +45,12 @@ static void base_genesis(struct base *base, struct planet *planet)
 void base_populate_planet(struct planet* planet)
 {
 	struct base *b;
-	int num = 10; /* FIXME */
+	int num;
+
+	if (ptrlist_len(&planet->type->base_types) > 0)
+		num = 10; /* FIXME */
+	else
+		num = 0;
 
 	pthread_rwlock_wrlock(&univ.basenames_lock);
 

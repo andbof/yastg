@@ -46,6 +46,7 @@ char planet_zone_names[PLANET_ZONE_NUM][PLANET_ZONE_NAME_LEN] = {
 static void planet_type_init(struct planet_type * const type)
 {
 	memset(type, 0, sizeof(*type));
+	ptrlist_init(&type->base_types);
 	INIT_LIST_HEAD(&type->list);
 }
 
@@ -59,6 +60,7 @@ void planet_type_free(struct planet_type * const type)
 		free(type->surface);
 	if (type->atmo)
 		free(type->atmo);
+	ptrlist_free(&type->base_types);
 }
 
 static int set_atmosphere(struct planet_type *type, struct config *conf)
@@ -76,25 +78,15 @@ static int set_atmosphere(struct planet_type *type, struct config *conf)
 static int set_base_types(struct planet_type *type, struct config *conf)
 {
 	struct config *child;
-	unsigned int i;
-	struct list_head type_root = LIST_HEAD_INIT(type_root);
-	int types[BASE_TYPE_N];
-
-	for (i = 0; i < BASE_TYPE_N; i++)
-		types[i] = i;
-
-	for (i = 0; i < BASE_TYPE_N; i++)
-		st_add_string(&type_root, base_types[i].name, &types[i]);
+	struct base_type *base;
 
 	list_for_each_entry(child, &conf->children, list) {
-		int *j = st_lookup_string(&type_root, child->key);
-		if (!j)
+		base = st_lookup_string(&univ.base_type_names, child->key);
+		if (!base)
 			return -1;
 
-		type->bases[*j] = 1;
+		ptrlist_push(&type->base_types, base);
 	}
-
-	st_destroy(&type_root, ST_DONT_FREE_DATA);
 
 	return 0;
 }

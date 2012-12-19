@@ -17,7 +17,7 @@ static void build_command_tree(struct list_head *root)
 	st_add_string(root, "weight", set_weight);
 }
 
-int load_all_items(struct list_head * const root)
+int load_all_items(struct list_head * const root, struct list_head * const item_tree)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
@@ -37,6 +37,12 @@ int load_all_items(struct list_head * const root)
 
 		item->name = strdup(conf->key);
 		if (!item->name) {
+			free(item);
+			goto err;
+		}
+
+		if (st_add_string(item_tree, item->name, item)) {
+			free(item->name);
 			free(item);
 			goto err;
 		}

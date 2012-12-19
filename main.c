@@ -22,6 +22,7 @@
 #include "server.h"
 #include "system.h"
 #include "base.h"
+#include "base_type.h"
 #include "inventory.h"
 #include "item.h"
 #include "player.h"
@@ -68,6 +69,24 @@ static void write_msg(int fd, struct signal *msg, char *msgdata)
 		bug("%s", "server signalling fd is closed");
 	if (msg->cnt && write(fd, msgdata, msg->cnt) < 1)
 		bug("%s", "server signalling fd is closed");
+}
+
+static int cmd_bases(void *ptr, char *param)
+{
+	struct base_type *type;
+
+	mprintf("%-26s %-26s %-8s %-8s %-8s %-8s\n",
+			"Name", "Description", "OCEAN", "SURFACE",
+			"ORBIT", "ROGUE");
+	list_for_each_entry(type, &univ.base_types, list)
+		mprintf("%-26.26s %-26.26s %-8s %-8s %-8s %-8s\n",
+				type->name, type->desc,
+				(type->zones[OCEAN] ? "Yes" : "No"),
+				(type->zones[SURFACE] ? "Yes" : "No"),
+				(type->zones[ORBIT] ? "Yes" : "No"),
+				(type->zones[ROGUE] ? "Yes" : "No"));
+
+	return 0;
 }
 
 static int cmd_help(void *_cli_root, char *param)
@@ -154,18 +173,18 @@ static int cmd_planets(void *ptr, char *param)
 {
 	struct planet_type *type;
 
-	mprintf("%-5s %-26s %-4s %-4s %-4s %-12s %-12s %-7s\n",
+	mprintf("%-5s %-26s %-4s %-4s %-4s %-12s %-12s %-10s\n",
 			"Class", "Name", "HOT", "ECO", "COLD",
-			"Min life", "Max life", "Base 0?");
+			"Min life", "Max life", "Base types");
 	list_for_each_entry(type, &univ.planet_types, list)
-		mprintf("%c     %-26.26s %-4.4s %-4.4s %-4.4s %-12.12s %-12.12s %-7.7s\n",
+		mprintf("%c     %-26.26s %-4.4s %-4.4s %-4.4s %-12.12s %-12.12s %-10lu\n",
 				type->c, type->name,
 				(type->zones[HOT] ? "Yes" : "No"),
 				(type->zones[ECO] ? "Yes" : "No"),
 				(type->zones[COLD] ? "Yes" : "No"),
 				(planet_life_names[type->minlife]),
 				(planet_life_names[type->maxlife]),
-				(type->bases[0] ? "Yes" : "No"));
+				ptrlist_len(&type->base_types));
 
 	return 0;
 }
@@ -272,6 +291,8 @@ static void initialize_server(struct server * const server)
 
 static int register_console_commands(struct list_head * const cli_root, struct server * server)
 {
+	if (cli_add_cmd(cli_root, "bases", cmd_bases, cli_root, "List available bases"))
+		return -1;
 	if (cli_add_cmd(cli_root, "help", cmd_help, cli_root, "Display this help text"))
 		return -1;
 	if (cli_add_cmd(cli_root, "insmod", cmd_insmod, NULL, "Insert a loadable module"))
@@ -320,9 +341,14 @@ static int create_universe(struct universe * const u, struct civ * const civs)
 	universe_init(u);
 
 	printf("Loading items ... ");
-	if (load_all_items(&u->items))
+	if (load_all_items(&u->items, &u->item_names))
 		return -1;
 	printf("done, %lu items loaded\n", list_len(&u->items));
+
+	printf("Loading bases ... ");
+	if (load_all_bases(&u->base_types))
+		return -1;
+	printf("done, %lu types loaded\n", list_len(&u->base_types));
 
 	printf("Loading planets ... ");
 	if (load_all_planets(&u->planet_types))

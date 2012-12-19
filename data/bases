@@ -1,0 +1,9 @@
+"Mining colony" {
+	description "Long description"
+	zones {
+		surface
+	}
+	item "Iron ore" {
+		capacity 2500
+	}
+}
