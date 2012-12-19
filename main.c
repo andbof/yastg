@@ -14,6 +14,7 @@
 
 #include "config.h"
 #include "common.h"
+#include "data.h"
 #include "log.h"
 #include "mtrandom.h"
 #include "cli.h"
@@ -24,6 +25,8 @@
 #include "inventory.h"
 #include "item.h"
 #include "player.h"
+#include "planet.h"
+#include "planet_type.h"
 #include "universe.h"
 #include "parseconfig.h"
 #include "civ.h"
@@ -147,6 +150,26 @@ static int cmd_pause(void *_server, char *param)
 	return 0;
 }
 
+static int cmd_planets(void *ptr, char *param)
+{
+	struct planet_type *type;
+
+	mprintf("%-5s %-26s %-4s %-4s %-4s %-12s %-12s %-7s\n",
+			"Class", "Name", "HOT", "ECO", "COLD",
+			"Min life", "Max life", "Base 0?");
+	list_for_each_entry(type, &univ.planet_types, list)
+		mprintf("%c     %-26.26s %-4.4s %-4.4s %-4.4s %-12.12s %-12.12s %-7.7s\n",
+				type->c, type->name,
+				(type->zones[HOT] ? "Yes" : "No"),
+				(type->zones[ECO] ? "Yes" : "No"),
+				(type->zones[COLD] ? "Yes" : "No"),
+				(planet_life_names[type->minlife]),
+				(planet_life_names[type->maxlife]),
+				(type->bases[0] ? "Yes" : "No"));
+
+	return 0;
+}
+
 static int cmd_resume(void *_server, char *param)
 {
 	struct server *server = _server;
@@ -261,6 +284,8 @@ static int register_console_commands(struct list_head * const cli_root, struct s
 		return -1;
 	if (cli_add_cmd(cli_root, "pause", cmd_pause, server, "Pause all players"))
 		return -1;
+	if (cli_add_cmd(cli_root, "planets", cmd_planets, server, "List available planet types"))
+		return -1;
 	if (cli_add_cmd(cli_root, "resume", cmd_resume, server, "Resume all players"))
 		return -1;
 	if (cli_add_cmd(cli_root, "rmmod", cmd_rmmod, NULL, "Unload a loadable module"))
@@ -298,6 +323,11 @@ static int create_universe(struct universe * const u, struct civ * const civs)
 	if (load_all_items(&u->items))
 		return -1;
 	printf("done, %lu items loaded\n", list_len(&u->items));
+
+	printf("Loading planets ... ");
+	if (load_all_planets(&u->planet_types))
+		return -1;
+	printf("done, %lu types loaded\n", list_len(&u->planet_types));
 
 	printf("Loading names ... ");
 	names_init(&u->avail_base_names);

@@ -1,0 +1,313 @@
+# Planetary classification is inspired by Star Trek canon, see
+#
+# https://en.wikipedia.org/wiki/Class_M_planet
+# http://www.sttff.net/planetaryclass.html
+
+A {
+	name		"Volcanic world"
+	description	"Long description ..."
+	surface		"Partially molten"
+	atmosphere	"Carbon dioxide and hydrogen"
+	zones {
+			HOT
+			ECO
+	}
+	mindiameter	10
+	maxdiameter	100
+	minlife		TOXIC
+	maxlife		TOXIC
+	bases {
+	}
+}
+B {
+	name		"Molten world"
+	description	"Long description ... "
+	atmosphere	"Thin, primarily helium and sodium"
+	surface		"Partially molten"
+	zones {
+			HOT
+	}
+	mindiameter	10
+	maxdiameter	100
+	minlife		TOXIC
+	maxlife		TOXIC
+	bases {
+	}
+}
+C {
+	name		"Barren, dead world"
+	description	"Long description ... "
+	atmosphere	"Extremely thin to none"
+	surface		"Barren, dead"
+	zones {
+			HOT
+			ECO
+			COLD
+	}
+	mindiameter	10
+	maxdiameter	100
+	minlife		BARREN
+	maxlife		BARREN
+	bases {
+			"Mining colony"
+	}
+}
+D {
+	name		"Dwarven planetoid"
+	description	"Long description ... "
+	atmosphere	"Extremely thin to none"
+	surface		"Barren, cratered"
+	zones {
+			HOT
+			ECO
+			COLD
+	}
+	mindiameter	10
+	maxdiameter	40
+	minlife		DEAD
+	maxlife		DEAD
+	bases {
+			"Mining colony"
+	}
+}
+E {
+	name		"Molten prototerrestrial"
+	description	"Long description ... "
+	atmosphere	"Hydrogen compounds and helium"
+	surface		"Partially molten"
+	zones {
+			ECO
+	}
+	mindiameter	100
+	maxdiameter	150
+	minlife		DEAD
+	maxlife		SINGLECELL
+	bases {
+	}
+}
+F {
+	name		"Volcanic prototerrestrial"
+	description	"Long description ... "
+	atmosphere	"Primarily carbon dioxide, ammonia and methane"
+	surface		"Barren, volcanic"
+	zones {
+			ECO
+	}
+	mindiameter	100
+	maxdiameter	150
+	minlife		SINGLECELL
+	maxlife		BACTERIA
+	bases {
+	}
+}
+
+G {
+	name		"Barren prototerrestrial"
+	description	"Long description ... "
+	atmosphere	"Primarily carbon dioxide, oxygen and nitrogen"
+	surface		"Rocky and barren"
+	zones {
+			ECO
+	}
+	mindiameter	100
+	maxdiameter	150
+	minlife		BACTERIA
+	maxlife		SIMPLE
+	bases {
+			"Mining colony"
+	}
+}
+
+H {
+	name		"Harsh desert world"
+	description	"Long description ... "
+	atmosphere	"Primarily oxygen, nitrogen and argon"
+	surface		"Arid"
+	zones {
+			ECO
+	}
+	mindiameter	80
+	maxdiameter	150
+	minlife		BACTERIA
+	maxlife		RESISTANT
+	bases {
+	}
+}
+
+I {
+	name		"Gas ice giant"
+	description	"Long description ... "
+	atmosphere	"Primarily hydrogen and helium"
+	surface		"Methane and ammonia ice"
+	zones {
+			COLD
+	}
+	mindiameter	300
+	maxdiameter	1000
+	minlife		TOXIC
+	maxlife		TOXIC
+	bases {
+	}
+}
+
+J {
+	name		"Gas giant"
+	description	"Long description ... "
+	atmosphere	"Primarily hydrogen and helium"
+	surface		"Liquid metallic hydrogen"
+	zones {
+			COLD
+	}
+	mindiameter	500
+	maxdiameter	5000
+	minlife		TOXIC
+	maxlife		TOXIC
+	bases {
+	}
+}
+
+K {
+	name		"Barren world"
+	description	"Long description ... "
+	atmosphere	"Thin carbon dioxide"
+	surface		"Barren, arid"
+	zones {
+			ECO
+	}
+	mindiameter	50
+	maxdiameter	100
+	minlife		DEAD
+	maxlife		SIMPLE
+	bases {
+			"Mining colony"
+	}
+}
+
+L {
+	name		"Primitive atmosphere"
+	description	"Long description ... "
+	atmosphere	"Primarily argon and oxygen"
+	surface		"Rocky, forested"
+	zones {
+			ECO
+	}
+	mindiameter	100
+	maxdiameter	150
+	minlife		RESISTANT
+	maxlife		COMPLEX
+	bases {
+			"Mining colony"
+	}
+}
+
+M {
+	name		"Terrestrial world"
+	description	"Long description ... "
+	atmosphere	"Primarily nitrogen and oxygen"
+	surface		"Temperate climate"
+	zones {
+			ECO
+	}
+	mindiameter	100
+	maxdiameter	150
+	minlife		COMPLEX
+	maxlife		INTELLIGENT
+	bases {
+			"Mining colony"
+	}
+}
+
+N {
+	name		"Sulfuric, corrosive world"
+	description	"Long description ... "
+	atmosphere	"Carbon dioxide and sulfides"
+	zones {
+			ECO
+	}
+	mindiameter	100
+	maxdiameter	150
+	minlife		TOXIC
+	maxlife		BACTERIA
+	bases {
+	}
+}
+
+O {
+	name		"Water world"
+	description	"Long description ... "
+	atmosphere	"Nitrogen and oxygen"
+	surface		"Oceanic"
+	zones {
+			ECO
+	}
+	mindiameter	100
+	maxdiameter	150
+	minlife		COMPLEX
+	maxlife		INTELLIGENT
+	bases {
+	}
+}
+
+P {
+	name		"Frozen water world"
+	description	"Long description ... "
+	atmosphere	"Nitrogen and oxygen"
+	surface		"Water ice"
+	zones {
+			ECO
+	}
+	mindiameter	100
+	maxdiameter	150
+	minlife		RESISTANT
+	maxlife		ANIMAL
+	bases {
+	}
+}
+
+S {
+	name		"Gas supergiant"
+	description	"Long description ... "
+	atmosphere	"Hydrogen and helium"
+	surface		"Liquid metallic hydrogen"
+	zones {
+			COLD
+	}
+	mindiameter	5000
+	maxdiameter	1000000
+	minlife		TOXIC
+	maxlife		TOXIC
+	bases {
+	}
+}
+
+T {
+	name		"Gas ultragiant"
+	description	"Long description ... "
+	atmosphere	"Hydrogen and helium"
+	surface		"Liquid hydrogen"
+	zones {
+			COLD
+	}
+	mindiameter	500000
+	maxdiameter	2000000
+	minlife		TOXIC
+	maxlife		TOXIC
+	bases {
+	}
+}
+
+Y {
+	name		"Demon world"
+	description	"Demon worlds are extremely hostile to life, often combining high radiation, hot temperatures and toxic atmospheres."
+	atmosphere	"Turbulent, toxic"
+	surface		"Barren"
+	zones {
+			HOT
+	}
+	mindiameter	100
+	maxdiameter	150
+	minlife		TOXIC
+	maxlife		TOXIC
+	bases {
+	}
+}

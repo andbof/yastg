@@ -10,7 +10,7 @@
 struct planet {
 	char *name;
 	char *gname;
-	unsigned int type;
+	struct planet_type *type;
 	unsigned int dia;		/* In hundreds of kilometres */
 	unsigned int dist;		/* In gigametres */
 	unsigned int life;

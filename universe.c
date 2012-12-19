@@ -13,6 +13,7 @@
 #include "rbtree.h"
 #include "ptrlist.h"
 #include "planet.h"
+#include "planet_type.h"
 #include "base.h"
 #include "system.h"
 #include "civ.h"
@@ -51,6 +52,13 @@ void universe_free(struct universe *u)
 		list_del(&i->list);
 		item_free(i);
 		free(i);
+	}
+
+	struct planet_type *pt, *_pt;
+	list_for_each_entry_safe(pt, _pt, &u->planet_types, list) {
+		list_del(&pt->list);
+		planet_type_free(pt);
+		free(pt);
 	}
 
 	st_destroy(&u->systemnames, ST_DONT_FREE_DATA);
@@ -225,6 +233,7 @@ void universe_init(struct universe *u)
 	u->name = NULL;
 	ptrlist_init(&u->systems);
 	INIT_LIST_HEAD(&u->items);
+	INIT_LIST_HEAD(&u->planet_types);
 	INIT_LIST_HEAD(&u->systemnames);
 	pthread_rwlock_init(&u->systemnames_lock, NULL);
 	INIT_LIST_HEAD(&u->planetnames);

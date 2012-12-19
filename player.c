@@ -13,6 +13,7 @@
 #include "stringtree.h"
 #include "log.h"
 #include "planet.h"
+#include "planet_type.h"
 #include "player.h"
 #include "ptrlist.h"
 #include "system.h"
@@ -62,13 +63,12 @@ static void player_showsystem(struct player *player, struct system *system)
 	if (!list_empty(&system->planets.list)) {
 		player_talk(player, "Planets:\n");
 		ptrlist_for_each_entry(planet, &system->planets, lh) {
-			struct planet_type *type = &planet_types[planet->type];
 			player_talk(player,
 				"  %s: Class %c (%s)\n"
 				"    Diameter: %u km, distance from main star: %u Gm, atmosphere: %s. %s.\n",
-				planet->name, type->c, type->name,
+				planet->name, planet->type->c, planet->type->name,
 				planet->dia*100, planet->dist,
-				type->atmo, planet_life_desc[planet->life]);
+				planet->type->atmo, planet_life_desc[planet->life]);
 		}
 	} else {
 		player_talk(player, "System does not have any planets.\n");
@@ -127,7 +127,6 @@ static void player_describe_base(struct player *player, struct base *base)
 
 static void player_showplanet(struct player *player, struct planet *planet)
 {
-	struct planet_type *ptype = &planet_types[planet->type];
 	struct base *base;
 	struct list_head *lh;
 	if (planet->gname)
@@ -139,8 +138,8 @@ static void player_showplanet(struct player *player, struct planet *planet)
 	player_talk(player,
 		", class %c (%s).\n"
 		"  Diameter: %u km, distance from main star: %u Gm, atmosphere: %s. %s.\n",
-		ptype->c, ptype->name,
-		planet->dia*100, planet->dist, ptype->atmo,
+		planet->type->c, planet->type->name,
+		planet->dia*100, planet->dist, planet->type->atmo,
 		planet_life_desc[planet->life]);
 
 	if (!list_empty(&planet->bases.list)) {

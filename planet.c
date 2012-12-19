@@ -11,6 +11,7 @@
 #include "mtrandom.h"
 #include "parseconfig.h"
 #include "planet.h"
+#include "planet_type.h"
 #include "ptrlist.h"
 #include "system.h"
 #include "universe.h"
@@ -80,14 +81,18 @@ static void planet_genesis(struct planet *planet, struct system *system)
 	else
 		zone = COLD;
 	
+	unsigned int i, j;
 	do {
-		planet->type = mtrandom_uint(PLANET_TYPE_N);
-	} while (planet_types[planet->type].zones[zone] == 0);
-
-	struct planet_type *type = &planet_types[planet->type];
+		i = mtrandom_uint(list_len(&univ.planet_types));
+		j = 0;
+		list_for_each_entry(planet->type, &univ.planet_types, list) {
+			if (j++ == i)
+				break;
+		}
+	} while (planet->type->zones[zone] == 0);
 	
-	planet->dia = mtrandom_uint(type->maxdia - type->mindia) + type->mindia;
-	planet->life = mtrandom_uint(type->maxlife - type->minlife) + type->minlife;
+	planet->dia = mtrandom_uint(planet->type->maxdia - planet->type->mindia) + planet->type->mindia;
+	planet->life = mtrandom_uint(planet->type->maxlife - planet->type->minlife) + planet->type->minlife;
 
 	switch (zone) {
 	case HOT:

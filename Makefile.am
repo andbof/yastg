@@ -61,6 +61,8 @@ yastg_SOURCES = base.c \
 		parseconfig-rename.h \
 		planet.c \
 		planet.h \
+		planet_type.c \
+		planet_type.h \
 		player.c \
 		player.h \
 		ptrarray.c \

@@ -15,6 +15,7 @@ struct universe {
 	struct ptrlist systems;
 	struct rb_root x_rbtree;
 	struct list_head items;
+	struct list_head planet_types;
 	struct list_head systemnames;
 	pthread_rwlock_t systemnames_lock;
 	struct list_head planetnames;
