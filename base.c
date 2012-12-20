@@ -10,28 +10,6 @@
 #include "planet.h"
 #include "universe.h"
 
-struct base* loadbase(struct base *b, const struct list_head * const config_root)
-{
-	struct config *conf;
-
-	memset(b, 0, sizeof(*b));
-	ptrlist_init(&b->inventory);
-	ptrlist_init(&b->players);
-
-	b->docks = 0;
-
-	list_for_each_entry(conf, config_root, list) {
-		if (strcmp(conf->key, "NAME") == 0)
-			b->name = strdup(conf->str);
-		else if (strcmp(conf->key, "TYPE") == 0)
-			b->type = conf->str[0];
-		else if (strcmp(conf->key, "DOCKS") == 0)
-			b->docks = limit_long_to_int(conf->l);
-		/* FIXME: inventory + players */
-	}
-	return b;
-}
-
 void base_free(struct base *b)
 {
 	st_rm_string(&univ.basenames, b->name);

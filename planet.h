@@ -22,7 +22,6 @@ struct planet {
 	struct list_head list;
 };
 
-int planet_load(struct planet *p, const struct list_head * const config_root);
 void planet_free(struct planet *p);
 struct planet* createplanet();
 int planet_populate_system(struct system* system);

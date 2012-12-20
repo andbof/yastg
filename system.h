@@ -27,7 +27,6 @@ struct system {
 };
 
 void system_init(struct system *s);
-struct system* system_load(const struct list_head * const config_root);
 int system_create(struct system *s, char *name);
 void system_free(struct system *s);
 

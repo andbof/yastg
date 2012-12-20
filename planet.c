@@ -51,29 +51,6 @@ void planet_free(struct planet *p)
 	free(p);
 }
 
-int planet_load(struct planet *p, const struct list_head * const config_root)
-{
-	struct base *b;
-	struct config *conf;
-
-	list_for_each_entry(conf, config_root, list) {
-		if (strcmp(conf->key, "NAME") == 0) {
-			p->name = strdup(conf->str);
-		} else if (strcmp(conf->key, "TYPE") == 0) {
-			p->type = conf->str[0];
-		} else if (strcmp(conf->key, "BASE") == 0) {
-			b = malloc(sizeof(*b));
-			if (!b)
-				return -1;
-
-			loadbase(b, &conf->children);
-			ptrlist_push(&p->bases, b);
-		}
-	}
-
-	return 0;
-}
-
 #define PLANET_MUL_ODDS 2
 #define PLANET_MUL_MAX 10 
 static int planet_gennum()
