@@ -91,6 +91,9 @@ unsigned long ptrlist_len(const struct ptrlist * const l)
 
 void* ptrlist_random(const struct ptrlist * const l)
 {
+	if (!ptrlist_len(l))
+		return NULL;
+
 	return ptrlist_entry(l, mtrandom_ulong(ptrlist_len(l)));
 }
 
