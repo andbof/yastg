@@ -3,7 +3,6 @@
 #include "common.h"
 #include "base_type.h"
 #include "base.h"
-#include "data.h"
 #include "stringtree.h"
 #include "log.h"
 #include "parseconfig.h"

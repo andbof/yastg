@@ -3,7 +3,6 @@
 #include <limits.h>
 #include "base.h"
 #include "common.h"
-#include "data.h"
 #include "stringtree.h"
 #include "log.h"
 #include "parseconfig.h"

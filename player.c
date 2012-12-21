@@ -10,7 +10,6 @@
 #include "common.h"
 #include "server.h"
 #include "connection.h"
-#include "data.h"
 #include "stringtree.h"
 #include "log.h"
 #include "planet.h"

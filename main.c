@@ -14,7 +14,6 @@
 
 #include "config.h"
 #include "common.h"
-#include "data.h"
 #include "log.h"
 #include "mtrandom.h"
 #include "cli.h"

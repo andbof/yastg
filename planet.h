@@ -4,7 +4,6 @@
 #include "system.h"
 #include "parseconfig.h"
 #include "list.h"
-#include "data.h"
 #include "ptrlist.h"
 
 struct planet {

@@ -40,8 +40,6 @@ yastg_SOURCES = base.c \
 		connection.h \
 		constellation.c \
 		constellation.h \
-		data.c \
-		data.h \
 		inventory.h \
 		item.c \
 		item.h \
