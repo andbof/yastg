@@ -200,7 +200,7 @@ int load_all_bases(struct list_head * const root)
 			func = st_lookup_string(&cmd_root, child->key);
 			if (!func) {
 				log_printfn("config", "unknown base type key: \"%s\"\n", child->key);
-				goto err;
+				continue;
 			}
 
 			func(type, child);
