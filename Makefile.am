@@ -75,6 +75,8 @@ yastg_SOURCES = base.c \
 		system.h \
 		server.c \
 		server.h \
+		ship.c \
+		ship.h \
 		ship_type.c \
 		ship_type.h \
 		star.c \

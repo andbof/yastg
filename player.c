@@ -16,6 +16,7 @@
 #include "planet_type.h"
 #include "player.h"
 #include "ptrlist.h"
+#include "ship.h"
 #include "system.h"
 #include "star.h"
 #include "universe.h"
@@ -28,6 +29,14 @@ void player_free(struct player *player)
 {
 	free(player->name);
 	cli_tree_destroy(&player->cli);
+
+	struct ship *s, *_s;
+	list_for_each_entry_safe(s, _s, &player->ships, list) {
+		list_del(&s->list);
+		ship_free(s);
+		free(s);
+	}
+
 	free(player);
 }
 
@@ -185,15 +194,17 @@ static char cmd_quit_help[] = "Log off and terminate connection";
 static int cmd_look(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	switch (player->postype) {
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+	switch (ship->postype) {
 	case SYSTEM:
-		player_showsystem(player, player->pos);
+		player_showsystem(player, ship->pos);
 		break;
 	case BASE:
-		player_showbase(player, player->pos);
+		player_showbase(player, ship->pos);
 		break;
 	case PLANET:
-		player_showplanet(player, player->pos);
+		player_showplanet(player, ship->pos);
 		break;
 	default:
 		player_talk(player, "internal error: don't know where you are\n");
@@ -205,7 +216,9 @@ static char cmd_look_help[] = "Look around";
 static int cmd_hyper(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	assert(player->postype == SYSTEM);
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+	assert(ship->postype == SYSTEM);
 
 	struct system *system;
 	pthread_rwlock_rdlock(&univ.systemnames_lock);
@@ -219,7 +232,7 @@ static int cmd_hyper(void *ptr, char *param)
 
 	int ok = 0;
 	struct system *tmp;
-	struct system *pos = player->pos;
+	struct system *pos = ship->pos;
 	struct list_head *lh;
 	ptrlist_for_each_entry(tmp, &pos->links, lh) {
 		if (tmp == system) {
@@ -263,14 +276,16 @@ static char cmd_jump_help[] = "Travel by jumpdrive to system";
 static int cmd_dock(void *ptr, char *param)
 {
 	struct player *player = ptr;
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
 
 	struct base *base;
 	pthread_rwlock_rdlock(&univ.basenames_lock);
 	base = st_lookup_string(&univ.basenames, param);
 	pthread_rwlock_unlock(&univ.basenames_lock);
 
-	if (base && ((player->postype == PLANET && base->planet == player->pos)
-		|| (player->postype == SYSTEM && base->system == player->pos))) {
+	if (base && ((ship->postype == PLANET && base->planet == ship->pos)
+		|| (ship->postype == SYSTEM && base->system == ship->pos))) {
 			player_talk(player, "Docking at %s\n", base->name);
 			player_go(player, BASE, base);
 			return 0;
@@ -284,8 +299,10 @@ static char cmd_dock_help[] = "Dock at spacedock or base";
 static int cmd_orbit(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	assert(player->postype == SYSTEM);
-	struct system *system = player->pos;
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+	assert(ship->postype == SYSTEM);
+	struct system *system = ship->pos;
 
 	struct planet *planet;
 	pthread_rwlock_rdlock(&univ.planetnames_lock);
@@ -306,8 +323,10 @@ static char cmd_orbit_help[] = "Enter orbit around planet";
 static int cmd_leave_base(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	assert(player->postype == BASE);
-	struct base *base = player->pos;
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+	assert(ship->postype == BASE);
+	struct base *base = ship->pos;
 	if (base->planet)
 		player_go(player, PLANET, base->planet);
 	else if (base->system)
@@ -322,8 +341,10 @@ static char cmd_leave_base_help[] = "Leave base and take off";
 static int cmd_leave_planet(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	assert(player->postype == PLANET);
-	struct planet *planet = player->pos;
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+	assert(ship->postype == PLANET);
+	struct planet *planet = ship->pos;
 	assert(planet->system);
 	player_talk(player, "Leaving orbit around %s\n", planet->name);
 	player_go(player, SYSTEM, planet->system);
@@ -333,7 +354,9 @@ static char cmd_leave_planet_help[] = "Leave planet orbit";
 
 void player_go(struct player *player, enum postype postype, void *pos)
 {
-	switch (player->postype) {
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+	switch (ship->postype) {
 	case SYSTEM:
 		cli_rm_cmd(&player->cli, "jump");
 		cli_rm_cmd(&player->cli, "dock");
@@ -352,11 +375,12 @@ void player_go(struct player *player, enum postype postype, void *pos)
 		bug("I don't know where player %s with connection %p is\n", player->name, player->conn);
 	}
 
-	player->postype = postype;
-	player->pos = pos;
-	cmd_look(player, NULL);
+	if (ship_go(ship, postype, pos))
+		player_talk(player, "You're not allowed to go there from here.\n");
+	else
+		cmd_look(player, NULL);
 
-	switch (postype) {
+	switch (ship->postype) {
 	case SYSTEM:
 		cli_add_cmd(&player->cli, "jump", cmd_jump, player, cmd_jump_help);
 		cli_add_cmd(&player->cli, "dock", cmd_dock, player, cmd_dock_help);
@@ -385,7 +409,7 @@ int player_init(struct player *player)
 
 	INIT_LIST_HEAD(&player->list);
 	INIT_LIST_HEAD(&player->cli);
-	player->postype = NONE;
+	INIT_LIST_HEAD(&player->ships);
 
 	cli_add_cmd(&player->cli, "help", cmd_help, player, cmd_help_help);
 	cli_add_cmd(&player->cli, "go", cmd_hyper, player, cmd_hyper_help);

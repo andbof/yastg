@@ -182,16 +182,22 @@ int conn_fulfixinit(struct connection *data)
 {
 	log_printfn("connection", "initializing connection from peer %s", data->peer);
 
+	if (list_len(&univ.ship_types) == 0)
+		return -1;
+
 	data->pl = malloc(sizeof(*data->pl));
 	if (!data->pl)
 		return -1;
 
-	if (player_init(data->pl)) {
-		free(data->pl);
+	if (player_init(data->pl))
 		return -1;
-	}
 
 	data->pl->conn = data;
+	if (new_ship_to_player(list_first_entry(&univ.ship_types, struct ship_type, list), data->pl))
+		return -1;
+	data->pl->pos = list_first_entry(&data->pl->ships, struct ship, list);
+	data->pl->postype = SHIP;
+
 	player_go(data->pl, SYSTEM, ptrlist_entry(&univ.systems, 0));
 
 	conn_send(data, PROMPT);
