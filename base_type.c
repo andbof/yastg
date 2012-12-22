@@ -52,7 +52,8 @@ static int add_zone(struct base_type *type, struct config *conf)
 		zones[i] = i;
 
 	for (i = 0; i < BASE_ZONE_NUM; i++)
-		st_add_string(&zone_root, base_zone_names[i], &zones[i]);
+		if (st_add_string(&zone_root, base_zone_names[i], &zones[i]))
+			return -1;
 
 	list_for_each_entry(child, &conf->children, list) {
 		int *j = st_lookup_string(&zone_root, child->key);
@@ -104,33 +105,39 @@ static int set_item_requires(struct base_type_item *item, struct config *conf)
 	return 0;
 }
 
-static void build_item_cmdtree(struct list_head *root)
+static int build_item_cmdtree(struct list_head *root)
 {
-	st_add_string(root, "capacity", set_item_capacity);
-	st_add_string(root, "produces", set_item_produces);
-	st_add_string(root, "consumes", set_item_consumes);
-	st_add_string(root, "requires", set_item_requires);
+	if (st_add_string(root, "capacity", set_item_capacity))
+		return -1;
+	if (st_add_string(root, "produces", set_item_produces))
+		return -1;
+	if (st_add_string(root, "consumes", set_item_consumes))
+		return -1;
+	if (st_add_string(root, "requires", set_item_requires))
+		return -1;
+
+	return 0;
 }
 
 static int add_item(struct base_type *type, struct config *conf)
 {
+	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
 	struct item *item;
+	if (build_item_cmdtree(&cmd_root))
+		return -1;
 
 	item = st_lookup_string(&univ.item_names, conf->key);
 	if (!item)
-		return -1;
+		goto err;
 
 	struct base_type_item *type_item = malloc(sizeof(*type_item));
 	if (!type_item)
-		return -1;
+		goto err;
 
 	base_type_item_init(type_item);
 	type_item->item = item;
 
-	struct list_head cmd_root;
 	int (*func)(struct item*, struct config*);
-	build_item_cmdtree(&cmd_root);
-
 	struct config *child;
 	list_for_each_entry(child, &conf->children, list) {
 		func = st_lookup_string(&cmd_root, child->key);
@@ -145,13 +152,22 @@ static int add_item(struct base_type *type, struct config *conf)
 
 	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return 0;
+
+err:
+	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
+	return -1;
 }
 
-static void build_command_tree(struct list_head *root)
+static int build_command_tree(struct list_head *root)
 {
-	st_add_string(root, "description", set_description);
-	st_add_string(root, "zones", add_zone);
-	st_add_string(root, "item", add_item);
+	if (st_add_string(root, "description", set_description))
+		return -1;
+	if (st_add_string(root, "zones", add_zone))
+		return -1;
+	if (st_add_string(root, "item", add_item))
+		return -1;
+
+	return 0;
 }
 
 int load_all_bases(struct list_head * const root)
@@ -162,7 +178,8 @@ int load_all_bases(struct list_head * const root)
 	struct base_type *type;
 	void (*func)(struct base_type*, struct config*);
 
-	build_command_tree(&cmd_root);
+	if (build_command_tree(&cmd_root))
+		return -1;
 
 	if (parse_config_file("data/bases", &conf_root))
 		return -1;
@@ -189,8 +206,13 @@ int load_all_bases(struct list_head * const root)
 			func(type, child);
 		}
 
+		if (st_add_string(&univ.base_type_names, type->name, type)) {
+			base_type_free(type);
+			free(type);
+			goto err;
+		}
+
 		list_add(&type->list, root);
-		st_add_string(&univ.base_type_names, type->name, type);
 	}
 
 	destroy_config(&conf_root);
