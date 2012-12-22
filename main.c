@@ -27,6 +27,7 @@
 #include "player.h"
 #include "planet.h"
 #include "planet_type.h"
+#include "ship_type.h"
 #include "universe.h"
 #include "parseconfig.h"
 #include "civ.h"
@@ -230,6 +231,19 @@ static int cmd_rmmod(void *ptr, char *name)
 	return 0;
 }
 
+static int cmd_ships(void *ptr, char *param)
+{
+	struct ship_type *type;
+
+	mprintf("%-26s %-26s %-12s\n",
+			"Name", "Description", "Carry weight");
+	list_for_each_entry(type, &univ.ship_types, list)
+		mprintf("%-26.26s %-26.26s %-12d\n",
+				type->name, type->desc, type->carry_weight);
+
+	return 0;
+}
+
 static int cmd_memstat(void *ptr, char *param)
 {
 	struct mallinfo minfo = mallinfo();
@@ -310,6 +324,8 @@ static int register_console_commands(struct list_head * const cli_root, struct s
 		return -1;
 	if (cli_add_cmd(cli_root, "rmmod", cmd_rmmod, NULL, "Unload a loadable module"))
 		return -1;
+	if (cli_add_cmd(cli_root, "ships", cmd_ships, NULL, "List available ship types"))
+		return -1;
 	if (cli_add_cmd(cli_root, "stats", cmd_stats, NULL, "Display statistics"))
 		return -1;
 	if (cli_add_cmd(cli_root, "memstat", cmd_memstat, NULL, "Display memory statistics"))
@@ -353,6 +369,11 @@ static int create_universe(struct universe * const u, struct civ * const civs)
 	if (load_all_planets(&u->planet_types))
 		return -1;
 	printf("done, %lu types loaded\n", list_len(&u->planet_types));
+
+	printf("Loading ships ... ");
+	if (load_all_ships(&u->ship_types))
+		return -1;
+	printf("done, %lu types loaded\n", list_len(&u->ship_types));
 
 	printf("Loading names ... ");
 	names_init(&u->avail_base_names);

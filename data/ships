@@ -1,0 +1,4 @@
+"Falcon Eagle" {
+	description "Long description of the Falcon Eagle including most of it's fancy features."
+	carryweight 10000
+}

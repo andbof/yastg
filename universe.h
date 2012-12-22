@@ -18,6 +18,8 @@ struct universe {
 	struct list_head base_types;
 	struct list_head base_type_names;
 	struct list_head planet_types;
+	struct list_head ship_types;
+	struct list_head ship_type_names;
 	struct list_head item_names;
 	struct list_head systemnames;
 	pthread_rwlock_t systemnames_lock;

@@ -14,6 +14,7 @@
 #include "ptrlist.h"
 #include "planet.h"
 #include "planet_type.h"
+#include "ship_type.h"
 #include "base.h"
 #include "system.h"
 #include "civ.h"
@@ -68,7 +69,16 @@ void universe_free(struct universe *u)
 		free(bt);
 	}
 
+
+	struct ship_type *st, *_st;
+	list_for_each_entry_safe(st, _st, &u->ship_types, list) {
+		list_del(&st->list);
+		ship_type_free(st);
+		free(st);
+	}
+
 	st_destroy(&u->base_type_names, ST_DONT_FREE_DATA);
+	st_destroy(&u->ship_type_names, ST_DONT_FREE_DATA);
 	st_destroy(&u->item_names, ST_DONT_FREE_DATA);
 	st_destroy(&u->systemnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->planetnames, ST_DONT_FREE_DATA);
@@ -245,6 +255,8 @@ void universe_init(struct universe *u)
 	INIT_LIST_HEAD(&u->base_types);
 	INIT_LIST_HEAD(&u->base_type_names);
 	INIT_LIST_HEAD(&u->planet_types);
+	INIT_LIST_HEAD(&u->ship_types);
+	INIT_LIST_HEAD(&u->ship_type_names);
 	INIT_LIST_HEAD(&u->item_names);
 	INIT_LIST_HEAD(&u->systemnames);
 	pthread_rwlock_init(&u->systemnames_lock, NULL);
