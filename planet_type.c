@@ -115,7 +115,8 @@ static int set_life(enum planet_life *life, char *value)
 		lifes[i] = i;
 
 	for (i = 0; i < ARRAY_SIZE(lifes); i++)
-		st_add_string(&life_root, planet_life_names[i], &lifes[i]);
+		if (st_add_string(&life_root, planet_life_names[i], &lifes[i]))
+			return -1;
 
 	int *j = st_lookup_string(&life_root, value);
 	if (!j)
@@ -185,7 +186,8 @@ static int set_zones(struct planet_type *type, struct config *conf)
 		zones[i] = i;
 
 	for (i = 0; i < ARRAY_SIZE(zones); i++)
-		st_add_string(&zone_root, planet_zone_names[i], &zones[i]);
+		if (st_add_string(&zone_root, planet_zone_names[i], &zones[i]))
+			return -1;
 
 	list_for_each_entry(child, &conf->children, list) {
 		int *j = st_lookup_string(&zone_root, child->key);
@@ -200,18 +202,30 @@ static int set_zones(struct planet_type *type, struct config *conf)
 	return 0;
 }
 
-static void build_command_tree(struct list_head *root)
+static int build_command_tree(struct list_head *root)
 {
-	st_add_string(root, "atmosphere", set_atmosphere);
-	st_add_string(root, "bases", set_base_types);
-	st_add_string(root, "description", set_description);
-	st_add_string(root, "maxdiameter", set_maximum_diameter);
-	st_add_string(root, "maxlife", set_maximum_life);
-	st_add_string(root, "mindiameter", set_minimum_diameter);
-	st_add_string(root, "minlife", set_minimum_life);
-	st_add_string(root, "name", set_name);
-	st_add_string(root, "surface", set_surface);
-	st_add_string(root, "zones", set_zones);
+	if (st_add_string(root, "atmosphere", set_atmosphere))
+		return -1;
+	if (st_add_string(root, "bases", set_base_types))
+		return -1;
+	if (st_add_string(root, "description", set_description))
+		return -1;
+	if (st_add_string(root, "maxdiameter", set_maximum_diameter))
+		return -1;
+	if (st_add_string(root, "maxlife", set_maximum_life))
+		return -1;
+	if (st_add_string(root, "mindiameter", set_minimum_diameter))
+		return -1;
+	if (st_add_string(root, "minlife", set_minimum_life))
+		return -1;
+	if (st_add_string(root, "name", set_name))
+		return -1;
+	if (st_add_string(root, "surface", set_surface))
+		return -1;
+	if (st_add_string(root, "zones", set_zones))
+		return -1;
+
+	return 0;
 }
 
 int load_all_planets(struct list_head * const root)
@@ -222,7 +236,8 @@ int load_all_planets(struct list_head * const root)
 	struct planet_type *pl_type;
 	int (*func)(struct planet_type*, struct config*);
 
-	build_command_tree(&cmd_root);
+	if (build_command_tree(&cmd_root))
+		return -1;
 
 	if (parse_config_file("data/planets", &conf_root))
 		return -1;
