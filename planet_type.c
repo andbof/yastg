@@ -254,12 +254,12 @@ int load_all_planets(struct list_head * const root)
 			func = st_lookup_string(&cmd_root, child->key);
 			if (!func) {
 				log_printfn("config", "unknown planet type key: \"%s\"", child->key);
-				goto err;
+				continue;
 			}
 
 			if (func(pl_type, child)) {
 				log_printfn("config", "syntax error or out of memory when processing planet type key \"%s\"", child->key);
-				goto err;
+				continue;
 			}
 		}
 
