@@ -18,13 +18,14 @@ struct base_type_item {
 	int capacity;
 	int daily_change;
 	struct ptrlist requires;
+	struct list_head list;
 };
 
 struct base_type {
 	char *name;
 	char *desc;
 	struct list_head list;
-	struct ptrlist items;
+	struct list_head items;
 	int zones[BASE_ZONE_NUM];
 };
 

@@ -19,14 +19,19 @@ static void base_type_init(struct base_type *type)
 {
 	memset(type, 0, sizeof(*type));
 	INIT_LIST_HEAD(&type->list);
-	ptrlist_init(&type->items);
+	INIT_LIST_HEAD(&type->items);
 }
 
 void base_type_free(struct base_type *type)
 {
 	free(type->name);
 	free(type->desc);
-	ptrlist_free(&type->items);
+
+	struct base_type_item *i, *_i;
+	list_for_each_entry_safe(i, _i, &type->items, list) {
+		list_del(&i->list);
+		free(i);
+	}
 }
 
 static int set_description(struct base_type *type, struct config *conf)
@@ -124,9 +129,16 @@ static int add_item(struct base_type *type, struct config *conf)
 	if (build_item_cmdtree(&cmd_root))
 		return -1;
 
-	item = st_lookup_string(&univ.item_names, conf->key);
-	if (!item)
+	if (!conf->str) {
+		log_printfn("config", "syntax error after \"item\"");
 		goto err;
+	}
+
+	item = st_lookup_string(&univ.item_names, conf->str);
+	if (!item) {
+		log_printfn("config", "unknown item: \"%s\"", conf->str);
+		goto err;
+	}
 
 	struct base_type_item *type_item = malloc(sizeof(*type_item));
 	if (!type_item)
@@ -147,6 +159,8 @@ static int add_item(struct base_type *type, struct config *conf)
 		if (func(type_item->item, child))
 			continue;
 	}
+
+	list_add(&type_item->list, &type->items);
 
 	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return 0;
