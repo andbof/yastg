@@ -37,7 +37,7 @@ void log_close()
 	pthread_mutex_destroy(&log_mutex);
 }
 
-void log_printfn(const char *subsys, const char *format, ...)
+void __attribute__((format(printf, 2, 3))) log_printfn(const char *subsys, const char *format, ...)
 {
 	/* We don't check the return codes from the fprintf() or the fflush(),
 	   this is a feature. */
