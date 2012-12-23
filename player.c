@@ -57,7 +57,7 @@ static void player_showsystem(struct player *player, struct system *system)
 
 	player_talk(player,
 		"System %s (coordinates %ldx%ld), habitability %d\n"
-		"Habitable zone is from %lu to %lu Gm\n",
+		"Habitable zone is from %u to %u Gm\n",
 		system->name, system->x, system->y, system->hab, system->hablow, system->habhigh);
 
 	player_talk(player, "Stars:\n");
