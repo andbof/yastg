@@ -36,6 +36,7 @@ void base_free(struct base *b)
 	}
 
 	pthread_rwlock_destroy(&b->items_lock);
+	st_destroy(&b->item_names, ST_DONT_FREE_DATA);
 	ptrlist_free(&b->players);
 	free(b);
 }
@@ -45,6 +46,7 @@ static void base_init(struct base *base)
 	memset(base, 0, sizeof(*base));
 	INIT_LIST_HEAD(&base->items);
 	pthread_rwlock_init(&base->items_lock, NULL);
+	INIT_LIST_HEAD(&base->item_names);
 	ptrlist_init(&base->players);
 }
 
@@ -76,6 +78,8 @@ static int base_genesis(struct base *base, struct planet *planet)
 		if (item->amount > 10)
 			item->amount = pow(5, log10(item->amount));
 
+		if (st_add_string(&base->item_names, item->item->name, item))
+			goto err;
 		list_add(&item->list, &base->items);
 	}
 
