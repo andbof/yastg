@@ -30,6 +30,8 @@ yastg_SOURCES = base.c \
 		base.h \
 		base_type.c \
 		base_type.h \
+		base_update.c \
+		base_update.h \
 		civ.c \
 		civ.h \
 		cli.c \

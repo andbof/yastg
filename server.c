@@ -16,6 +16,7 @@
 #include <semaphore.h>
 #include <ev.h>
 
+#include "base_update.h"
 #include "common.h"
 #include "log.h"
 #include "server.h"
@@ -455,6 +456,7 @@ err:
 void* server_main(void* p)
 {
 	ev_io msg_watcher;
+	pthread_t update_thread;
 	loop = EV_DEFAULT;
 	LIST_HEAD(sockets);
 	LIST_HEAD(watchers);
@@ -467,6 +469,9 @@ void* server_main(void* p)
 
 	if (conndata_init(&conn_data))
 		die("%s", "failed initializing connection data structures");
+
+	if (start_updating_bases())
+		die("%s", "failed starting base update thread");
 
 	initialize_server_sockets(&sockets);
 	if (list_empty(&sockets))
@@ -489,6 +494,7 @@ void* server_main(void* p)
 	disconnect_peers(loop);
 	stop_and_free_server_watchers(&watchers, loop);
 	close_and_free_sockets(&sockets);
+	stop_updating_bases();
 
 	/*
 	 * We'd like to free all resources allocated by libev here, but

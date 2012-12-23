@@ -27,6 +27,9 @@ AC_CHECK_LIB([m],[floor],
 AC_CHECK_LIB([pthread],[pthread_create],
              [],
              [AC_MSG_ERROR([libpthread not found])])
+AC_CHECK_LIB([rt],[clock_gettime],
+	     [],
+	     [AC_MSG_ERROR([librt not found])])
 
 AC_CHECK_LIB([ev],[ev_now],
 	     [],
@@ -67,8 +70,8 @@ AC_FUNC_ALLOCA
 AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([floor localtime_r memset munmap pow socket sqrt strchr strdup \
-		strerror strstr strtol],
+AC_CHECK_FUNCS([clock_gettime floor localtime_r memset munmap pow socket sqrt \
+		strchr strdup strerror strstr strtol],
                [],
                [AC_MSG_ERROR([A standard library function was not found])])
 
