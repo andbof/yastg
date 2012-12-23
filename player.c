@@ -352,6 +352,38 @@ static int cmd_leave_planet(void *ptr, char *param)
 }
 static char cmd_leave_planet_help[] = "Leave planet orbit";
 
+static int cmd_show_ships(void *ptr, char *param)
+{
+	struct player *player = ptr;
+	struct ship *ship;
+
+	player_talk(player, "%-26s %-26s %-32s\n",
+			"Name", "Type", "Position");
+	list_for_each_entry(ship, &player->ships, list) {
+		char pos[64];
+		switch (ship->postype) {
+		case SYSTEM:
+			snprintf(pos, sizeof(pos), "In %s", ((struct system*)ship->pos)->name);
+			break;
+		case BASE:
+			snprintf(pos, sizeof(pos), "Docked at %s", ((struct base*)ship->pos)->name);
+			break;
+		case PLANET:
+			snprintf(pos, sizeof(pos), "Orbiting %s", ((struct planet*)ship->pos)->name);
+			break;
+		default:
+			bug("I don't know where player %s with connection %p is\n", player->name, player->conn);
+		}
+		pos[sizeof(pos) - 1] = '\0';
+
+		player_talk(player, "%-26.26s %-26.26s %-32.32s\n",
+				ship->name, ship->type->name, pos);
+	}
+
+	return 0;
+}
+static char cmd_show_ships_help[] = "Information about your ships";
+
 void player_go(struct player *player, enum postype postype, void *pos)
 {
 	assert(player->postype == SHIP);
@@ -415,6 +447,7 @@ int player_init(struct player *player)
 	cli_add_cmd(&player->cli, "go", cmd_hyper, player, cmd_hyper_help);
 	cli_add_cmd(&player->cli, "quit", cmd_quit, player, cmd_quit_help);
 	cli_add_cmd(&player->cli, "look", cmd_look, player, cmd_look_help);
+	cli_add_cmd(&player->cli, "ships", cmd_show_ships, player, cmd_show_ships_help);
 
 	return 0;
 }
