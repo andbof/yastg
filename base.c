@@ -89,6 +89,8 @@ static int base_genesis(struct base *base, struct planet *planet)
 		base->name = create_unique_name(&univ.avail_base_names);
 	} while (st_lookup_exact(&univ.basenames, base->name));
 
+	list_add(&base->list, &univ.bases);
+
 	return 0;
 
 err:

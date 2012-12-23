@@ -24,6 +24,7 @@ struct base {
 	pthread_rwlock_t items_lock;
 	struct list_head item_names;
 	struct ptrlist players;
+	struct list_head list;
 };
 
 void base_populate_planet(struct planet* planet);
