@@ -67,7 +67,7 @@ AC_FUNC_ALLOCA
 AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([floor localtime_r memset munmap socket sqrt strchr strdup \
+AC_CHECK_FUNCS([floor localtime_r memset munmap pow socket sqrt strchr strdup \
 		strerror strstr strtol],
                [],
                [AC_MSG_ERROR([A standard library function was not found])])

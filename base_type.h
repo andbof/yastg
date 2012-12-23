@@ -1,6 +1,7 @@
 #ifndef _HAS_BASE_TYPE_H
 #define _HAS_BASE_TYPE_H
 
+#include "list.h"
 #include "ptrlist.h"
 
 enum base_zone {
@@ -15,8 +16,8 @@ extern char base_zone_names[BASE_ZONE_NUM][8];
 
 struct base_type_item {
 	struct item *item;
-	int capacity;
-	int daily_change;
+	long capacity;
+	long daily_change;
 	struct ptrlist requires;
 	struct list_head list;
 };

@@ -11,6 +11,7 @@
 #include "server.h"
 #include "connection.h"
 #include "stringtree.h"
+#include "item.h"
 #include "log.h"
 #include "planet.h"
 #include "planet_type.h"
@@ -384,6 +385,32 @@ static int cmd_show_ships(void *ptr, char *param)
 }
 static char cmd_show_ships_help[] = "Information about your ships";
 
+static int cmd_trade(void *ptr, char *param)
+{
+	struct player *player = ptr;
+
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+
+	assert(ship->postype == BASE);
+	struct base *base = ship->pos;
+
+	pthread_rwlock_rdlock(&base->items_lock);
+
+	struct base_item *bt;
+	player_talk(player, "%-26s %-12s %-12s %-12s\n",
+			"Item", "In stock", "Max stock", "Daily change");
+	list_for_each_entry(bt, &base->items, list) {
+		player_talk(player, "%-26.26s %-12ld %-12ld %-12ld\n",
+				bt->item->name, bt->amount, bt->max, bt->daily_change);
+	}
+
+	pthread_rwlock_unlock(&base->items_lock);
+
+	return 0;
+}
+static char cmd_trade_help[] = "Trade with base";
+
 void player_go(struct player *player, enum postype postype, void *pos)
 {
 	assert(player->postype == SHIP);
@@ -396,6 +423,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 		break;
 	case BASE:
 		cli_rm_cmd(&player->cli, "leave");
+		cli_rm_cmd(&player->cli, "trade");
 		break;
 	case PLANET:
 		cli_rm_cmd(&player->cli, "dock");
@@ -420,6 +448,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 		break;
 	case BASE:
 		cli_add_cmd(&player->cli, "leave", cmd_leave_base, player, cmd_leave_base_help);
+		cli_add_cmd(&player->cli, "trade", cmd_trade, player, cmd_trade_help);
 		break;
 	case PLANET:
 		cli_add_cmd(&player->cli, "dock", cmd_dock, player, cmd_dock_help);

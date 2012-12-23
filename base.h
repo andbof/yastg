@@ -2,8 +2,17 @@
 #define _HAS_BASE_H
 
 #include "ptrlist.h"
+#include "list.h"
 #include "parseconfig.h"
 #include "base_type.h"
+
+struct base_item {
+	struct item *item;
+	long max;
+	long amount;
+	long daily_change;
+	struct list_head list;
+};
 
 struct base {
 	char *name;
@@ -11,7 +20,8 @@ struct base {
 	int docks;
 	struct planet *planet;
 	struct system *system;
-	struct ptrlist inventory;
+	struct list_head items;
+	pthread_rwlock_t items_lock;
 	struct ptrlist players;
 };
 

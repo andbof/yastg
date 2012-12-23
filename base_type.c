@@ -3,6 +3,7 @@
 #include "common.h"
 #include "base_type.h"
 #include "base.h"
+#include "item.h"
 #include "stringtree.h"
 #include "log.h"
 #include "parseconfig.h"
@@ -14,6 +15,12 @@ char base_zone_names[BASE_ZONE_NUM][8] = {
 	"orbit",
 	"rogue",
 };
+
+static void base_type_item_init(struct base_type_item *item)
+{
+	memset(item, 0, sizeof(*item));
+	ptrlist_init(&item->requires);
+}
 
 static void base_type_init(struct base_type *type)
 {
@@ -69,12 +76,6 @@ static int add_zone(struct base_type *type, struct config *conf)
 	st_destroy(&zone_root, ST_DONT_FREE_DATA);
 
 	return 0;
-}
-
-static void base_type_item_init(struct base_type_item *item)
-{
-	memset(item, 0, sizeof(*item));
-	ptrlist_init(&item->requires);
 }
 
 static int set_item_capacity(struct base_type_item *item, struct config *conf)
@@ -147,7 +148,7 @@ static int add_item(struct base_type *type, struct config *conf)
 	base_type_item_init(type_item);
 	type_item->item = item;
 
-	int (*func)(struct item*, struct config*);
+	int (*func)(struct base_type_item*, struct config*);
 	struct config *child;
 	list_for_each_entry(child, &conf->children, list) {
 		func = st_lookup_string(&cmd_root, child->key);
@@ -156,7 +157,7 @@ static int add_item(struct base_type *type, struct config *conf)
 			continue;
 		}
 
-		if (func(type_item->item, child))
+		if (func(type_item, child))
 			continue;
 	}
 
