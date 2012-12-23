@@ -32,11 +32,8 @@ void system_free(struct system *s) {
 	struct planet *planet;
 	struct base *base;
 
-	if (s->name)
-		free(s->name);
-
-	if (s->gname)
-		free(s->gname);
+	free(s->name);
+	free(s->gname);
 
 	ptrlist_for_each_entry(sol, &s->stars, lh)
 		star_free(sol);

@@ -259,7 +259,7 @@ void destroy_config(struct list_head * const root)
 		destroy_config(&c->children);
 		list_del(&c->list);
 		free(c->key);
-		if (c->str);
+		if (c->str)
 			free(c->str);
 		free(c);
 	}

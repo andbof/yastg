@@ -73,10 +73,8 @@ void connection_free(struct connection *conn)
 
 	if (conn->peerfd)
 		close(conn->peerfd);
-	if (conn->rbuf)
-		free(conn->rbuf);
-	if (conn->sbuf)
-		free(conn->sbuf);
+	free(conn->rbuf);
+	free(conn->sbuf);
 	if (conn->pl)
 		player_free(conn->pl);
 }

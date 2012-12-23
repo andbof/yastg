@@ -35,8 +35,7 @@ static void base_genesis(struct base *base, struct planet *planet)
 
 	/* FIXME: limit loop */
 	do {
-		if (base->name)
-			free(base->name);
+		free(base->name);
 		base->name = create_unique_name(&univ.avail_base_names);
 	} while (st_lookup_exact(&univ.basenames, base->name));
 }

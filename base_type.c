@@ -24,10 +24,8 @@ static void base_type_init(struct base_type *type)
 
 void base_type_free(struct base_type *type)
 {
-	if (type->name)
-		free(type->name);
-	if (type->desc)
-		free(type->desc);
+	free(type->name);
+	free(type->desc);
 	ptrlist_free(&type->items);
 }
 

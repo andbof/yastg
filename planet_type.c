@@ -51,14 +51,10 @@ static void planet_type_init(struct planet_type * const type)
 
 void planet_type_free(struct planet_type * const type)
 {
-	if (type->name)
-		free(type->name);
-	if (type->desc)
-		free(type->desc);
-	if (type->surface)
-		free(type->surface);
-	if (type->atmo)
-		free(type->atmo);
+	free(type->name);
+	free(type->desc);
+	free(type->surface);
+	free(type->atmo);
 	ptrlist_free(&type->base_types);
 }
 

@@ -72,6 +72,5 @@ err:
 
 void item_free(struct item * const item)
 {
-	if (item->name)
-		free(item->name);
+	free(item->name);
 }

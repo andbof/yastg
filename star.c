@@ -156,10 +156,10 @@ int star_populate_system(struct system *system)
 	return 0;
 
 err:
-	if (sol && sol->name)
+	if (sol) {
 		free(sol->name);
-	if (sol)
 		free(sol);
+	}
 
 	return -1;
 }

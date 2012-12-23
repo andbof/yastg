@@ -18,10 +18,8 @@ static void ship_type_init(struct ship_type * const type)
 
 void ship_type_free(struct ship_type * const type)
 {
-	if (type->name)
-		free(type->name);
-	if (type->desc)
-		free(type->desc);
+	free(type->name);
+	free(type->desc);
 }
 
 static int set_description(struct ship_type *type, struct config *conf)

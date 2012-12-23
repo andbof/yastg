@@ -240,9 +240,7 @@ int civ_load_all(struct civ *civs)
 	while ((de = readdir(dirp)) != NULL) {
 		if (de->d_name[0] != '.') {
 			if ((int)strlen(de->d_name) > pathlen-6) {
-				if (path != NULL)
-					free(path);
-
+				free(path);
 				pathlen = strlen(de->d_name)+6;
 				path = malloc(pathlen);
 			}
@@ -267,8 +265,7 @@ int civ_load_all(struct civ *civs)
 	}
 
 close:
-	if (path != NULL)
-		free(path);
+	free(path);
 	closedir(dirp);
 
 	return r;

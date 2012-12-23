@@ -83,8 +83,7 @@ void universe_free(struct universe *u)
 	st_destroy(&u->systemnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->planetnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->basenames, ST_DONT_FREE_DATA);
-	if (u->name)
-		free(u->name);
+	free(u->name);
 }
 
 void linksystems(struct system *s1, struct system *s2)
