@@ -79,7 +79,7 @@ void connection_free(struct connection *conn)
 		player_free(conn->pl);
 }
 
-void conn_send(struct connection *data, char *format, ...)
+void __attribute__((format(printf, 2, 3))) conn_send(struct connection *data, char *format, ...)
 {
 	va_list ap;
 	size_t len;
@@ -107,12 +107,17 @@ void conn_send(struct connection *data, char *format, ...)
 
 }
 
-void conn_error(struct connection *data, char *format, ...)
+void __attribute__((format(printf, 2, 3))) conn_error(struct connection *data, char *format, ...)
 {
+	char msg[128];
 	va_list ap;
+
 	va_start(ap, format);
-	conn_send(data, "Oops! An internal error occured: %s.\nYour current state is NOT saved and you are being forcibly disconnected.\nSorry!", format, ap);
+	vsnprintf(msg, sizeof(msg), format, ap);
 	va_end(ap);
+	msg[sizeof(msg) - 1] = '\0';
+
+	conn_send(data, "Oops! An internal error occured: %s.\nYour current state is NOT saved and you are being forcibly disconnected.\nSorry!", msg);
 	server_disconnect_nicely(data);
 }
 

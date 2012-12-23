@@ -49,9 +49,9 @@ struct conn_worker_list {
 int conn_init(struct connection *conn);
 void connection_free(struct connection *conn);
 void* conn_main(void *dataptr);
-void conn_send(struct connection *data, char *format, ...);
+void __attribute__((format(printf, 2, 3))) conn_send(struct connection *data, char *format, ...);
 void conn_cleanexit(struct connection *data);
-void conn_error(struct connection *data, char *format, ...);
+void __attribute__((format(printf, 2, 3))) conn_error(struct connection *data, char *format, ...);
 void* connection_worker(void *_data);
 int conn_fulfixinit(struct connection *data);
 
