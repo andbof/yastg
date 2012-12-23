@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
+#include <ctype.h>
+#include <limits.h>
 #include "base.h"
 #include "base_type.h"
 #include "cargo.h"
@@ -412,6 +414,157 @@ static int cmd_trade(void *ptr, char *param)
 }
 static char cmd_trade_help[] = "Trade with base";
 
+static int parse_buysell_cargo(char * const input, long *amount, char **name)
+{
+	if (!input)
+		return -1;
+
+	char *end;
+	end = strchr(input, ' ');
+	if (!end)
+		return -1;
+
+	*end = '\0';
+	*name = end + 1;
+	while (isspace(**name))
+		name++;
+
+	if (!strcmp(input, "all")) {
+		*amount = LONG_MAX;
+	} else {
+		*amount = strtol(input, &end, 10);
+		if (*end != '\0')
+			return -1;
+		if (*amount <= 0)
+			return -1;
+	}
+
+	return 0;
+}
+
+static const char cmd_buy_syntax[] = "syntax: buy <amount|all> <cargo>\n";
+static int cmd_buy(void *ptr, char *param)
+{
+	struct player *player = ptr;
+
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+
+	assert(ship->postype == BASE);
+	struct base *base = ship->pos;
+
+	char *name;
+	long amount;
+	if (parse_buysell_cargo(param, &amount, &name))
+		goto syntax_err;
+
+	pthread_rwlock_wrlock(&base->items_lock);
+
+	struct cargo *c = st_lookup_string(&base->item_names, name);
+	if (!c) {
+		pthread_rwlock_unlock(&base->items_lock);
+		player_talk(player, "%s does not supply %s\n", base->name, name);
+		return 0;
+	}
+
+	pthread_rwlock_wrlock(&ship->cargo_lock);
+
+	amount = move_cargo_to_ship(ship, c, amount);
+
+	pthread_rwlock_unlock(&ship->cargo_lock);
+	pthread_rwlock_unlock(&base->items_lock);
+
+	player_talk(player, "Bought %ld %s from %s\n",
+			amount, c->item->name, base->name);
+
+	return 0;
+
+syntax_err:
+	player_talk(player, "%s", cmd_buy_syntax);
+	return 0;
+}
+static char cmd_buy_help[] = "Buy goods from base";
+
+static const char cmd_sell_syntax[] = "syntax: sell <amount|all> <cargo>\n";
+static int cmd_sell(void *ptr, char *param)
+{
+	struct player *player = ptr;
+
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+
+	assert(ship->postype == BASE);
+	struct base *base = ship->pos;
+
+	char *name;
+	long amount;
+	if (parse_buysell_cargo(param, &amount, &name))
+		goto syntax_err;
+
+	pthread_rwlock_wrlock(&base->items_lock);
+	pthread_rwlock_wrlock(&ship->cargo_lock);
+
+	if (!st_lookup_string(&ship->cargo_names, name)) {
+		player_talk(player, "You don't have any %s\n", name);
+		goto unlock;
+	}
+
+	struct cargo *c = st_lookup_string(&base->item_names, name);
+	if (!c) {
+		player_talk(player, "%s does not accept %s\n", base->name, name);
+		goto unlock;
+	}
+
+	amount = move_cargo_from_ship(ship, c, amount);
+
+	pthread_rwlock_unlock(&base->items_lock);
+	pthread_rwlock_unlock(&ship->cargo_lock);
+
+	player_talk(player, "Sold %ld %s to %s\n",
+			amount, c->item->name, base->name);
+
+	return 0;
+
+unlock:
+	pthread_rwlock_unlock(&base->items_lock);
+	pthread_rwlock_unlock(&ship->cargo_lock);
+	return 0;
+
+syntax_err:
+	player_talk(player, "%s", cmd_sell_syntax);
+	return 0;
+}
+static char cmd_sell_help[] = "Sell goods to base";
+
+static int cmd_inventory(void *ptr, char *param)
+{
+	struct player *player = ptr;
+
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+
+	pthread_rwlock_rdlock(&ship->cargo_lock);
+
+	if (list_empty(&ship->cargo)) {
+		pthread_rwlock_unlock(&ship->cargo_lock);
+		player_talk(player, "Cargo hold of %s is empty.\n", ship->name);
+		return 0;
+	}
+
+	player_talk(player, "Cargo manifest of %s\n%-26s %-10s\n",
+			ship->name, "Name", "Amount");
+
+	struct cargo *c;
+	list_for_each_entry(c, &ship->cargo, list)
+		player_talk(player, "%-26.26s %-12ld\n",
+				c->item->name, c->amount);
+
+	pthread_rwlock_unlock(&ship->cargo_lock);
+
+	return 0;
+}
+static char cmd_inventory_help[] = "Display ship cargo manifest";
+
 void player_go(struct player *player, enum postype postype, void *pos)
 {
 	assert(player->postype == SHIP);
@@ -423,7 +576,9 @@ void player_go(struct player *player, enum postype postype, void *pos)
 		cli_rm_cmd(&player->cli, "orbit");
 		break;
 	case BASE:
+		cli_rm_cmd(&player->cli, "buy");
 		cli_rm_cmd(&player->cli, "leave");
+		cli_rm_cmd(&player->cli, "sell");
 		cli_rm_cmd(&player->cli, "trade");
 		break;
 	case PLANET:
@@ -448,7 +603,9 @@ void player_go(struct player *player, enum postype postype, void *pos)
 		cli_add_cmd(&player->cli, "orbit", cmd_orbit, player, cmd_orbit_help);
 		break;
 	case BASE:
+		cli_add_cmd(&player->cli, "buy", cmd_buy, player, cmd_buy_help);
 		cli_add_cmd(&player->cli, "leave", cmd_leave_base, player, cmd_leave_base_help);
+		cli_add_cmd(&player->cli, "sell", cmd_sell, player, cmd_sell_help);
 		cli_add_cmd(&player->cli, "trade", cmd_trade, player, cmd_trade_help);
 		break;
 	case PLANET:
@@ -474,6 +631,7 @@ int player_init(struct player *player)
 	INIT_LIST_HEAD(&player->ships);
 
 	cli_add_cmd(&player->cli, "help", cmd_help, player, cmd_help_help);
+	cli_add_cmd(&player->cli, "inventory", cmd_inventory, player, cmd_inventory_help);
 	cli_add_cmd(&player->cli, "go", cmd_hyper, player, cmd_hyper_help);
 	cli_add_cmd(&player->cli, "quit", cmd_quit, player, cmd_quit_help);
 	cli_add_cmd(&player->cli, "look", cmd_look, player, cmd_look_help);
