@@ -10,6 +10,7 @@ uint64_t mtrandom_uint64(uint64_t range);
 unsigned int mtrandom_uint(unsigned int range);
 int mtrandom_int(int range);
 unsigned long mtrandom_ulong(unsigned long range);
+long mtrandom_long(long range);
 double mtrandom_double(double range);
 
 #endif

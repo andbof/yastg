@@ -33,11 +33,18 @@ int64_t mtrandom_int64(int64_t range)
 	if (range == 0)
 		return range;
 
+	/*
+	 * The 31 bit shift guarantees the number is positive.
+	 * We only return a negative number if the range is negative.
+	 */
 	r |= mt_genrand_int32();
-	r <<= 32;
+	r <<= 31;
 	r |= mt_genrand_int32();
 
-	return r % range;
+	if (range > 0)
+		return r % range;
+	else
+		return -(r % -range);
 }
 
 uint64_t mtrandom_uint64(uint64_t range)
@@ -72,6 +79,11 @@ int mtrandom_int(int range)
 unsigned long mtrandom_ulong(unsigned long range)
 {
 	return mtrandom_uint64(range);
+}
+
+long mtrandom_long(long range)
+{
+	return mtrandom_int64(range);
 }
 
 double mtrandom_double(double range)
