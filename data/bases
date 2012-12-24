@@ -5,5 +5,6 @@
 	}
 	item "Iron ore" {
 		capacity 2500
+		produces 1000
 	}
 }
