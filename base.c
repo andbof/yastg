@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
@@ -111,15 +112,21 @@ err:
 	return -1;
 }
 
+#define BASE_MAXNUM 3
+#define BASE_MUL_ODDS 2
 void base_populate_planet(struct planet* planet)
 {
 	struct base *b;
 	int num;
 
-	if (ptrlist_len(&planet->type->base_types) > 0)
-		num = 10; /* FIXME */
-	else
+	num = 0;
+
+	if (ptrlist_len(&planet->type->base_types) > 0) {
+		while (num < BASE_MAXNUM && mtrandom_uint(UINT_MAX) < UINT_MAX / BASE_MUL_ODDS)
+			num++;
+	} else {
 		num = 0;
+	}
 
 	pthread_rwlock_wrlock(&univ.basenames_lock);
 
