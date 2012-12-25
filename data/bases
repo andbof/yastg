@@ -23,3 +23,56 @@
 		capacity 2500
 	}
 }
+
+"Oceanic city" {
+	description ""
+	zones {
+		ocean
+	}
+}
+
+"City" {
+	description ""
+	zones {
+		surface
+	}
+}
+
+"Religious reprieve" {
+	description ""
+	zones {
+		surface
+		orbit
+	}
+}
+
+"Military installation" {
+	description ""
+	zones {
+		ocean
+		orbit
+		surface
+	}
+}
+
+"Trading post" {
+	description ""
+	zones {
+		ocean
+		orbit
+		surface
+	}
+	item "Iron ore" {
+		capacity 1000
+	}
+	item "Steel" {
+		capacity 1000
+	}
+}
+
+"Shipyard" {
+	description ""
+	zones {
+		orbit
+	}
+}
