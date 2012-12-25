@@ -4,3 +4,6 @@
 "Iridium ore" {
 	weight 1000
 }
+"Steel" {
+	weight 1000
+}

@@ -8,3 +8,18 @@
 		produces 1000
 	}
 }
+
+"Steel mill" {
+	description ""
+	zones {
+		surface
+	}
+	item "Steel" {
+		capacity 5000
+		produces 2500
+		requires "Iron ore"
+	}
+	item "Iron ore" {
+		capacity 2500
+	}
+}

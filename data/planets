@@ -50,6 +50,7 @@ C {
 	maxlife		BARREN
 	bases {
 			"Mining colony (iron ore)"
+			"Steel mill"
 	}
 }
 D {
@@ -68,6 +69,7 @@ D {
 	maxlife		DEAD
 	bases {
 			"Mining colony (iron ore)"
+			"Steel mill"
 	}
 }
 E {
@@ -115,6 +117,7 @@ G {
 	maxlife		SIMPLE
 	bases {
 			"Mining colony (iron ore)"
+			"Steel mill"
 	}
 }
 
@@ -180,6 +183,7 @@ K {
 	maxlife		SIMPLE
 	bases {
 			"Mining colony (iron ore)"
+			"Steel mill"
 	}
 }
 
@@ -197,6 +201,7 @@ L {
 	maxlife		COMPLEX
 	bases {
 			"Mining colony (iron ore)"
+			"Steel mill"
 	}
 }
 
@@ -214,6 +219,7 @@ M {
 	maxlife		INTELLIGENT
 	bases {
 			"Mining colony (iron ore)"
+			"Steel mill"
 	}
 }
 
