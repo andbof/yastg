@@ -20,6 +20,12 @@ static void base_type_item_init(struct base_type_item *item)
 {
 	memset(item, 0, sizeof(*item));
 	ptrlist_init(&item->requires);
+	INIT_LIST_HEAD(&item->list);
+}
+
+static void base_type_item_free(struct base_type_item *item)
+{
+	ptrlist_free(&item->requires);
 }
 
 static void base_type_init(struct base_type *type)
@@ -27,6 +33,7 @@ static void base_type_init(struct base_type *type)
 	memset(type, 0, sizeof(*type));
 	INIT_LIST_HEAD(&type->list);
 	INIT_LIST_HEAD(&type->items);
+	INIT_LIST_HEAD(&type->item_names);
 }
 
 void base_type_free(struct base_type *type)
@@ -37,8 +44,11 @@ void base_type_free(struct base_type *type)
 	struct base_type_item *i, *_i;
 	list_for_each_entry_safe(i, _i, &type->items, list) {
 		list_del(&i->list);
+		base_type_item_free(i),
 		free(i);
 	}
+
+	st_destroy(&type->item_names, ST_DONT_FREE_DATA);
 }
 
 static int set_description(struct base_type *type, struct config *conf)
@@ -78,30 +88,33 @@ static int add_zone(struct base_type *type, struct config *conf)
 	return 0;
 }
 
-static int set_item_capacity(struct base_type_item *item, struct config *conf)
+static int set_item_capacity(struct base_type_item *item, struct list_head *item_names, struct config *conf)
 {
+	printf("Set %s capacity to %ld\n", item->item->name, conf->l);
 	item->capacity = conf->l;
 	return 0;
 }
 
-static int set_item_produces(struct base_type_item *item, struct config *conf)
+static int set_item_produces(struct base_type_item *item, struct list_head *item_names, struct config *conf)
 {
+	printf("Set %s daily change to %ld\n", item->item->name, conf->l);
 	item->daily_change += conf->l;
 	return 0;
 }
 
-static int set_item_consumes(struct base_type_item *item, struct config *conf)
+static int set_item_consumes(struct base_type_item *item, struct list_head *item_names, struct config *conf)
 {
+	printf("Set %s daily change to %ld\n", item->item->name, -conf->l);
 	item->daily_change -= conf->l;
 	return 0;
 }
 
-static int set_item_requires(struct base_type_item *item, struct config *conf)
+static int set_item_requires(struct base_type_item *item, struct list_head *item_names, struct config *conf)
 {
-	struct item *req = st_lookup_string(&univ.item_names, conf->str);
+	struct base_type_item *req = st_lookup_string(item_names, conf->str);
 
 	if (!req) {
-		log_printfn("config", "unknown item '%s'", conf->str);
+		log_printfn("config", "item '%s' does not exist in this base", conf->str);
 		return -1;
 	}
 
@@ -126,29 +139,16 @@ static int build_item_cmdtree(struct list_head *root)
 static int add_item(struct base_type *type, struct config *conf)
 {
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
-	struct item *item;
 	if (build_item_cmdtree(&cmd_root))
-		return -1;
-
-	if (!conf->str) {
-		log_printfn("config", "syntax error after \"item\"");
 		goto err;
-	}
-
-	item = st_lookup_string(&univ.item_names, conf->str);
-	if (!item) {
-		log_printfn("config", "unknown item: \"%s\"", conf->str);
-		goto err;
-	}
-
-	struct base_type_item *type_item = malloc(sizeof(*type_item));
-	if (!type_item)
+	if (!conf->str)
 		goto err;
 
-	base_type_item_init(type_item);
-	type_item->item = item;
+	struct base_type_item *item = st_lookup_string(&type->item_names, conf->str);
+	if (!item)
+		goto err;
 
-	int (*func)(struct base_type_item*, struct config*);
+	int (*func)(struct base_type_item*, struct list_head *item_names, struct config*);
 	struct config *child;
 	list_for_each_entry(child, &conf->children, list) {
 		func = st_lookup_string(&cmd_root, child->key);
@@ -157,11 +157,9 @@ static int add_item(struct base_type *type, struct config *conf)
 			continue;
 		}
 
-		if (func(type_item, child))
+		if (func(item, &type->item_names, child))
 			continue;
 	}
-
-	list_add(&type_item->list, &type->items);
 
 	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return 0;
@@ -171,13 +169,45 @@ err:
 	return -1;
 }
 
+static int pre_add_item(struct base_type *type, struct config *conf)
+{
+	struct base_type_item *type_item = NULL;
+
+	if (!conf->str) {
+		log_printfn("config", "syntax error after \"item\"");
+		goto err;
+	}
+
+	struct item *item = st_lookup_string(&univ.item_names, conf->str);
+	if (!item) {
+		log_printfn("config", "unknown item: \"%s\"", conf->str);
+		goto err;
+	}
+
+	type_item = malloc(sizeof(*type_item));
+	if (!type_item)
+		goto err;
+	base_type_item_init(type_item);
+
+	type_item->item = item;
+	if (st_add_string(&type->item_names, item->name, type_item))
+		goto err;
+
+	list_add(&type_item->list, &type->items);
+	return 0;
+
+err:
+	free(type_item);
+	return -1;
+}
+
 static int build_command_tree(struct list_head *root)
 {
 	if (st_add_string(root, "description", set_description))
 		return -1;
 	if (st_add_string(root, "zones", add_zone))
 		return -1;
-	if (st_add_string(root, "item", add_item))
+	if (st_add_string(root, "item", pre_add_item))
 		return -1;
 
 	return 0;
@@ -187,15 +217,18 @@ int load_all_bases(struct list_head * const root)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
+	struct list_head item_root = LIST_HEAD_INIT(item_root);
 	struct config *conf, *child;
 	struct base_type *type;
-	void (*func)(struct base_type*, struct config*);
+	int (*func)(struct base_type*, struct config*);
 
 	if (build_command_tree(&cmd_root))
-		return -1;
+		goto err;
+	if (st_add_string(&item_root, "item", add_item))
+		goto err;
 
 	if (parse_config_file("data/bases", &conf_root))
-		return -1;
+		goto err;
 
 	list_for_each_entry(conf, &conf_root, list) {
 		type = malloc(sizeof(*type));
@@ -209,6 +242,12 @@ int load_all_bases(struct list_head * const root)
 			goto err;
 		}
 
+		/*
+		 * We need to parse in two steps because parsing the items requires
+		 * all items to exist (as they have mutual dependencies). The first
+		 * step allocates the items and builds the stringtree, while the
+		 * second step does the actual item parsing.
+		 */
 		list_for_each_entry(child, &conf->children, list) {
 			func = st_lookup_string(&cmd_root, child->key);
 			if (!func) {
@@ -216,7 +255,14 @@ int load_all_bases(struct list_head * const root)
 				continue;
 			}
 
-			func(type, child);
+			if (func(type, child))
+				goto err;
+		}
+
+		list_for_each_entry(child, &conf->children, list) {
+			func = st_lookup_string(&item_root, child->key);
+			if (func && func(type, child))
+				goto err;
 		}
 
 		if (st_add_string(&univ.base_type_names, type->name, type)) {
@@ -229,11 +275,13 @@ int load_all_bases(struct list_head * const root)
 	}
 
 	destroy_config(&conf_root);
-	st_destroy(&cmd_root, 0);
+	st_destroy(&item_root, ST_DONT_FREE_DATA);
+	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return 0;
 
 err:
 	destroy_config(root);
-	st_destroy(&cmd_root, 0);
+	st_destroy(&item_root, ST_DONT_FREE_DATA);
+	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return -1;
 }

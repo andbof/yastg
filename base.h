@@ -11,6 +11,7 @@ struct base_item {
 	long max;
 	long amount;
 	long daily_change;
+	struct ptrlist requires;
 	struct list_head list;
 };
 

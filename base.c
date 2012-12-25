@@ -14,11 +14,13 @@
 static void base_item_init(struct base_item *item)
 {
 	memset(item, 0, sizeof(*item));
+	ptrlist_init(&item->requires);
+	INIT_LIST_HEAD(&item->list);
 }
 
 static void base_item_free(struct base_item *item)
 {
-	return;
+	ptrlist_free(&item->requires);
 }
 
 void base_free(struct base *b)
@@ -59,7 +61,7 @@ static int base_genesis(struct base *base, struct planet *planet)
 	base->type = ptrlist_random(&planet->type->base_types);
 	base->docks = 1; /* FIXME */
 
-	struct base_type_item *bt_item;
+	struct base_type_item *bt_item, *bt_req;
 	struct base_item *item;
 	struct list_head *lh;
 	list_for_each_entry(bt_item, &base->type->items, list) {
@@ -80,7 +82,18 @@ static int base_genesis(struct base *base, struct planet *planet)
 
 		if (st_add_string(&base->item_names, item->item->name, item))
 			goto err;
+
 		list_add(&item->list, &base->items);
+	}
+
+	/*
+	 * We can't copy the requirement lists before all the base items are constructed
+	 * and registered in the string tree or we wouldn't be able to look them up.
+	 */
+	list_for_each_entry(bt_item, &base->type->items, list) {
+		item = st_lookup_string(&base->item_names, bt_item->item->name);
+		ptrlist_for_each_entry(bt_req, &bt_item->requires, lh)
+			ptrlist_push(&item->requires, st_lookup_string(&base->item_names, bt_req->item->name));
 	}
 
 	/* FIXME: limit loop */

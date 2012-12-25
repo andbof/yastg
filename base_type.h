@@ -27,6 +27,7 @@ struct base_type {
 	char *desc;
 	struct list_head list;
 	struct list_head items;
+	struct list_head item_names;
 	int zones[BASE_ZONE_NUM];
 };
 
