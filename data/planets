@@ -49,7 +49,7 @@ C {
 	minlife		BARREN
 	maxlife		BARREN
 	bases {
-			"Mining colony"
+			"Mining colony (iron ore)"
 	}
 }
 D {
@@ -67,7 +67,7 @@ D {
 	minlife		DEAD
 	maxlife		DEAD
 	bases {
-			"Mining colony"
+			"Mining colony (iron ore)"
 	}
 }
 E {
@@ -114,7 +114,7 @@ G {
 	minlife		BACTERIA
 	maxlife		SIMPLE
 	bases {
-			"Mining colony"
+			"Mining colony (iron ore)"
 	}
 }
 
@@ -179,7 +179,7 @@ K {
 	minlife		DEAD
 	maxlife		SIMPLE
 	bases {
-			"Mining colony"
+			"Mining colony (iron ore)"
 	}
 }
 
@@ -196,7 +196,7 @@ L {
 	minlife		RESISTANT
 	maxlife		COMPLEX
 	bases {
-			"Mining colony"
+			"Mining colony (iron ore)"
 	}
 }
 
@@ -213,7 +213,7 @@ M {
 	minlife		COMPLEX
 	maxlife		INTELLIGENT
 	bases {
-			"Mining colony"
+			"Mining colony (iron ore)"
 	}
 }
 

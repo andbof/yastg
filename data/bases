@@ -1,4 +1,4 @@
-"Mining colony" {
+"Mining colony (iron ore)" {
 	description "Long description"
 	zones {
 		surface
