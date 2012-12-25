@@ -37,11 +37,10 @@ static void update_base(struct base *base, uint32_t iteration)
 		mod = item->daily_change % BASE_UPDATE_FRACTION;
 		fraction_iteration = BASE_UPDATE_FRACTION / item->daily_change;
 
-		if (mod && item->daily_change && fraction_iteration
-				&& iteration % fraction_iteration == 0) {
+		if (mod && fraction_iteration && iteration % fraction_iteration == 0) {
 			if (item->daily_change > 0)
 				change++;
-			else
+			else if (item->daily_change < 0)
 				change--;
 		}
 
@@ -50,7 +49,24 @@ static void update_base(struct base *base, uint32_t iteration)
 		else if (change > 0 && item->max - item->amount < change)
 			change = item->max - item->amount;
 
+		struct base_item *req;
+		struct list_head *lh;
+		ptrlist_for_each_entry(req, &item->requires, lh) {
+			if (change > 0 && req->amount < change)
+				change = req->amount;
+			else if (change < 0 && req->amount < -change)
+				change = -req->amount;
+		}
+
 		item->amount += change;
+
+		if (change < 0) {
+			ptrlist_for_each_entry(req, &item->requires, lh)
+				req->amount += change;
+		} else {
+			ptrlist_for_each_entry(req, &item->requires, lh)
+				req->amount -= change;
+		}
 	}
 
 	pthread_rwlock_unlock(&base->items_lock);
