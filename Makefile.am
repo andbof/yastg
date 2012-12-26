@@ -95,7 +95,9 @@ test_stringtree_test_SOURCES = test/stringtree_test.c \
 test_config_test_SOURCES = test/config_test.c \
 			   log.c \
 			   log.h \
+			   parseconfig.h \
 			   parseconfig-lex.l \
+			   parseconfig-rename.h \
 			   parseconfig-yacc.y
 
 # The LDFLAGS for test_module are required to make a shared library without the
