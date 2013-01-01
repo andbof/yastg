@@ -3,6 +3,7 @@
 #include "common.h"
 #include "base_type.h"
 #include "base.h"
+#include "cargo.h"
 #include "item.h"
 #include "stringtree.h"
 #include "log.h"
@@ -15,18 +16,6 @@ char base_zone_names[BASE_ZONE_NUM][8] = {
 	"orbit",
 	"rogue",
 };
-
-static void base_type_item_init(struct base_type_item *item)
-{
-	memset(item, 0, sizeof(*item));
-	ptrlist_init(&item->requires);
-	INIT_LIST_HEAD(&item->list);
-}
-
-static void base_type_item_free(struct base_type_item *item)
-{
-	ptrlist_free(&item->requires);
-}
 
 static void base_type_init(struct base_type *type)
 {
@@ -41,11 +30,11 @@ void base_type_free(struct base_type *type)
 	free(type->name);
 	free(type->desc);
 
-	struct base_type_item *i, *_i;
-	list_for_each_entry_safe(i, _i, &type->items, list) {
-		list_del(&i->list);
-		base_type_item_free(i),
-		free(i);
+	struct cargo *c, *_c;
+	list_for_each_entry_safe(c, _c, &type->items, list) {
+		list_del(&c->list);
+		cargo_free(c),
+		free(c);
 	}
 
 	st_destroy(&type->item_names, ST_DONT_FREE_DATA);
@@ -88,37 +77,34 @@ static int add_zone(struct base_type *type, struct config *conf)
 	return 0;
 }
 
-static int set_item_capacity(struct base_type_item *item, struct list_head *item_names, struct config *conf)
+static int set_item_capacity(struct cargo *cargo, struct list_head *item_names, struct config *conf)
 {
-	printf("Set %s capacity to %ld\n", item->item->name, conf->l);
-	item->capacity = conf->l;
+	cargo->max = conf->l;
 	return 0;
 }
 
-static int set_item_produces(struct base_type_item *item, struct list_head *item_names, struct config *conf)
+static int set_item_produces(struct cargo *cargo, struct list_head *item_names, struct config *conf)
 {
-	printf("Set %s daily change to %ld\n", item->item->name, conf->l);
-	item->daily_change += conf->l;
+	cargo->daily_change += conf->l;
 	return 0;
 }
 
-static int set_item_consumes(struct base_type_item *item, struct list_head *item_names, struct config *conf)
+static int set_item_consumes(struct cargo *cargo, struct list_head *item_names, struct config *conf)
 {
-	printf("Set %s daily change to %ld\n", item->item->name, -conf->l);
-	item->daily_change -= conf->l;
+	cargo->daily_change -= conf->l;
 	return 0;
 }
 
-static int set_item_requires(struct base_type_item *item, struct list_head *item_names, struct config *conf)
+static int set_item_requires(struct cargo *cargo, struct list_head *item_names, struct config *conf)
 {
-	struct base_type_item *req = st_lookup_string(item_names, conf->str);
+	struct cargo *req = st_lookup_string(item_names, conf->str);
 
 	if (!req) {
 		log_printfn("config", "item '%s' does not exist in this base", conf->str);
 		return -1;
 	}
 
-	ptrlist_push(&item->requires, req);
+	ptrlist_push(&cargo->requires, req);
 	return 0;
 }
 
@@ -144,11 +130,11 @@ static int add_item(struct base_type *type, struct config *conf)
 	if (!conf->str)
 		goto err;
 
-	struct base_type_item *item = st_lookup_string(&type->item_names, conf->str);
-	if (!item)
+	struct cargo *cargo = st_lookup_string(&type->item_names, conf->str);
+	if (!cargo)
 		goto err;
 
-	int (*func)(struct base_type_item*, struct list_head *item_names, struct config*);
+	int (*func)(struct cargo*, struct list_head *item_names, struct config*);
 	struct config *child;
 	list_for_each_entry(child, &conf->children, list) {
 		func = st_lookup_string(&cmd_root, child->key);
@@ -157,7 +143,7 @@ static int add_item(struct base_type *type, struct config *conf)
 			continue;
 		}
 
-		if (func(item, &type->item_names, child))
+		if (func(cargo, &type->item_names, child))
 			continue;
 	}
 
@@ -171,7 +157,7 @@ err:
 
 static int pre_add_item(struct base_type *type, struct config *conf)
 {
-	struct base_type_item *type_item = NULL;
+	struct cargo *cargo = NULL;
 
 	if (!conf->str) {
 		log_printfn("config", "syntax error after \"item\"");
@@ -184,20 +170,22 @@ static int pre_add_item(struct base_type *type, struct config *conf)
 		goto err;
 	}
 
-	type_item = malloc(sizeof(*type_item));
-	if (!type_item)
+	cargo = malloc(sizeof(*cargo));
+	if (!cargo)
 		goto err;
-	base_type_item_init(type_item);
+	cargo_init(cargo);
 
-	type_item->item = item;
-	if (st_add_string(&type->item_names, item->name, type_item))
+	cargo->item = item;
+	if (st_add_string(&type->item_names, item->name, cargo))
 		goto err;
 
-	list_add(&type_item->list, &type->items);
+	list_add(&cargo->list, &type->items);
 	return 0;
 
 err:
-	free(type_item);
+	if (cargo)
+		cargo_free(cargo);
+	free(cargo);
 	return -1;
 }
 

@@ -6,6 +6,7 @@
 #include <assert.h>
 #include "base.h"
 #include "base_type.h"
+#include "cargo.h"
 #include "cli.h"
 #include "common.h"
 #include "server.h"
@@ -397,12 +398,12 @@ static int cmd_trade(void *ptr, char *param)
 
 	pthread_rwlock_rdlock(&base->items_lock);
 
-	struct base_item *bt;
+	struct cargo *c;
 	player_talk(player, "%-26s %-12s %-12s %-12s\n",
 			"Item", "In stock", "Max stock", "Daily change");
-	list_for_each_entry(bt, &base->items, list) {
+	list_for_each_entry(c, &base->items, list) {
 		player_talk(player, "%-26.26s %-12ld %-12ld %-12ld\n",
-				bt->item->name, bt->amount, bt->max, bt->daily_change);
+				c->item->name, c->amount, c->max, c->daily_change);
 	}
 
 	pthread_rwlock_unlock(&base->items_lock);

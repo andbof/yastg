@@ -14,14 +14,6 @@ enum base_zone {
 
 extern char base_zone_names[BASE_ZONE_NUM][8];
 
-struct base_type_item {
-	struct item *item;
-	long capacity;
-	long daily_change;
-	struct ptrlist requires;
-	struct list_head list;
-};
-
 struct base_type {
 	char *name;
 	char *desc;

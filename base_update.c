@@ -6,6 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "base.h"
+#include "cargo.h"
 #include "item.h"
 #include "log.h"
 #include "universe.h"
@@ -24,47 +25,47 @@ pthread_mutex_t termination_lock;
 
 static void update_base(struct base *base, uint32_t iteration)
 {
-	struct base_item *item;
+	struct cargo *cargo;
 	long change, mod, fraction_iteration;
 
 	pthread_rwlock_wrlock(&base->items_lock);
 
-	list_for_each_entry(item, &base->items, list) {
-		if (!item->daily_change)
+	list_for_each_entry(cargo, &base->items, list) {
+		if (!cargo->daily_change)
 			continue;
 
-		change = item->daily_change / BASE_UPDATE_FRACTION;
-		mod = item->daily_change % BASE_UPDATE_FRACTION;
-		fraction_iteration = BASE_UPDATE_FRACTION / item->daily_change;
+		change = cargo->daily_change / BASE_UPDATE_FRACTION;
+		mod = cargo->daily_change % BASE_UPDATE_FRACTION;
+		fraction_iteration = BASE_UPDATE_FRACTION / cargo->daily_change;
 
 		if (mod && fraction_iteration && iteration % fraction_iteration == 0) {
-			if (item->daily_change > 0)
+			if (cargo->daily_change > 0)
 				change++;
-			else if (item->daily_change < 0)
+			else if (cargo->daily_change < 0)
 				change--;
 		}
 
-		if (change < 0 && item->amount < -change)
-			change = -item->amount;
-		else if (change > 0 && item->max - item->amount < change)
-			change = item->max - item->amount;
+		if (change < 0 && cargo->amount < -change)
+			change = -cargo->amount;
+		else if (change > 0 && cargo->max - cargo->amount < change)
+			change = cargo->max - cargo->amount;
 
-		struct base_item *req;
+		struct cargo *req;
 		struct list_head *lh;
-		ptrlist_for_each_entry(req, &item->requires, lh) {
+		ptrlist_for_each_entry(req, &cargo->requires, lh) {
 			if (change > 0 && req->amount < change)
 				change = req->amount;
 			else if (change < 0 && req->amount < -change)
 				change = -req->amount;
 		}
 
-		item->amount += change;
+		cargo->amount += change;
 
 		if (change < 0) {
-			ptrlist_for_each_entry(req, &item->requires, lh)
+			ptrlist_for_each_entry(req, &cargo->requires, lh)
 				req->amount += change;
 		} else {
-			ptrlist_for_each_entry(req, &item->requires, lh)
+			ptrlist_for_each_entry(req, &cargo->requires, lh)
 				req->amount -= change;
 		}
 	}

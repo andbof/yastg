@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <math.h>
 #include "base.h"
+#include "cargo.h"
 #include "common.h"
 #include "stringtree.h"
 #include "item.h"
@@ -12,18 +13,6 @@
 #include "planet_type.h"
 #include "universe.h"
 
-static void base_item_init(struct base_item *item)
-{
-	memset(item, 0, sizeof(*item));
-	ptrlist_init(&item->requires);
-	INIT_LIST_HEAD(&item->list);
-}
-
-static void base_item_free(struct base_item *item)
-{
-	ptrlist_free(&item->requires);
-}
-
 void base_free(struct base *b)
 {
 	if (b->name) {
@@ -31,11 +20,11 @@ void base_free(struct base *b)
 		free(b->name);
 	}
 
-	struct base_item *bt, *_bt;
-	list_for_each_entry_safe(bt, _bt, &b->items, list) {
-		list_del(&bt->list);
-		base_item_free(bt);
-		free(bt);
+	struct cargo *c, *_c;
+	list_for_each_entry_safe(c, _c, &b->items, list) {
+		list_del(&c->list);
+		cargo_free(c);
+		free(c);
 	}
 
 	pthread_rwlock_destroy(&b->items_lock);
@@ -62,39 +51,38 @@ static int base_genesis(struct base *base, struct planet *planet)
 	base->type = ptrlist_random(&planet->type->base_types);
 	base->docks = 1; /* FIXME */
 
-	struct base_type_item *bt_item, *bt_req;
-	struct base_item *item;
+	struct cargo *bt_cargo, *cargo, *req;
 	struct list_head *lh;
-	list_for_each_entry(bt_item, &base->type->items, list) {
-		item = malloc(sizeof*(item));
-		if (!item)
+	list_for_each_entry(bt_cargo, &base->type->items, list) {
+		cargo = malloc(sizeof(*cargo));
+		if (!cargo)
 			goto err;
-		base_item_init(item);
+		cargo_init(cargo);
 
-		item->item = bt_item->item;
-		item->max = bt_item->capacity * (1 - BASE_CARGO_RANDOMNESS)
-			+ mtrandom_ulong(bt_item->capacity * BASE_CARGO_RANDOMNESS * 2);
-		item->daily_change = bt_item->daily_change * (1 - BASE_CARGO_RANDOMNESS)
-			+ mtrandom_long(bt_item->daily_change * BASE_CARGO_RANDOMNESS * 2);
+		cargo->item = bt_cargo->item;
+		cargo->max = bt_cargo->max * (1 - BASE_CARGO_RANDOMNESS)
+			+ mtrandom_ulong(bt_cargo->max * BASE_CARGO_RANDOMNESS * 2);
+		cargo->daily_change = bt_cargo->daily_change * (1 - BASE_CARGO_RANDOMNESS)
+			+ mtrandom_long(bt_cargo->daily_change * BASE_CARGO_RANDOMNESS * 2);
 
-		item->amount = mtrandom_ulong(item->max);
-		if (item->amount > 10)
-			item->amount = pow(5, log10(item->amount));
+		cargo->amount = mtrandom_ulong(cargo->max);
+		if (cargo->amount > 10)
+			cargo->amount = pow(5, log10(cargo->amount));
 
-		if (st_add_string(&base->item_names, item->item->name, item))
+		if (st_add_string(&base->item_names, cargo->item->name, cargo))
 			goto err;
 
-		list_add(&item->list, &base->items);
+		list_add(&cargo->list, &base->items);
 	}
 
 	/*
 	 * We can't copy the requirement lists before all the base items are constructed
 	 * and registered in the string tree or we wouldn't be able to look them up.
 	 */
-	list_for_each_entry(bt_item, &base->type->items, list) {
-		item = st_lookup_string(&base->item_names, bt_item->item->name);
-		ptrlist_for_each_entry(bt_req, &bt_item->requires, lh)
-			ptrlist_push(&item->requires, st_lookup_string(&base->item_names, bt_req->item->name));
+	list_for_each_entry(bt_cargo, &base->type->items, list) {
+		cargo = st_lookup_string(&base->item_names, bt_cargo->item->name);
+		ptrlist_for_each_entry(req, &bt_cargo->requires, lh)
+			ptrlist_push(&cargo->requires, st_lookup_string(&base->item_names, req->item->name));
 	}
 
 	/* FIXME: limit loop */

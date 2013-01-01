@@ -6,15 +6,6 @@
 #include "parseconfig.h"
 #include "base_type.h"
 
-struct base_item {
-	struct item *item;
-	long max;
-	long amount;
-	long daily_change;
-	struct ptrlist requires;
-	struct list_head list;
-};
-
 struct base {
 	char *name;
 	struct base_type *type;
