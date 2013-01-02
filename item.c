@@ -7,6 +7,11 @@
 #include "parseconfig.h"
 #include "stringtree.h"
 
+static void set_base_price(struct item *item, struct config *conf)
+{
+	item->base_price = conf->l;
+}
+
 static void set_weight(struct item *item, struct config *conf)
 {
 	item->weight = conf->l;
@@ -14,6 +19,7 @@ static void set_weight(struct item *item, struct config *conf)
 
 static void build_command_tree(struct list_head *root)
 {
+	st_add_string(root, "price", set_base_price);
 	st_add_string(root, "weight", set_weight);
 }
 

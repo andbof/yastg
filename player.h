@@ -7,6 +7,7 @@
 
 struct player {
 	char *name;
+	long credits;
 	enum postype postype;
 	void *pos;
 	struct list_head ships;

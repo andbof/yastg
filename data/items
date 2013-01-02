@@ -1,9 +1,12 @@
 "Iron ore" {
 	weight 1000
+	price 10
 }
 "Iridium ore" {
 	weight 1000
+	price 100
 }
 "Steel" {
 	weight 1000
+	price 40
 }

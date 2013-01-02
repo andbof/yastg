@@ -64,6 +64,7 @@ static int base_genesis(struct base *base, struct planet *planet)
 			+ mtrandom_ulong(bt_cargo->max * BASE_CARGO_RANDOMNESS * 2);
 		cargo->daily_change = bt_cargo->daily_change * (1 - BASE_CARGO_RANDOMNESS)
 			+ mtrandom_long(bt_cargo->daily_change * BASE_CARGO_RANDOMNESS * 2);
+		cargo->price = bt_cargo->item->base_price;
 
 		cargo->amount = mtrandom_ulong(cargo->max);
 		if (cargo->amount > 10)

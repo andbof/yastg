@@ -9,6 +9,7 @@ struct cargo {
 	long min, max;
 	long amount;
 	long daily_change;
+	long price;
 	struct ptrlist requires;
 	struct list_head list;
 };

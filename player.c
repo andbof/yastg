@@ -401,14 +401,16 @@ static int cmd_trade(void *ptr, char *param)
 	pthread_rwlock_rdlock(&base->items_lock);
 
 	struct cargo *c;
-	player_talk(player, "%-26s %-12s %-12s %-12s\n",
-			"Item", "In stock", "Max stock", "Daily change");
+	player_talk(player, "%-26s %-12s %-12s %-12s %-12s\n",
+			"Item", "In stock", "Max stock", "Daily change", "Price");
 	list_for_each_entry(c, &base->items, list) {
-		player_talk(player, "%-26.26s %-12ld %-12ld %-12ld\n",
-				c->item->name, c->amount, c->max, c->daily_change);
+		player_talk(player, "%-26.26s %-12ld %-12ld %-12ld %-12ld\n",
+				c->item->name, c->amount, c->max, c->daily_change, c->price);
 	}
 
 	pthread_rwlock_unlock(&base->items_lock);
+
+	player_talk(player, "\nYou have %ld credits.\n", player->credits);
 
 	return 0;
 }
@@ -467,15 +469,29 @@ static int cmd_buy(void *ptr, char *param)
 		return 0;
 	}
 
+	if (c->price) {
+		amount = MIN(amount, player->credits / c->price);
+		if (!amount) {
+			pthread_rwlock_unlock(&base->items_lock);
+			player_talk(player, "You cannot afford any %s\n", c->item->name);
+			return 0;
+		}
+	}
+
 	pthread_rwlock_wrlock(&ship->cargo_lock);
 
 	amount = move_cargo_to_ship(ship, c, amount);
+	long price = amount * c->price;
+	player->credits -= price;
 
 	pthread_rwlock_unlock(&ship->cargo_lock);
 	pthread_rwlock_unlock(&base->items_lock);
 
-	player_talk(player, "Bought %ld %s from %s\n",
-			amount, c->item->name, base->name);
+	if (amount)
+		player_talk(player, "Bought %ld %s from %s for %ld credits\n",
+				amount, c->item->name, base->name, price);
+	else
+		player_talk(player, "Cannot buy any %s\n", c->item->name);
 
 	return 0;
 
@@ -514,14 +530,20 @@ static int cmd_sell(void *ptr, char *param)
 		player_talk(player, "%s does not accept %s\n", base->name, name);
 		goto unlock;
 	}
+	long price;
 
 	amount = move_cargo_from_ship(ship, c, amount);
+	price = amount * c->price;
+	player->credits += price;
 
 	pthread_rwlock_unlock(&base->items_lock);
 	pthread_rwlock_unlock(&ship->cargo_lock);
 
-	player_talk(player, "Sold %ld %s to %s\n",
-			amount, c->item->name, base->name);
+	if (amount)
+		player_talk(player, "Sold %ld %s to %s for %ld credits\n",
+				amount, c->item->name, base->name, price);
+	else
+		player_talk(player, "Cannot sell any %s\n", c->item->name);
 
 	return 0;
 

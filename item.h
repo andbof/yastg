@@ -6,6 +6,7 @@
 struct item {
 	char *name;
 	long weight;
+	long base_price;
 	struct list_head list;
 };
 

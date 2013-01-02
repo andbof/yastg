@@ -200,6 +200,7 @@ int conn_fulfixinit(struct connection *data)
 		return -1;
 	data->pl->pos = list_first_entry(&data->pl->ships, struct ship, list);
 	data->pl->postype = SHIP;
+	data->pl->credits = 100000;
 
 	player_go(data->pl, SYSTEM, ptrlist_entry(&univ.systems, 0));
 
