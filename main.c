@@ -122,7 +122,7 @@ static int cmd_items(void *ptr, char *param)
 
 	mprintf("%-24s %-8s\n", "Name", "Weight");
 	list_for_each_entry(i, &univ.items, list)
-		mprintf("%-24.24s %-8u\n", i->name, i->weight);
+		mprintf("%-24.24s %-8ld\n", i->name, i->weight);
 
 	return 0;
 }

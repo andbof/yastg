@@ -5,7 +5,7 @@
 
 struct item {
 	char *name;
-	int weight;
+	long weight;
 	struct list_head list;
 };
 
