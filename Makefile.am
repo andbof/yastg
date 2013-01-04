@@ -26,7 +26,9 @@ check_PROGRAMS = test/stringtree_test test/config_test test/conntest
 check_LTLIBRARIES = test_module.la
 
 # optflags: -O3 -funroll-loops
-yastg_SOURCES = base.c \
+yastg_SOURCES = asciiart.c \
+		asciiart.h \
+		base.c \
 		base.h \
 		base_type.c \
 		base_type.h \
