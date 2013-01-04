@@ -113,7 +113,8 @@ int makeneighbours(struct system *s1, struct system *s2, unsigned long min, unsi
 
 	return 0;
 	/*
-	 * FIXME: Don't place too close to another system.
+	 * FIXME: Don't place too close to another system,
+	 * 5 ly is probably a good idea considering the map resolution.
 	 * Perhaps try a limited number of times, then return failure.
 	 */
 }
