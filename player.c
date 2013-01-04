@@ -25,6 +25,7 @@
 #include "star.h"
 #include "universe.h"
 #include "names.h"
+#include "map.h"
 
 #define player_talk(PLAYER, ...)	\
 	conn_send(PLAYER->conn, __VA_ARGS__)
@@ -50,6 +51,24 @@ static char* hundreths(unsigned long l, char *buf, size_t len)
 
 	return buf;
 }
+
+#define MAP_WIDTH 71	/* FIXME: must be uneven for now, or the '|' and the 'X' won't be aligned */
+static int cmd_map(void *_player, char *param)
+{
+	char buf[80 * 50];
+	struct player *player = _player;
+	assert(player->postype == SHIP);
+	struct ship *ship = player->pos;
+	assert(ship->postype == SYSTEM);
+	struct system *system = ship->pos;
+
+	generate_map(buf, sizeof(buf), system, 50 * TICK_PER_LY, MAP_WIDTH);
+
+	player_talk(player, "%s\n", buf);
+
+	return 0;
+}
+static char cmd_map_help[] = "Display map";
 
 static void player_showsystem(struct player *player, struct system *system)
 {
@@ -658,6 +677,7 @@ int player_init(struct player *player)
 	cli_add_cmd(&player->cli, "quit", cmd_quit, player, cmd_quit_help);
 	cli_add_cmd(&player->cli, "look", cmd_look, player, cmd_look_help);
 	cli_add_cmd(&player->cli, "ships", cmd_show_ships, player, cmd_show_ships_help);
+	cli_add_cmd(&player->cli, "map", cmd_map, player, cmd_map_help);
 
 	return 0;
 }
