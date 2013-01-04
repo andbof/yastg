@@ -53,6 +53,8 @@ yastg_SOURCES = asciiart.c \
 		log.c \
 		log.h \
 		main.c \
+		map.c \
+		map.h \
 		module.c \
 		module.h \
 		mt19937ar-cok.c \
