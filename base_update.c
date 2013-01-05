@@ -87,7 +87,7 @@ static void* base_update_worker(void *ptr)
 	uint32_t iteration = 0;
 
 	if (clock_gettime(CLOCK_MONOTONIC, &next))
-		return NULL;
+		goto clock_err;
 
 	do {
 		pthread_rwlock_rdlock(&univ.bases_lock);
@@ -110,12 +110,16 @@ static void* base_update_worker(void *ptr)
 			pthread_mutex_unlock(&termination_lock);
 
 			if (clock_gettime(CLOCK_MONOTONIC, &now))
-				break;
+				goto clock_err;
 
 		} while (!terminate && now.tv_sec < next.tv_sec);
 
 	} while (!terminate);
 
+	return NULL;
+
+clock_err:
+	log_printfn("base_update", "clock_gettime() failed");
 	return NULL;
 }
 
