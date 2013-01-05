@@ -17,7 +17,7 @@
 #define BASE_UPDATE_FRACTION (SECONDS_PER_DAY / BASE_UPDATE_INTERVAL)
 
 pthread_t thread;
-volatile int terminate;
+int terminate;
 
 pthread_condattr_t termination_attr;
 pthread_cond_t termination_cond;
@@ -102,6 +102,10 @@ static void* base_update_worker(void *ptr)
 
 		do {
 			pthread_mutex_lock(&termination_lock);
+			if (terminate) {
+				pthread_mutex_unlock(&termination_lock);
+				break;
+			}
 			pthread_cond_timedwait(&termination_cond, &termination_lock, &next);
 			pthread_mutex_unlock(&termination_lock);
 
@@ -139,8 +143,8 @@ int start_updating_bases(void)
 
 void stop_updating_bases(void)
 {
-	terminate = 1;
 	pthread_mutex_lock(&termination_lock);
+	terminate = 1;
 	pthread_cond_signal(&termination_cond);
 	pthread_mutex_unlock(&termination_lock);
 
