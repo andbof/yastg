@@ -305,35 +305,39 @@ static void initialize_server(struct server * const server)
 static int register_console_commands(struct list_head * const cli_root, struct server * server)
 {
 	if (cli_add_cmd(cli_root, "bases", cmd_bases, cli_root, "List available bases"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "help", cmd_help, cli_root, "Display this help text"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "insmod", cmd_insmod, NULL, "Insert a loadable module"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "items", cmd_items, NULL, "List available items"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "lsmod", cmd_lsmod, NULL, "List modules currently loaded"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "wall", cmd_wall, server, "Send a message to all connected players"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "pause", cmd_pause, server, "Pause all players"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "planets", cmd_planets, server, "List available planet types"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "resume", cmd_resume, server, "Resume all players"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "rmmod", cmd_rmmod, NULL, "Unload a loadable module"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "ships", cmd_ships, NULL, "List available ship types"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "stats", cmd_stats, NULL, "Display statistics"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "memstat", cmd_memstat, NULL, "Display memory statistics"))
-		return -1;
+		goto err;
 	if (cli_add_cmd(cli_root, "quit", cmd_quit, server, "Terminate the server"))
-		return -1;
+		goto err;
 
 	return 0;
+
+err:
+	cli_tree_destroy(cli_root);
+	return -1;
 }
 
 static int parse_config_files(struct civ * const civs)
@@ -393,9 +397,13 @@ static int start_server_thread(struct server * const server)
 	if (pipe(server->fd) != 0)
 		return -1;
 	if (pthread_create(&server->thread, NULL, server_main, &server->fd[0]) != 0)
-		return -1;
+		goto err_close;
 
 	return 0;
+
+err_close:
+	close(*server->fd);
+	return -1;
 }
 
 static void kill_server_thread(struct server * const server)
