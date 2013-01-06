@@ -523,14 +523,26 @@ void initialize_server(struct server * const server)
 
 int start_server(struct server * const server)
 {
+	sigset_t old, new;
+
+	sigfillset(&new);
+
 	if (pipe(server->fd) != 0)
 		goto err;
+
+	if (pthread_sigmask(SIG_SETMASK, &new, &old))
+		goto err_close;
 
 	if (pthread_create(&server->thread, NULL, server_main, server) != 0)
 		goto err_close;
 
+	if (pthread_sigmask(SIG_SETMASK, &old, NULL))
+		goto err_cancel;
+
 	return 0;
 
+err_cancel:
+	pthread_cancel(server->thread);
 err_close:
 	close(*server->fd);
 err:

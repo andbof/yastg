@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,6 +126,10 @@ clock_err:
 
 int start_updating_ports(void)
 {
+	sigset_t old, new;
+
+	sigfillset(&new);
+
 	if (pthread_condattr_init(&termination_attr))
 		goto err;
 
@@ -137,11 +142,19 @@ int start_updating_ports(void)
 	if (pthread_cond_init(&termination_cond, &termination_attr))
 		goto err_free_mutex;
 
+	if (pthread_sigmask(SIG_SETMASK, &new, &old))
+		goto err_free_mutex;
+
 	if (pthread_create(&thread, NULL, port_update_worker, NULL))
 		goto err_free_cond;
 
+	if (pthread_sigmask(SIG_SETMASK, &old, NULL))
+		goto err_cancel_thread;
+
 	return 0;
 
+err_cancel_thread:
+	pthread_cancel(thread);
 err_free_cond:
 	pthread_cond_destroy(&termination_cond);
 err_free_mutex:

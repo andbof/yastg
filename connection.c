@@ -220,23 +220,35 @@ void conn_do_work(struct conn_data *data, struct connection *conn)
 
 static int start_new_worker(struct conn_data *data)
 {
-	int r;
 	struct conn_worker_list *w;
+	sigset_t old, new;
+
+	sigfillset(&new);
+
 	w = malloc(sizeof(*w));
 	if (!w)
 		return -1;
 	memset(w, 0, sizeof(*w));
 	w->conn_data = data;
 
-	r = pthread_create(&w->thread, NULL, connection_worker, w);
-	if (r) {
-		free(w);
-		return -1;
+	if (pthread_sigmask(SIG_SETMASK, &new, &old))
+		goto err_free;
+
+	if (pthread_create(&w->thread, NULL, connection_worker, w))
+		goto err_free;
+
+	if (pthread_sigmask(SIG_SETMASK, &old, NULL)) {
+		pthread_cancel(w->thread);
+		goto err_free;
 	}
 
 	list_add(&w->list, &data->workers);
 
 	return 0;
+
+err_free:
+	free(w);
+	return -1;
 }
 
 #define NUM_WORKERS 4
