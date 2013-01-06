@@ -128,21 +128,30 @@ int start_updating_bases(void)
 	int r;
 
 	if (pthread_condattr_init(&termination_attr))
-		return -1;
+		goto err;
 
 	if (pthread_condattr_setclock(&termination_attr, CLOCK_MONOTONIC))
-		return -1;
+		goto err_free_attr;
 
 	if (pthread_mutex_init(&termination_lock, NULL))
-		return -1;
+		goto err_free_attr;
 
 	if (pthread_cond_init(&termination_cond, &termination_attr))
-		return -1;
+		goto err_free_mutex;
 
 	if (pthread_create(&thread, NULL, base_update_worker, NULL))
-		return -1;
+		goto err_free_cond;
 
 	return 0;
+
+err_free_cond:
+	pthread_cond_destroy(&termination_cond);
+err_free_mutex:
+	pthread_mutex_destroy(&termination_lock);
+err_free_attr:
+	pthread_condattr_destroy(&termination_attr);
+err:
+	return -1;
 }
 
 void stop_updating_bases(void)
