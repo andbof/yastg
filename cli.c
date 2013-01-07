@@ -64,11 +64,14 @@ static char* trim_and_validate(char *string)
 	while (string[0] == ' ')
 		string++;
 
-	last = strlen(string) -1;
-	while (string[last] == ' ')
-		string[last--] = '\0';
+	last = strlen(string);
+	if (last) {
+		last--;
+		while (last > 0 && string[last] == ' ')
+			string[last--] = '\0';
+	}
 
-	if (last == 1)
+	if (last == 0)
 		return NULL;
 
 	return string;
