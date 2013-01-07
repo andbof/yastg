@@ -20,12 +20,10 @@ int ptrlist_init(struct ptrlist *l)
 void ptrlist_free(struct ptrlist *l)
 {
 	assert(l != NULL);
-	struct ptrlist *e;
-	struct list_head *p, *q;
+	struct ptrlist *e, *_e;
 
-	list_for_each_safe(p, q, &l->list) {
-		e = list_entry(p, struct ptrlist, list);
-		list_del(p);
+	list_for_each_entry_safe(e, _e, &l->list, list) {
+		list_del(&e->list);
 		free(e);
 	}
 }
