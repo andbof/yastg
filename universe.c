@@ -78,6 +78,9 @@ void universe_free(struct universe *u)
 	}
 
 	pthread_rwlock_destroy(&u->bases_lock);
+	pthread_rwlock_destroy(&u->systemnames_lock);
+	pthread_rwlock_destroy(&u->planetnames_lock);
+	pthread_rwlock_destroy(&u->basenames_lock);
 	st_destroy(&u->base_type_names, ST_DONT_FREE_DATA);
 	st_destroy(&u->ship_type_names, ST_DONT_FREE_DATA);
 	st_destroy(&u->item_names, ST_DONT_FREE_DATA);
