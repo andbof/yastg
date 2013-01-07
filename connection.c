@@ -127,7 +127,6 @@ void* connection_worker(void *_w)
 	struct conn_worker_list *w = _w;
 	struct conn_data *data = w->conn_data;
 	struct connection *conn;
-	void *ptr;
 
 	do {
 		/*

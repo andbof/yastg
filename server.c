@@ -101,7 +101,7 @@ static void disconnect_peers(struct ev_loop *loop)
 
 static void server_handlesignal(struct ev_loop *loop, struct signal *msg, char *data)
 {
-	struct connection *cd, *p;
+	struct connection *cd;
 	log_printfn("server", "received signal %d", msg->type);
 	switch (msg->type) {
 	case MSG_TERM:
@@ -456,7 +456,6 @@ err:
 void* server_main(void* p)
 {
 	ev_io msg_watcher;
-	pthread_t update_thread;
 	loop = EV_DEFAULT;
 	LIST_HEAD(sockets);
 	LIST_HEAD(watchers);

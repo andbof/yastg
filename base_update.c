@@ -125,8 +125,6 @@ clock_err:
 
 int start_updating_bases(void)
 {
-	int r;
-
 	if (pthread_condattr_init(&termination_attr))
 		goto err;
 

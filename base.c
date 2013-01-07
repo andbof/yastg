@@ -45,8 +45,6 @@ static void base_init(struct base *base)
 #define BASE_CARGO_RANDOMNESS 0.5
 static int base_genesis(struct base *base, struct planet *planet)
 {
-	unsigned int i, j;
-
 	base->planet = planet;
 	base->type = ptrlist_random(&planet->type->base_types);
 	base->docks = 1; /* FIXME */
