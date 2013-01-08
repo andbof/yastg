@@ -43,12 +43,6 @@ int detached = 0;
 
 extern int sockfd;
 
-struct server {
-	pthread_t thread;
-	int fd[2];
-	int running;
-};
-
 static void parse_command_line(int argc, char **argv)
 {
 	char c;
@@ -296,13 +290,6 @@ static void open_log_file()
 	log_printfn(LOG_MAIN, "This is %s, built %s %s", PACKAGE_VERSION, __DATE__, __TIME__);
 }
 
-static void initialize_server(struct server * const server)
-{
-	server->running = 1;
-	srand(time(NULL));
-	mtrandom_init();
-}
-
 static int register_console_commands(struct list_head * const cli_root, struct server * server)
 {
 	if (cli_add_cmd(cli_root, "ports", cmd_ports, cli_root, "List available ports"))
@@ -351,34 +338,6 @@ static int create_universe(struct universe * const u)
 	return 0;
 }
 
-static int start_server_thread(struct server * const server)
-{
-	if (pipe(server->fd) != 0)
-		return -1;
-	if (pthread_create(&server->thread, NULL, server_main, &server->fd[0]) != 0)
-		goto err_close;
-
-	return 0;
-
-err_close:
-	close(*server->fd);
-	return -1;
-}
-
-static void kill_server_thread(struct server * const server)
-{
-	struct signal signal = {
-		.cnt = 0,
-		.type = MSG_TERM
-	};
-
-	if (write(server->fd[1], &signal, sizeof(signal)) < 1)
-		bug("%s", "server signalling fd seems closed when sending signal");
-
-	log_printfn(LOG_MAIN, "waiting for server to terminate");
-	pthread_join(server->thread, NULL);
-}
-
 int main(int argc, char **argv)
 {
 	char *line = malloc(256); /* FIXME */
@@ -395,6 +354,8 @@ int main(int argc, char **argv)
 
 	if (register_console_commands(&cli_root, &server))
 		die("%s", "Could not register console commands");
+	srand(time(NULL));
+	mtrandom_init();
 
 	universe_init(&univ);
 	names_init(&univ.avail_constellations);
@@ -407,7 +368,7 @@ int main(int argc, char **argv)
 	if (create_universe(&univ))
 		die("%s", "Could not create universe");
 
-	if (start_server_thread(&server))
+	if (start_server(&server))
 		die("%s", "Could not start server thread");
 
 	mprintf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
@@ -425,7 +386,7 @@ int main(int argc, char **argv)
 	/*
 	 * This will also automatically kill all player threads and terminate all connections
 	 */
-	kill_server_thread(&server);
+	stop_server(&server);
 
 	log_printfn(LOG_MAIN, "cleaning up");
 	mprintf("Cleaning up ... ");

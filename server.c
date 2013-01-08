@@ -514,3 +514,40 @@ void* server_main(void* p)
 
 	return NULL;
 }
+
+void initialize_server(struct server * const server)
+{
+	server->running = 1;
+}
+
+int start_server(struct server * const server)
+{
+	if (pipe(server->fd) != 0)
+		goto err;
+
+	if (pthread_create(&server->thread, NULL, server_main, &server->fd[0]) != 0)
+		goto err_close;
+
+	return 0;
+
+err_close:
+	close(*server->fd);
+err:
+	return -1;
+}
+
+void stop_server(struct server * const server)
+{
+	struct signal signal = {
+		.cnt = 0,
+		.type = MSG_TERM
+	};
+
+	if (write(server->fd[1], &signal, sizeof(signal)) < 1)
+		bug("%s", "server signalling fd seems closed when sending signal");
+
+	log_printfn(LOG_MAIN, "waiting for server to terminate");
+	pthread_join(server->thread, NULL);
+
+	close(*server->fd);
+}
