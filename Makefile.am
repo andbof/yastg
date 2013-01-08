@@ -55,6 +55,8 @@ yastg_SOURCES = asciiart.c \
 		connection.h \
 		constellation.c \
 		constellation.h \
+		console.c \
+		console.h \
 		inventory.h \
 		item.c \
 		item.h \

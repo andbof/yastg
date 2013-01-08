@@ -453,7 +453,7 @@ err:
 	return -1;
 }
 
-void* server_main(void* p)
+static void* server_main(void* p)
 {
 	ev_io msg_watcher;
 	loop = EV_DEFAULT;
