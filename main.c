@@ -44,7 +44,7 @@ int detached = 0;
 
 extern int sockfd;
 
-static void parse_command_line(int argc, char **argv)
+static int parse_command_line(int argc, char **argv)
 {
 	char c;
 	while ((c = getopt(argc, argv, options)) > 0) {
@@ -54,9 +54,11 @@ static void parse_command_line(int argc, char **argv)
 			detached = 1;
 			break;
 		default:
-			exit(1);
+			return -1;
 		}
 	}
+
+	return 0;
 }
 
 static void open_log_file()
@@ -86,7 +88,8 @@ int main(int argc, char **argv)
 
 	initialize_server(&server);
 
-	parse_command_line(argc, argv);
+	if (parse_command_line(argc, argv))
+		die("%s", "Syntax error on command line");
 
 	srand(time(NULL));
 	mtrandom_init();
