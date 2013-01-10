@@ -453,8 +453,9 @@ err:
 	return -1;
 }
 
-static void* server_main(void* p)
+static void* server_main(void *_server)
 {
+	struct server *server = _server;
 	ev_io msg_watcher;
 	loop = EV_DEFAULT;
 	LIST_HEAD(sockets);
@@ -463,8 +464,8 @@ static void* server_main(void* p)
 	INIT_LIST_HEAD(&conn_list);
 	pthread_rwlock_init(&conn_list_lock, NULL);
 
-	signfdr = *(int*)p;
-	signfdw = *((int*)p + 1);
+	signfdr = server->fd[0];
+	signfdw = server->fd[1];
 
 	if (conndata_init(&conn_data))
 		die("%s", "failed initializing connection data structures");
@@ -525,7 +526,7 @@ int start_server(struct server * const server)
 	if (pipe(server->fd) != 0)
 		goto err;
 
-	if (pthread_create(&server->thread, NULL, server_main, &server->fd[0]) != 0)
+	if (pthread_create(&server->thread, NULL, server_main, server) != 0)
 		goto err_close;
 
 	return 0;
