@@ -20,7 +20,7 @@ void system_init(struct system *s)
 	rb_init_node(&s->x_rbtree);
 	ptrlist_init(&s->stars);
 	ptrlist_init(&s->planets);
-	ptrlist_init(&s->bases);
+	ptrlist_init(&s->ports);
 	ptrlist_init(&s->links);
 
 	INIT_LIST_HEAD(&s->list);
@@ -30,7 +30,7 @@ void system_free(struct system *s) {
 	struct list_head *lh;
 	struct star *sol;
 	struct planet *planet;
-	struct base *base;
+	struct port *port;
 
 	free(s->name);
 	free(s->gname);
@@ -43,9 +43,9 @@ void system_free(struct system *s) {
 		planet_free(planet);
 	ptrlist_free(&s->planets);
 
-	ptrlist_for_each_entry(base, &s->bases, lh)
-		base_free(base);
-	ptrlist_free(&s->bases);
+	ptrlist_for_each_entry(port, &s->ports, lh)
+		port_free(port);
+	ptrlist_free(&s->ports);
 
 	ptrlist_free(&s->links);
 	free(s);

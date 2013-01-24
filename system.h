@@ -21,7 +21,7 @@ struct system {
 	unsigned int hablow, habhigh;
 	struct ptrlist stars;
 	struct ptrlist planets;
-	struct ptrlist bases;
+	struct ptrlist ports;
 	struct ptrlist links;
 	struct list_head list;
 };

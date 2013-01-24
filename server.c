@@ -469,8 +469,8 @@ void* server_main(void* p)
 	if (conndata_init(&conn_data))
 		die("%s", "failed initializing connection data structures");
 
-	if (start_updating_bases())
-		die("%s", "failed starting base update thread");
+	if (start_updating_ports())
+		die("%s", "failed starting port update thread");
 
 	initialize_server_sockets(&sockets);
 	if (list_empty(&sockets))
@@ -493,7 +493,7 @@ void* server_main(void* p)
 	disconnect_peers(loop);
 	stop_and_free_server_watchers(&watchers, loop);
 	close_and_free_sockets(&sockets);
-	stop_updating_bases();
+	stop_updating_ports();
 
 	/*
 	 * We'd like to free all resources allocated by libev here, but

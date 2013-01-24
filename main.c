@@ -71,14 +71,14 @@ static void write_msg(int fd, struct signal *msg, char *msgdata)
 		bug("%s", "server signalling fd is closed");
 }
 
-static int cmd_bases(void *ptr, char *param)
+static int cmd_ports(void *ptr, char *param)
 {
-	struct base_type *type;
+	struct port_type *type;
 
 	mprintf("%-26s %-26s %-8s %-8s %-8s %-8s\n",
 			"Name", "Description", "OCEAN", "SURFACE",
 			"ORBIT", "ROGUE");
-	list_for_each_entry(type, &univ.base_types, list)
+	list_for_each_entry(type, &univ.port_types, list)
 		mprintf("%-26.26s %-26.26s %-8s %-8s %-8s %-8s\n",
 				type->name, type->desc,
 				(type->zones[OCEAN] ? "Yes" : "No"),
@@ -175,7 +175,7 @@ static int cmd_planets(void *ptr, char *param)
 
 	mprintf("%-5s %-26s %-4s %-4s %-4s %-12s %-12s %-10s\n",
 			"Class", "Name", "HOT", "ECO", "COLD",
-			"Min life", "Max life", "Base types");
+			"Min life", "Max life", "Port types");
 	list_for_each_entry(type, &univ.planet_types, list)
 		mprintf("%c     %-26.26s %-4.4s %-4.4s %-4.4s %-12.12s %-12.12s %-10lu\n",
 				type->c, type->name,
@@ -184,7 +184,7 @@ static int cmd_planets(void *ptr, char *param)
 				(type->zones[COLD] ? "Yes" : "No"),
 				(planet_life_names[type->minlife]),
 				(planet_life_names[type->maxlife]),
-				ptrlist_len(&type->base_types));
+				ptrlist_len(&type->port_types));
 
 	return 0;
 }
@@ -304,7 +304,7 @@ static void initialize_server(struct server * const server)
 
 static int register_console_commands(struct list_head * const cli_root, struct server * server)
 {
-	if (cli_add_cmd(cli_root, "bases", cmd_bases, cli_root, "List available bases"))
+	if (cli_add_cmd(cli_root, "ports", cmd_ports, cli_root, "List available ports"))
 		goto err;
 	if (cli_add_cmd(cli_root, "help", cmd_help, cli_root, "Display this help text"))
 		goto err;
@@ -364,10 +364,10 @@ static int create_universe(struct universe * const u, struct civ * const civs)
 		return -1;
 	printf("done, %lu items loaded\n", list_len(&u->items));
 
-	printf("Loading bases ... ");
-	if (load_all_bases(&u->base_types))
+	printf("Loading ports ... ");
+	if (load_all_ports(&u->port_types))
 		return -1;
-	printf("done, %lu types loaded\n", list_len(&u->base_types));
+	printf("done, %lu types loaded\n", list_len(&u->port_types));
 
 	printf("Loading planets ... ");
 	if (load_all_planets(&u->planet_types))
@@ -380,9 +380,9 @@ static int create_universe(struct universe * const u, struct civ * const civs)
 	printf("done, %lu types loaded\n", list_len(&u->ship_types));
 
 	printf("Loading names ... ");
-	names_init(&u->avail_base_names);
+	names_init(&u->avail_port_names);
 	names_init(&u->avail_player_names);
-	names_load(&u->avail_base_names, "data/placeprefix", "data/placenames", NULL, "data/placesuffix");
+	names_load(&u->avail_port_names, "data/placeprefix", "data/placenames", NULL, "data/placesuffix");
 	names_load(&u->avail_player_names, NULL, "data/firstnames", "data/surnames", NULL);
 	printf("done.\n");
 
@@ -480,7 +480,7 @@ int main(int argc, char **argv)
 	}
 	civ_free(&civs);
 
-	names_free(&univ.avail_base_names);
+	names_free(&univ.avail_port_names);
 	names_free(&univ.avail_player_names);
 
 	universe_free(&univ);

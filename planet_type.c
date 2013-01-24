@@ -45,7 +45,7 @@ char planet_zone_names[PLANET_ZONE_NUM][PLANET_ZONE_NAME_LEN] = {
 static void planet_type_init(struct planet_type * const type)
 {
 	memset(type, 0, sizeof(*type));
-	ptrlist_init(&type->base_types);
+	ptrlist_init(&type->port_types);
 	INIT_LIST_HEAD(&type->list);
 }
 
@@ -55,7 +55,7 @@ void planet_type_free(struct planet_type * const type)
 	free(type->desc);
 	free(type->surface);
 	free(type->atmo);
-	ptrlist_free(&type->base_types);
+	ptrlist_free(&type->port_types);
 }
 
 static int set_atmosphere(struct planet_type *type, struct config *conf)
@@ -70,17 +70,17 @@ static int set_atmosphere(struct planet_type *type, struct config *conf)
 	return 0;
 }
 
-static int set_base_types(struct planet_type *type, struct config *conf)
+static int set_port_types(struct planet_type *type, struct config *conf)
 {
 	struct config *child;
-	struct base_type *base;
+	struct port_type *port;
 
 	list_for_each_entry(child, &conf->children, list) {
-		base = st_lookup_string(&univ.base_type_names, child->key);
-		if (!base)
+		port = st_lookup_string(&univ.port_type_names, child->key);
+		if (!port)
 			return -1;
 
-		ptrlist_push(&type->base_types, base);
+		ptrlist_push(&type->port_types, port);
 	}
 
 	return 0;
@@ -202,7 +202,7 @@ static int build_command_tree(struct list_head *root)
 {
 	if (st_add_string(root, "atmosphere", set_atmosphere))
 		return -1;
-	if (st_add_string(root, "bases", set_base_types))
+	if (st_add_string(root, "ports", set_port_types))
 		return -1;
 	if (st_add_string(root, "description", set_description))
 		return -1;

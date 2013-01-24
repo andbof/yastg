@@ -11,10 +11,10 @@
 #include "log.h"
 #include "universe.h"
 
-#define BASE_UPDATE_INTERVAL 10		/* in seconds, no larger than once a day */
+#define PORT_UPDATE_INTERVAL 10		/* in seconds, no larger than once a day */
 
 #define SECONDS_PER_DAY (24 * 60 * 60)
-#define BASE_UPDATE_FRACTION (SECONDS_PER_DAY / BASE_UPDATE_INTERVAL)
+#define PORT_UPDATE_FRACTION (SECONDS_PER_DAY / PORT_UPDATE_INTERVAL)
 
 pthread_t thread;
 int terminate;
@@ -23,20 +23,20 @@ pthread_condattr_t termination_attr;
 pthread_cond_t termination_cond;
 pthread_mutex_t termination_lock;
 
-static void update_base(struct base *base, uint32_t iteration)
+static void update_port(struct port *port, uint32_t iteration)
 {
 	struct cargo *cargo;
 	long change, mod, fraction_iteration;
 
-	pthread_rwlock_wrlock(&base->items_lock);
+	pthread_rwlock_wrlock(&port->items_lock);
 
-	list_for_each_entry(cargo, &base->items, list) {
+	list_for_each_entry(cargo, &port->items, list) {
 		if (!cargo->daily_change)
 			continue;
 
-		change = cargo->daily_change / BASE_UPDATE_FRACTION;
-		mod = cargo->daily_change % BASE_UPDATE_FRACTION;
-		fraction_iteration = BASE_UPDATE_FRACTION / cargo->daily_change;
+		change = cargo->daily_change / PORT_UPDATE_FRACTION;
+		mod = cargo->daily_change % PORT_UPDATE_FRACTION;
+		fraction_iteration = PORT_UPDATE_FRACTION / cargo->daily_change;
 
 		if (mod && fraction_iteration && iteration % fraction_iteration == 0) {
 			if (cargo->daily_change > 0)
@@ -70,18 +70,18 @@ static void update_base(struct base *base, uint32_t iteration)
 		}
 	}
 
-	pthread_rwlock_unlock(&base->items_lock);
+	pthread_rwlock_unlock(&port->items_lock);
 }
 
-static void update_all_bases(uint32_t iteration)
+static void update_all_ports(uint32_t iteration)
 {
-	struct base *base;
+	struct port *port;
 
-	list_for_each_entry(base, &univ.bases, list)
-		update_base(base, iteration);
+	list_for_each_entry(port, &univ.ports, list)
+		update_port(port, iteration);
 }
 
-static void* base_update_worker(void *ptr)
+static void* port_update_worker(void *ptr)
 {
 	struct timespec next, now;
 	uint32_t iteration = 0;
@@ -90,15 +90,15 @@ static void* base_update_worker(void *ptr)
 		goto clock_err;
 
 	do {
-		pthread_rwlock_rdlock(&univ.bases_lock);
-		update_all_bases(iteration);
-		pthread_rwlock_unlock(&univ.bases_lock);
+		pthread_rwlock_rdlock(&univ.ports_lock);
+		update_all_ports(iteration);
+		pthread_rwlock_unlock(&univ.ports_lock);
 
 		iteration++;
-		if (iteration >= BASE_UPDATE_FRACTION)
+		if (iteration >= PORT_UPDATE_FRACTION)
 			iteration = 0;
 
-		next.tv_sec += BASE_UPDATE_INTERVAL;
+		next.tv_sec += PORT_UPDATE_INTERVAL;
 
 		do {
 			pthread_mutex_lock(&termination_lock);
@@ -119,11 +119,11 @@ static void* base_update_worker(void *ptr)
 	return NULL;
 
 clock_err:
-	log_printfn("base_update", "clock_gettime() failed");
+	log_printfn("port_update", "clock_gettime() failed");
 	return NULL;
 }
 
-int start_updating_bases(void)
+int start_updating_ports(void)
 {
 	if (pthread_condattr_init(&termination_attr))
 		goto err;
@@ -137,7 +137,7 @@ int start_updating_bases(void)
 	if (pthread_cond_init(&termination_cond, &termination_attr))
 		goto err_free_mutex;
 
-	if (pthread_create(&thread, NULL, base_update_worker, NULL))
+	if (pthread_create(&thread, NULL, port_update_worker, NULL))
 		goto err_free_cond;
 
 	return 0;
@@ -152,7 +152,7 @@ err:
 	return -1;
 }
 
-void stop_updating_bases(void)
+void stop_updating_ports(void)
 {
 	pthread_mutex_lock(&termination_lock);
 	terminate = 1;

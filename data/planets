@@ -16,7 +16,7 @@ A {
 	maxdiameter	100
 	minlife		TOXIC
 	maxlife		TOXIC
-	bases {
+	ports {
 	}
 }
 B {
@@ -31,7 +31,7 @@ B {
 	maxdiameter	100
 	minlife		TOXIC
 	maxlife		TOXIC
-	bases {
+	ports {
 	}
 }
 C {
@@ -48,7 +48,7 @@ C {
 	maxdiameter	100
 	minlife		BARREN
 	maxlife		BARREN
-	bases {
+	ports {
 			"Mining colony (iron ore)"
 			"Steel mill"
 	}
@@ -67,7 +67,7 @@ D {
 	maxdiameter	40
 	minlife		DEAD
 	maxlife		DEAD
-	bases {
+	ports {
 			"Mining colony (iron ore)"
 			"Steel mill"
 	}
@@ -84,7 +84,7 @@ E {
 	maxdiameter	150
 	minlife		DEAD
 	maxlife		SINGLECELL
-	bases {
+	ports {
 	}
 }
 F {
@@ -99,7 +99,7 @@ F {
 	maxdiameter	150
 	minlife		SINGLECELL
 	maxlife		BACTERIA
-	bases {
+	ports {
 	}
 }
 
@@ -115,7 +115,7 @@ G {
 	maxdiameter	150
 	minlife		BACTERIA
 	maxlife		SIMPLE
-	bases {
+	ports {
 			"Mining colony (iron ore)"
 			"Steel mill"
 	}
@@ -133,7 +133,7 @@ H {
 	maxdiameter	150
 	minlife		BACTERIA
 	maxlife		RESISTANT
-	bases {
+	ports {
 	}
 }
 
@@ -149,7 +149,7 @@ I {
 	maxdiameter	1000
 	minlife		TOXIC
 	maxlife		TOXIC
-	bases {
+	ports {
 	}
 }
 
@@ -165,7 +165,7 @@ J {
 	maxdiameter	5000
 	minlife		TOXIC
 	maxlife		TOXIC
-	bases {
+	ports {
 	}
 }
 
@@ -181,7 +181,7 @@ K {
 	maxdiameter	100
 	minlife		DEAD
 	maxlife		SIMPLE
-	bases {
+	ports {
 			"Mining colony (iron ore)"
 			"Steel mill"
 	}
@@ -199,7 +199,7 @@ L {
 	maxdiameter	150
 	minlife		RESISTANT
 	maxlife		COMPLEX
-	bases {
+	ports {
 			"Mining colony (iron ore)"
 			"Steel mill"
 	}
@@ -217,7 +217,7 @@ M {
 	maxdiameter	150
 	minlife		COMPLEX
 	maxlife		INTELLIGENT
-	bases {
+	ports {
 			"Mining colony (iron ore)"
 			"Steel mill"
 	}
@@ -234,7 +234,7 @@ N {
 	maxdiameter	150
 	minlife		TOXIC
 	maxlife		BACTERIA
-	bases {
+	ports {
 	}
 }
 
@@ -250,7 +250,7 @@ O {
 	maxdiameter	150
 	minlife		COMPLEX
 	maxlife		INTELLIGENT
-	bases {
+	ports {
 	}
 }
 
@@ -266,7 +266,7 @@ P {
 	maxdiameter	150
 	minlife		RESISTANT
 	maxlife		ANIMAL
-	bases {
+	ports {
 	}
 }
 
@@ -282,7 +282,7 @@ S {
 	maxdiameter	1000000
 	minlife		TOXIC
 	maxlife		TOXIC
-	bases {
+	ports {
 	}
 }
 
@@ -298,7 +298,7 @@ T {
 	maxdiameter	2000000
 	minlife		TOXIC
 	maxlife		TOXIC
-	bases {
+	ports {
 	}
 }
 
@@ -314,6 +314,6 @@ Y {
 	maxdiameter	150
 	minlife		TOXIC
 	maxlife		TOXIC
-	bases {
+	ports {
 	}
 }

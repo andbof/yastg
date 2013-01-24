@@ -1,7 +1,7 @@
-#ifndef _HAS_BASE_UPDATE_H
-#define _HAS_BASE_UPDATE_H
+#ifndef _HAS_PORT_UPDATE_H
+#define _HAS_PORT_UPDATE_H
 
-int start_updating_bases(void);
-void stop_updating_bases(void);
+int start_updating_ports(void);
+void stop_updating_ports(void);
 
 #endif

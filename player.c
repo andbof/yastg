@@ -136,29 +136,29 @@ static void player_showsystem(struct player *player, struct system *system)
 	}
 }
 
-static void player_showbase(struct player *player, struct base *base)
+static void player_showport(struct player *player, struct port *port)
 {
 	char *o;
-	if (base->planet)
-		o = base->planet->name;
+	if (port->planet)
+		o = port->planet->name;
 	else
-		o = base->system->name;
+		o = port->system->name;
 
 	player_talk(player,
 		"Station %s, orbiting %s. %s\n"
 		"%s\n",
-		base->name, o, base->type->name,
-		base->type->desc);
+		port->name, o, port->type->name,
+		port->type->desc);
 }
 
-static void player_describe_base(struct player *player, struct base *base)
+static void player_describe_port(struct player *player, struct port *port)
 {
-	player_talk(player, "%s\n", base->name);
+	player_talk(player, "%s\n", port->name);
 }
 
 static void player_showplanet(struct player *player, struct planet *planet)
 {
-	struct base *base;
+	struct port *port;
 	struct list_head *lh;
 	if (planet->gname)
 		player_talk(player, "Planet %s (%s) in system %s",
@@ -173,21 +173,21 @@ static void player_showplanet(struct player *player, struct planet *planet)
 		planet->dia*100, planet->dist, planet->type->atmo,
 		planet_life_desc[planet->life]);
 
-	if (!list_empty(&planet->bases.list)) {
-		player_talk(player, "Bases:\n");
-		ptrlist_for_each_entry(base, &planet->bases, lh) {
+	if (!list_empty(&planet->ports.list)) {
+		player_talk(player, "Ports:\n");
+		ptrlist_for_each_entry(port, &planet->ports, lh) {
 			player_talk(player, "  ");
-			player_describe_base(player, base);
+			player_describe_port(player, port);
 		}
 	} else {
-		player_talk(player, "No bases.\n");
+		player_talk(player, "No ports.\n");
 	}
 
 	if (!list_empty(&planet->stations.list)) {
 		player_talk(player, "Orbital stations:\n");
-		ptrlist_for_each_entry(base, &planet->stations, lh) {
+		ptrlist_for_each_entry(port, &planet->stations, lh) {
 			player_talk(player, "  ");
-			player_describe_base(player, base);
+			player_describe_port(player, port);
 		}
 	} else {
 		player_talk(player, "No orbital stations.\n");
@@ -223,8 +223,8 @@ static int cmd_look(void *ptr, char *param)
 	case SYSTEM:
 		player_showsystem(player, ship->pos);
 		break;
-	case BASE:
-		player_showbase(player, ship->pos);
+	case PORT:
+		player_showport(player, ship->pos);
 		break;
 	case PLANET:
 		player_showplanet(player, ship->pos);
@@ -302,22 +302,22 @@ static int cmd_dock(void *ptr, char *param)
 	assert(player->postype == SHIP);
 	struct ship *ship = player->pos;
 
-	struct base *base;
-	pthread_rwlock_rdlock(&univ.basenames_lock);
-	base = st_lookup_string(&univ.basenames, param);
-	pthread_rwlock_unlock(&univ.basenames_lock);
+	struct port *port;
+	pthread_rwlock_rdlock(&univ.portnames_lock);
+	port = st_lookup_string(&univ.portnames, param);
+	pthread_rwlock_unlock(&univ.portnames_lock);
 
-	if (base && ((ship->postype == PLANET && base->planet == ship->pos)
-		|| (ship->postype == SYSTEM && base->system == ship->pos))) {
-			player_talk(player, "Docking at %s\n", base->name);
-			player_go(player, BASE, base);
+	if (port && ((ship->postype == PLANET && port->planet == ship->pos)
+		|| (ship->postype == SYSTEM && port->system == ship->pos))) {
+			player_talk(player, "Docking at %s\n", port->name);
+			player_go(player, PORT, port);
 			return 0;
 	}
 
-	player_talk(player, "No base or spacedock found by that name.\n");
+	player_talk(player, "No port or spacedock found by that name.\n");
 	return 1;
 }
-static char cmd_dock_help[] = "Dock at spacedock or base";
+static char cmd_dock_help[] = "Dock at spacedock or port";
 
 static int cmd_orbit(void *ptr, char *param)
 {
@@ -343,23 +343,23 @@ static int cmd_orbit(void *ptr, char *param)
 }
 static char cmd_orbit_help[] = "Enter orbit around planet";
 
-static int cmd_leave_base(void *ptr, char *param)
+static int cmd_leave_port(void *ptr, char *param)
 {
 	struct player *player = ptr;
 	assert(player->postype == SHIP);
 	struct ship *ship = player->pos;
-	assert(ship->postype == BASE);
-	struct base *base = ship->pos;
-	if (base->planet)
-		player_go(player, PLANET, base->planet);
-	else if (base->system)
-		player_go(player, SYSTEM, base->system);
+	assert(ship->postype == PORT);
+	struct port *port = ship->pos;
+	if (port->planet)
+		player_go(player, PLANET, port->planet);
+	else if (port->system)
+		player_go(player, SYSTEM, port->system);
 	else
-		bug("%s", "base %s does not have any positional information");
+		bug("%s", "port %s does not have any positional information");
 
 	return 0;
 }
-static char cmd_leave_base_help[] = "Leave base and take off";
+static char cmd_leave_port_help[] = "Leave port and take off";
 
 static int cmd_leave_planet(void *ptr, char *param)
 {
@@ -388,8 +388,8 @@ static int cmd_show_ships(void *ptr, char *param)
 		case SYSTEM:
 			snprintf(pos, sizeof(pos), "In %s", ((struct system*)ship->pos)->name);
 			break;
-		case BASE:
-			snprintf(pos, sizeof(pos), "Docked at %s", ((struct base*)ship->pos)->name);
+		case PORT:
+			snprintf(pos, sizeof(pos), "Docked at %s", ((struct port*)ship->pos)->name);
 			break;
 		case PLANET:
 			snprintf(pos, sizeof(pos), "Orbiting %s", ((struct planet*)ship->pos)->name);
@@ -414,26 +414,26 @@ static int cmd_trade(void *ptr, char *param)
 	assert(player->postype == SHIP);
 	struct ship *ship = player->pos;
 
-	assert(ship->postype == BASE);
-	struct base *base = ship->pos;
+	assert(ship->postype == PORT);
+	struct port *port = ship->pos;
 
-	pthread_rwlock_rdlock(&base->items_lock);
+	pthread_rwlock_rdlock(&port->items_lock);
 
 	struct cargo *c;
 	player_talk(player, "%-26s %-12s %-12s %-12s %-12s\n",
 			"Item", "In stock", "Max stock", "Daily change", "Price");
-	list_for_each_entry(c, &base->items, list) {
+	list_for_each_entry(c, &port->items, list) {
 		player_talk(player, "%-26.26s %-12ld %-12ld %-12ld %-12ld\n",
 				c->item->name, c->amount, c->max, c->daily_change, c->price);
 	}
 
-	pthread_rwlock_unlock(&base->items_lock);
+	pthread_rwlock_unlock(&port->items_lock);
 
 	player_talk(player, "\nYou have %ld credits.\n", player->credits);
 
 	return 0;
 }
-static char cmd_trade_help[] = "Trade with base";
+static char cmd_trade_help[] = "Trade with port";
 
 static int parse_buysell_cargo(char * const input, long *amount, char **name)
 {
@@ -471,27 +471,27 @@ static int cmd_buy(void *ptr, char *param)
 	assert(player->postype == SHIP);
 	struct ship *ship = player->pos;
 
-	assert(ship->postype == BASE);
-	struct base *base = ship->pos;
+	assert(ship->postype == PORT);
+	struct port *port = ship->pos;
 
 	char *name;
 	long amount;
 	if (parse_buysell_cargo(param, &amount, &name))
 		goto syntax_err;
 
-	pthread_rwlock_wrlock(&base->items_lock);
+	pthread_rwlock_wrlock(&port->items_lock);
 
-	struct cargo *c = st_lookup_string(&base->item_names, name);
+	struct cargo *c = st_lookup_string(&port->item_names, name);
 	if (!c) {
-		pthread_rwlock_unlock(&base->items_lock);
-		player_talk(player, "%s does not supply %s\n", base->name, name);
+		pthread_rwlock_unlock(&port->items_lock);
+		player_talk(player, "%s does not supply %s\n", port->name, name);
 		return 0;
 	}
 
 	if (c->price) {
 		amount = MIN(amount, player->credits / c->price);
 		if (!amount) {
-			pthread_rwlock_unlock(&base->items_lock);
+			pthread_rwlock_unlock(&port->items_lock);
 			player_talk(player, "You cannot afford any %s\n", c->item->name);
 			return 0;
 		}
@@ -504,11 +504,11 @@ static int cmd_buy(void *ptr, char *param)
 	player->credits -= price;
 
 	pthread_rwlock_unlock(&ship->cargo_lock);
-	pthread_rwlock_unlock(&base->items_lock);
+	pthread_rwlock_unlock(&port->items_lock);
 
 	if (amount)
 		player_talk(player, "Bought %ld %s from %s for %ld credits\n",
-				amount, c->item->name, base->name, price);
+				amount, c->item->name, port->name, price);
 	else
 		player_talk(player, "Cannot buy any %s\n", c->item->name);
 
@@ -518,7 +518,7 @@ syntax_err:
 	player_talk(player, "%s", cmd_buy_syntax);
 	return 0;
 }
-static char cmd_buy_help[] = "Buy goods from base";
+static char cmd_buy_help[] = "Buy goods from port";
 
 static const char cmd_sell_syntax[] = "syntax: sell <amount|all> <cargo>\n";
 static int cmd_sell(void *ptr, char *param)
@@ -528,15 +528,15 @@ static int cmd_sell(void *ptr, char *param)
 	assert(player->postype == SHIP);
 	struct ship *ship = player->pos;
 
-	assert(ship->postype == BASE);
-	struct base *base = ship->pos;
+	assert(ship->postype == PORT);
+	struct port *port = ship->pos;
 
 	char *name;
 	long amount;
 	if (parse_buysell_cargo(param, &amount, &name))
 		goto syntax_err;
 
-	pthread_rwlock_wrlock(&base->items_lock);
+	pthread_rwlock_wrlock(&port->items_lock);
 	pthread_rwlock_wrlock(&ship->cargo_lock);
 
 	if (!st_lookup_string(&ship->cargo_names, name)) {
@@ -544,9 +544,9 @@ static int cmd_sell(void *ptr, char *param)
 		goto unlock;
 	}
 
-	struct cargo *c = st_lookup_string(&base->item_names, name);
+	struct cargo *c = st_lookup_string(&port->item_names, name);
 	if (!c) {
-		player_talk(player, "%s does not accept %s\n", base->name, name);
+		player_talk(player, "%s does not accept %s\n", port->name, name);
 		goto unlock;
 	}
 	long price;
@@ -555,19 +555,19 @@ static int cmd_sell(void *ptr, char *param)
 	price = amount * c->price;
 	player->credits += price;
 
-	pthread_rwlock_unlock(&base->items_lock);
+	pthread_rwlock_unlock(&port->items_lock);
 	pthread_rwlock_unlock(&ship->cargo_lock);
 
 	if (amount)
 		player_talk(player, "Sold %ld %s to %s for %ld credits\n",
-				amount, c->item->name, base->name, price);
+				amount, c->item->name, port->name, price);
 	else
 		player_talk(player, "Cannot sell any %s\n", c->item->name);
 
 	return 0;
 
 unlock:
-	pthread_rwlock_unlock(&base->items_lock);
+	pthread_rwlock_unlock(&port->items_lock);
 	pthread_rwlock_unlock(&ship->cargo_lock);
 	return 0;
 
@@ -575,7 +575,7 @@ syntax_err:
 	player_talk(player, "%s", cmd_sell_syntax);
 	return 0;
 }
-static char cmd_sell_help[] = "Sell goods to base";
+static char cmd_sell_help[] = "Sell goods to port";
 
 static int cmd_inventory(void *ptr, char *param)
 {
@@ -616,7 +616,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 		cli_rm_cmd(&player->cli, "dock");
 		cli_rm_cmd(&player->cli, "orbit");
 		break;
-	case BASE:
+	case PORT:
 		cli_rm_cmd(&player->cli, "buy");
 		cli_rm_cmd(&player->cli, "leave");
 		cli_rm_cmd(&player->cli, "sell");
@@ -643,9 +643,9 @@ void player_go(struct player *player, enum postype postype, void *pos)
 		cli_add_cmd(&player->cli, "dock", cmd_dock, player, cmd_dock_help);
 		cli_add_cmd(&player->cli, "orbit", cmd_orbit, player, cmd_orbit_help);
 		break;
-	case BASE:
+	case PORT:
 		cli_add_cmd(&player->cli, "buy", cmd_buy, player, cmd_buy_help);
-		cli_add_cmd(&player->cli, "leave", cmd_leave_base, player, cmd_leave_base_help);
+		cli_add_cmd(&player->cli, "leave", cmd_leave_port, player, cmd_leave_port_help);
 		cli_add_cmd(&player->cli, "sell", cmd_sell, player, cmd_sell_help);
 		cli_add_cmd(&player->cli, "trade", cmd_trade, player, cmd_trade_help);
 		break;

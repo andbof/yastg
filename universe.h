@@ -15,10 +15,10 @@ struct universe {
 	struct ptrlist systems;
 	struct rb_root x_rbtree;
 	struct list_head items;
-	struct list_head bases;
-	pthread_rwlock_t bases_lock;
-	struct list_head base_types;
-	struct list_head base_type_names;
+	struct list_head ports;
+	pthread_rwlock_t ports_lock;
+	struct list_head port_types;
+	struct list_head port_type_names;
 	struct list_head planet_types;
 	struct list_head ship_types;
 	struct list_head ship_type_names;
@@ -27,10 +27,10 @@ struct universe {
 	pthread_rwlock_t systemnames_lock;
 	struct list_head planetnames;
 	pthread_rwlock_t planetnames_lock;
-	struct list_head basenames;
-	pthread_rwlock_t basenames_lock;
+	struct list_head portnames;
+	pthread_rwlock_t portnames_lock;
 	struct list_head list;
-	struct name_list avail_base_names;
+	struct name_list avail_port_names;
 	struct name_list avail_player_names;
 };
 

@@ -13,10 +13,10 @@
 #include "planet_type.h"
 #include "universe.h"
 
-void base_free(struct base *b)
+void port_free(struct port *b)
 {
 	if (b->name) {
-		st_rm_string(&univ.basenames, b->name);
+		st_rm_string(&univ.portnames, b->name);
 		free(b->name);
 	}
 
@@ -33,103 +33,103 @@ void base_free(struct base *b)
 	free(b);
 }
 
-static void base_init(struct base *base)
+static void port_init(struct port *port)
 {
-	memset(base, 0, sizeof(*base));
-	INIT_LIST_HEAD(&base->items);
-	pthread_rwlock_init(&base->items_lock, NULL);
-	INIT_LIST_HEAD(&base->item_names);
-	ptrlist_init(&base->players);
+	memset(port, 0, sizeof(*port));
+	INIT_LIST_HEAD(&port->items);
+	pthread_rwlock_init(&port->items_lock, NULL);
+	INIT_LIST_HEAD(&port->item_names);
+	ptrlist_init(&port->players);
 }
 
-#define BASE_CARGO_RANDOMNESS 0.5
-static int base_genesis(struct base *base, struct planet *planet)
+#define PORT_CARGO_RANDOMNESS 0.5
+static int port_genesis(struct port *port, struct planet *planet)
 {
-	base->planet = planet;
-	base->type = ptrlist_random(&planet->type->base_types);
-	base->docks = 1; /* FIXME */
+	port->planet = planet;
+	port->type = ptrlist_random(&planet->type->port_types);
+	port->docks = 1; /* FIXME */
 
-	struct cargo *bt_cargo, *cargo, *req;
+	struct cargo *port_cargo, *cargo, *req;
 	struct list_head *lh;
-	list_for_each_entry(bt_cargo, &base->type->items, list) {
+	list_for_each_entry(port_cargo, &port->type->items, list) {
 		cargo = malloc(sizeof(*cargo));
 		if (!cargo)
 			goto err;
 		cargo_init(cargo);
 
-		cargo->item = bt_cargo->item;
-		cargo->max = bt_cargo->max * (1 - BASE_CARGO_RANDOMNESS)
-			+ mtrandom_ulong(bt_cargo->max * BASE_CARGO_RANDOMNESS * 2);
-		cargo->daily_change = bt_cargo->daily_change * (1 - BASE_CARGO_RANDOMNESS)
-			+ mtrandom_long(bt_cargo->daily_change * BASE_CARGO_RANDOMNESS * 2);
-		cargo->price = bt_cargo->item->base_price;
+		cargo->item = port_cargo->item;
+		cargo->max = port_cargo->max * (1 - PORT_CARGO_RANDOMNESS)
+			+ mtrandom_ulong(port_cargo->max * PORT_CARGO_RANDOMNESS * 2);
+		cargo->daily_change = port_cargo->daily_change * (1 - PORT_CARGO_RANDOMNESS)
+			+ mtrandom_long(port_cargo->daily_change * PORT_CARGO_RANDOMNESS * 2);
+		cargo->price = port_cargo->item->base_price;
 
 		cargo->amount = mtrandom_ulong(cargo->max);
 		if (cargo->amount > 10)
 			cargo->amount = pow(5, log10(cargo->amount));
 
-		if (st_add_string(&base->item_names, cargo->item->name, cargo))
+		if (st_add_string(&port->item_names, cargo->item->name, cargo))
 			goto err;
 
-		list_add(&cargo->list, &base->items);
+		list_add(&cargo->list, &port->items);
 	}
 
 	/*
-	 * We can't copy the requirement lists before all the base items are constructed
+	 * We can't copy the requirement lists before all the port items are constructed
 	 * and registered in the string tree or we wouldn't be able to look them up.
 	 */
-	list_for_each_entry(bt_cargo, &base->type->items, list) {
-		cargo = st_lookup_string(&base->item_names, bt_cargo->item->name);
-		ptrlist_for_each_entry(req, &bt_cargo->requires, lh)
-			ptrlist_push(&cargo->requires, st_lookup_string(&base->item_names, req->item->name));
+	list_for_each_entry(port_cargo, &port->type->items, list) {
+		cargo = st_lookup_string(&port->item_names, port_cargo->item->name);
+		ptrlist_for_each_entry(req, &port_cargo->requires, lh)
+			ptrlist_push(&cargo->requires, st_lookup_string(&port->item_names, req->item->name));
 	}
 
 	/* FIXME: limit loop */
 	do {
-		free(base->name);
-		base->name = create_unique_name(&univ.avail_base_names);
-	} while (st_lookup_exact(&univ.basenames, base->name));
+		free(port->name);
+		port->name = create_unique_name(&univ.avail_port_names);
+	} while (st_lookup_exact(&univ.portnames, port->name));
 
-	list_add(&base->list, &univ.bases);
+	list_add(&port->list, &univ.ports);
 
 	return 0;
 
 err:
-	base_free(base);
+	port_free(port);
 	return -1;
 }
 
-#define BASE_MAXNUM 3
-#define BASE_MUL_ODDS 2
-void base_populate_planet(struct planet* planet)
+#define PORT_MAXNUM 3
+#define PORT_MUL_ODDS 2
+void port_populate_planet(struct planet* planet)
 {
-	struct base *b;
+	struct port *b;
 	int num;
 
 	num = 0;
 
-	if (ptrlist_len(&planet->type->base_types) > 0) {
-		while (num < BASE_MAXNUM && mtrandom_uint(UINT_MAX) < UINT_MAX / BASE_MUL_ODDS)
+	if (ptrlist_len(&planet->type->port_types) > 0) {
+		while (num < PORT_MAXNUM && mtrandom_uint(UINT_MAX) < UINT_MAX / PORT_MUL_ODDS)
 			num++;
 	} else {
 		num = 0;
 	}
 
-	pthread_rwlock_wrlock(&univ.basenames_lock);
+	pthread_rwlock_wrlock(&univ.portnames_lock);
 
 	for (int i = 0; i < num; i++) {
 		b = malloc(sizeof(*b));
 		if (!b)
 			goto unlock;
-		base_init(b);
-		if (base_genesis(b, planet)) {
+		port_init(b);
+		if (port_genesis(b, planet)) {
 			free(b);
 			goto unlock;
 		}
-		ptrlist_push(&planet->bases, b);
-		st_add_string(&univ.basenames, b->name, b);
+		ptrlist_push(&planet->ports, b);
+		st_add_string(&univ.portnames, b->name, b);
 	}
 
 unlock:
-	pthread_rwlock_unlock(&univ.basenames_lock);
+	pthread_rwlock_unlock(&univ.portnames_lock);
 }

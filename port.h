@@ -1,14 +1,14 @@
-#ifndef _HAS_BASE_H
-#define _HAS_BASE_H
+#ifndef _HAS_PORT_H
+#define _HAS_PORT_H
 
 #include "ptrlist.h"
 #include "list.h"
 #include "parseconfig.h"
 #include "port_type.h"
 
-struct base {
+struct port {
 	char *name;
-	struct base_type *type;
+	struct port_type *type;
 	int docks;
 	struct planet *planet;
 	struct system *system;
@@ -19,8 +19,8 @@ struct base {
 	struct list_head list;
 };
 
-void base_populate_planet(struct planet* planet);
+void port_populate_planet(struct planet* planet);
 
-void base_free(struct base *b);
+void port_free(struct port *b);
 
 #endif

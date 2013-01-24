@@ -9,7 +9,7 @@
 enum postype {
 	NONE,
 	SYSTEM,
-	BASE,
+	PORT,
 	PLANET,
 	SHIP
 };

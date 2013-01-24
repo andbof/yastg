@@ -19,7 +19,7 @@ static void planet_init(struct planet *p)
 {
 	memset(p, 0, sizeof(*p));
 
-	ptrlist_init(&p->bases);
+	ptrlist_init(&p->ports);
 	ptrlist_init(&p->stations);
 	ptrlist_init(&p->moons);
 	INIT_LIST_HEAD(&p->list);
@@ -28,14 +28,14 @@ static void planet_init(struct planet *p)
 void planet_free(struct planet *p)
 {
 	assert(p != NULL);
-	struct base *b;
+	struct port *b;
 	struct planet *m;
 	struct list_head *lh;
-	ptrlist_for_each_entry(b, &p->bases, lh)
-		base_free(b);
-	ptrlist_free(&p->bases);
+	ptrlist_for_each_entry(b, &p->ports, lh)
+		port_free(b);
+	ptrlist_free(&p->ports);
 	ptrlist_for_each_entry(b, &p->stations, lh)
-		base_free(b);
+		port_free(b);
 	ptrlist_free(&p->stations);
 	ptrlist_for_each_entry(m, &p->moons, lh)
 		planet_free(m);
@@ -108,7 +108,7 @@ static void planet_genesis(struct planet *planet, struct system *system)
 		bug("%s", "illegal execution point");
 	}
 
-	base_populate_planet(planet);
+	port_populate_planet(planet);
 }
 
 int planet_populate_system(struct system* system)

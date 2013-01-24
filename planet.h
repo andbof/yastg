@@ -13,7 +13,7 @@ struct planet {
 	unsigned int dia;		/* In hundreds of kilometres */
 	unsigned int dist;		/* In gigametres */
 	unsigned int life;
-	struct ptrlist bases;
+	struct ptrlist ports;
 	struct ptrlist stations;
 	struct ptrlist moons;
 	struct ptrlist players;

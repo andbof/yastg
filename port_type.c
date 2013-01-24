@@ -10,14 +10,14 @@
 #include "parseconfig.h"
 #include "universe.h"
 
-char base_zone_names[BASE_ZONE_NUM][8] = {
+char port_zone_names[PORT_ZONE_NUM][8] = {
 	"oceanic",
 	"surface",
 	"orbit",
 	"rogue",
 };
 
-static void base_type_init(struct base_type *type)
+static void port_type_init(struct port_type *type)
 {
 	memset(type, 0, sizeof(*type));
 	INIT_LIST_HEAD(&type->list);
@@ -25,7 +25,7 @@ static void base_type_init(struct base_type *type)
 	INIT_LIST_HEAD(&type->item_names);
 }
 
-void base_type_free(struct base_type *type)
+void port_type_free(struct port_type *type)
 {
 	free(type->name);
 	free(type->desc);
@@ -40,7 +40,7 @@ void base_type_free(struct base_type *type)
 	st_destroy(&type->item_names, ST_DONT_FREE_DATA);
 }
 
-static int set_description(struct base_type *type, struct config *conf)
+static int set_description(struct port_type *type, struct config *conf)
 {
 	if (conf->str)
 		type->desc = strdup(conf->str);
@@ -50,18 +50,18 @@ static int set_description(struct base_type *type, struct config *conf)
 	return 0;
 }
 
-static int add_zone(struct base_type *type, struct config *conf)
+static int add_zone(struct port_type *type, struct config *conf)
 {
 	struct config *child;
 	int i;
 	struct list_head zone_root = LIST_HEAD_INIT(zone_root);
-	int zones[BASE_ZONE_NUM];
+	int zones[PORT_ZONE_NUM];
 
-	for (i = 0; i < BASE_ZONE_NUM; i++)
+	for (i = 0; i < PORT_ZONE_NUM; i++)
 		zones[i] = i;
 
-	for (i = 0; i < BASE_ZONE_NUM; i++)
-		if (st_add_string(&zone_root, base_zone_names[i], &zones[i]))
+	for (i = 0; i < PORT_ZONE_NUM; i++)
+		if (st_add_string(&zone_root, port_zone_names[i], &zones[i]))
 			return -1;
 
 	list_for_each_entry(child, &conf->children, list) {
@@ -100,7 +100,7 @@ static int set_item_requires(struct cargo *cargo, struct list_head *item_names, 
 	struct cargo *req = st_lookup_string(item_names, conf->str);
 
 	if (!req) {
-		log_printfn("config", "item '%s' does not exist in this base", conf->str);
+		log_printfn("config", "item '%s' does not exist in this port", conf->str);
 		return -1;
 	}
 
@@ -122,7 +122,7 @@ static int build_item_cmdtree(struct list_head *root)
 	return 0;
 }
 
-static int add_item(struct base_type *type, struct config *conf)
+static int add_item(struct port_type *type, struct config *conf)
 {
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
 	if (build_item_cmdtree(&cmd_root))
@@ -139,7 +139,7 @@ static int add_item(struct base_type *type, struct config *conf)
 	list_for_each_entry(child, &conf->children, list) {
 		func = st_lookup_string(&cmd_root, child->key);
 		if (!func) {
-			log_printfn("config", "unknown base type item key: \"%s\"\n", child->key);
+			log_printfn("config", "unknown port type item key: \"%s\"\n", child->key);
 			continue;
 		}
 
@@ -155,7 +155,7 @@ err:
 	return -1;
 }
 
-static int pre_add_item(struct base_type *type, struct config *conf)
+static int pre_add_item(struct port_type *type, struct config *conf)
 {
 	struct cargo *cargo = NULL;
 
@@ -201,14 +201,14 @@ static int build_command_tree(struct list_head *root)
 	return 0;
 }
 
-int load_all_bases(struct list_head * const root)
+int load_all_ports(struct list_head * const root)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
 	struct list_head item_root = LIST_HEAD_INIT(item_root);
 	struct config *conf, *child;
-	struct base_type *type;
-	int (*func)(struct base_type*, struct config*);
+	struct port_type *type;
+	int (*func)(struct port_type*, struct config*);
 
 	if (build_command_tree(&cmd_root))
 		goto err;
@@ -222,7 +222,7 @@ int load_all_bases(struct list_head * const root)
 		type = malloc(sizeof(*type));
 		if (!type)
 			goto err;
-		base_type_init(type);
+		port_type_init(type);
 
 		type->name = strdup(conf->key);
 		if (!type->name) {
@@ -239,7 +239,7 @@ int load_all_bases(struct list_head * const root)
 		list_for_each_entry(child, &conf->children, list) {
 			func = st_lookup_string(&cmd_root, child->key);
 			if (!func) {
-				log_printfn("config", "unknown base type key: \"%s\"\n", child->key);
+				log_printfn("config", "unknown port type key: \"%s\"\n", child->key);
 				continue;
 			}
 
@@ -253,8 +253,8 @@ int load_all_bases(struct list_head * const root)
 				goto err;
 		}
 
-		if (st_add_string(&univ.base_type_names, type->name, type)) {
-			base_type_free(type);
+		if (st_add_string(&univ.port_type_names, type->name, type)) {
+			port_type_free(type);
 			free(type);
 			goto err;
 		}

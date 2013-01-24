@@ -62,11 +62,11 @@ void universe_free(struct universe *u)
 		free(pt);
 	}
 
-	struct base_type *bt, *_bt;
-	list_for_each_entry_safe(bt, _bt, &u->base_types, list) {
-		list_del(&bt->list);
-		base_type_free(bt);
-		free(bt);
+	struct port_type *port, *_port;
+	list_for_each_entry_safe(port, _port, &u->port_types, list) {
+		list_del(&port->list);
+		port_type_free(port);
+		free(port);
 	}
 
 
@@ -77,16 +77,16 @@ void universe_free(struct universe *u)
 		free(st);
 	}
 
-	pthread_rwlock_destroy(&u->bases_lock);
+	pthread_rwlock_destroy(&u->ports_lock);
 	pthread_rwlock_destroy(&u->systemnames_lock);
 	pthread_rwlock_destroy(&u->planetnames_lock);
-	pthread_rwlock_destroy(&u->basenames_lock);
-	st_destroy(&u->base_type_names, ST_DONT_FREE_DATA);
+	pthread_rwlock_destroy(&u->portnames_lock);
+	st_destroy(&u->port_type_names, ST_DONT_FREE_DATA);
 	st_destroy(&u->ship_type_names, ST_DONT_FREE_DATA);
 	st_destroy(&u->item_names, ST_DONT_FREE_DATA);
 	st_destroy(&u->systemnames, ST_DONT_FREE_DATA);
 	st_destroy(&u->planetnames, ST_DONT_FREE_DATA);
-	st_destroy(&u->basenames, ST_DONT_FREE_DATA);
+	st_destroy(&u->portnames, ST_DONT_FREE_DATA);
 	free(u->name);
 }
 
@@ -256,10 +256,10 @@ void universe_init(struct universe *u)
 	u->name = NULL;
 	ptrlist_init(&u->systems);
 	INIT_LIST_HEAD(&u->items);
-	INIT_LIST_HEAD(&u->bases);
-	pthread_rwlock_init(&u->bases_lock, NULL);
-	INIT_LIST_HEAD(&u->base_types);
-	INIT_LIST_HEAD(&u->base_type_names);
+	INIT_LIST_HEAD(&u->ports);
+	pthread_rwlock_init(&u->ports_lock, NULL);
+	INIT_LIST_HEAD(&u->port_types);
+	INIT_LIST_HEAD(&u->port_type_names);
 	INIT_LIST_HEAD(&u->planet_types);
 	INIT_LIST_HEAD(&u->ship_types);
 	INIT_LIST_HEAD(&u->ship_type_names);
@@ -268,8 +268,8 @@ void universe_init(struct universe *u)
 	pthread_rwlock_init(&u->systemnames_lock, NULL);
 	INIT_LIST_HEAD(&u->planetnames);
 	pthread_rwlock_init(&u->planetnames_lock, NULL);
-	INIT_LIST_HEAD(&u->basenames);
-	pthread_rwlock_init(&u->basenames_lock, NULL);
+	INIT_LIST_HEAD(&u->portnames);
+	pthread_rwlock_init(&u->portnames_lock, NULL);
 }
 
 int universe_genesis(struct universe *univ, struct civ *civs)
