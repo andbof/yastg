@@ -7,7 +7,7 @@
 #include "civ.h"
 #include "system.h"
 #include "planet.h"
-#include "base.h"
+#include "port.h"
 #include "ptrlist.h"
 #include "parseconfig.h"
 #include "star.h"

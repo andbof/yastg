@@ -28,12 +28,6 @@ check_LTLIBRARIES = test_module.la
 # optflags: -O3 -funroll-loops
 yastg_SOURCES = asciiart.c \
 		asciiart.h \
-		base.c \
-		base.h \
-		base_type.c \
-		base_type.h \
-		base_update.c \
-		base_update.h \
 		cargo.c \
 		cargo.h \
 		civ.c \
@@ -73,6 +67,12 @@ yastg_SOURCES = asciiart.c \
 		planet_type.h \
 		player.c \
 		player.h \
+		port.c \
+		port.h \
+		port_type.c \
+		port_type.h \
+		port_update.c \
+		port_update.h \
 		ptrarray.c \
 		ptrarray.h \
 		ptrlist.c \

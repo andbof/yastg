@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "base_type.h"
-#include "base.h"
+#include "port_type.h"
+#include "port.h"
 #include "cargo.h"
 #include "item.h"
 #include "stringtree.h"
@@ -215,7 +215,7 @@ int load_all_bases(struct list_head * const root)
 	if (st_add_string(&item_root, "item", add_item))
 		goto err;
 
-	if (parse_config_file("data/bases", &conf_root))
+	if (parse_config_file("data/ports", &conf_root))
 		goto err;
 
 	list_for_each_entry(conf, &conf_root, list) {

@@ -15,7 +15,7 @@
 #include "planet.h"
 #include "planet_type.h"
 #include "ship_type.h"
-#include "base.h"
+#include "port.h"
 #include "system.h"
 #include "civ.h"
 #include "star.h"

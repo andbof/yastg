@@ -4,7 +4,7 @@
 #include "ptrlist.h"
 #include "list.h"
 #include "parseconfig.h"
-#include "base_type.h"
+#include "port_type.h"
 
 struct base {
 	char *name;
