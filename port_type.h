@@ -23,7 +23,7 @@ struct port_type {
 	int zones[PORT_ZONE_NUM];
 };
 
-int load_all_ports();
+int load_all_ports(const char * const file);
 void port_type_free(struct port_type *type);
 
 #endif

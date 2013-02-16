@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
@@ -201,7 +202,7 @@ static int build_command_tree(struct list_head *root)
 	return 0;
 }
 
-int load_all_ports()
+int load_all_ports(const char * const file)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
@@ -209,13 +210,14 @@ int load_all_ports()
 	struct config *conf, *child;
 	struct port_type *type;
 	int (*func)(struct port_type*, struct config*);
+	assert(file);
 
 	if (build_command_tree(&cmd_root))
 		goto err;
 	if (st_add_string(&item_root, "item", add_item))
 		goto err;
 
-	if (parse_config_file("data/ports", &conf_root))
+	if (parse_config_file(file, &conf_root))
 		goto err;
 
 	list_for_each_entry(conf, &conf_root, list) {

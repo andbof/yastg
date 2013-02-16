@@ -14,6 +14,7 @@
 
 #include "config.h"
 #include "common.h"
+#include "loadconfig.h"
 #include "log.h"
 #include "mtrandom.h"
 #include "cli.h"
@@ -340,51 +341,9 @@ err:
 	return -1;
 }
 
-static int parse_config_files(struct civ * const civs)
-{
-	printf("Parsing configuration files\n");
-
-	printf("  civilizations: ");
-	civ_init(civs);
-	if (civ_load_all(civs))
-		return -1;
-
-	printf("done, %lu civs loaded.\n", list_len(&civs->list));
-
-	return 0;
-}
-
 static int create_universe(struct universe * const u, struct civ * const civs)
 {
 	printf("Creating universe\n");
-	universe_init(u);
-
-	printf("Loading items ... ");
-	if (load_all_items(&u->items, &u->item_names))
-		return -1;
-	printf("done, %lu items loaded\n", list_len(&u->items));
-
-	printf("Loading ports ... ");
-	if (load_all_ports(&u->port_types))
-		return -1;
-	printf("done, %lu types loaded\n", list_len(&u->port_types));
-
-	printf("Loading planets ... ");
-	if (load_all_planets(&u->planet_types))
-		return -1;
-	printf("done, %lu types loaded\n", list_len(&u->planet_types));
-
-	printf("Loading ships ... ");
-	if (load_all_ships(&u->ship_types))
-		return -1;
-	printf("done, %lu types loaded\n", list_len(&u->ship_types));
-
-	printf("Loading names ... ");
-	names_init(&u->avail_port_names);
-	names_init(&u->avail_player_names);
-	names_load(&u->avail_port_names, "data/placeprefix", "data/placenames", NULL, "data/placesuffix");
-	names_load(&u->avail_player_names, NULL, "data/firstnames", "data/surnames", NULL);
-	printf("done.\n");
 
 	if (universe_genesis(u, civs))
 		return -1;
@@ -438,7 +397,11 @@ int main(int argc, char **argv)
 	if (register_console_commands(&cli_root, &server))
 		die("%s", "Could not register console commands");
 
-	if (parse_config_files(&civs))
+	universe_init(&univ);
+	names_init(&univ.avail_port_names);
+	names_init(&univ.avail_player_names);
+
+	if (parse_config_files(&univ, &civs))
 		die("%s", "Could not parse config files");
 
 	if (create_universe(&univ, &civs))

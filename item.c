@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,17 +25,18 @@ static void build_command_tree(struct list_head *root)
 	st_add_string(root, "weight", set_weight);
 }
 
-int load_all_items()
+int load_all_items(const char * const file)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
 	struct config *conf, *child;
 	struct item *item;
 	void (*func)(struct item*, struct config*);
+	assert(file);
 
 	build_command_tree(&cmd_root);
 
-	if (parse_config_file("data/items", &conf_root))
+	if (parse_config_file(file, &conf_root))
 		return -1;
 
 	list_for_each_entry(conf, &conf_root, list) {

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -50,18 +51,19 @@ static int build_command_tree(struct list_head *root)
 	return 0;
 }
 
-int load_all_ships()
+int load_all_ships(const char * const file)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
 	struct config *conf, *child;
 	struct ship_type *sh_type;
 	int (*func)(struct ship_type*, struct config*);
+	assert(file);
 
 	if (build_command_tree(&cmd_root))
 		return -1;
 
-	if (parse_config_file("data/ships", &conf_root))
+	if (parse_config_file(file, &conf_root))
 		return -1;
 
 	list_for_each_entry(conf, &conf_root, list) {

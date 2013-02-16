@@ -47,6 +47,6 @@ struct planet_type {
 };
 
 void planet_type_free(struct planet_type * const type);
-int load_all_planets();
+int load_all_planets(const char * const file);
 
 #endif

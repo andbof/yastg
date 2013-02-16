@@ -43,6 +43,10 @@ AC_CHECK_LIB([dl],[dlopen],
 	     [],
 	     [AC_MSG_ERROR([libdl not found])])
 
+AC_CHECK_LIB([xdg-basedir],[xdgInitHandle],
+	     [],
+	     [AC_MSG_ERROR([libxdg-basedir not found])])
+
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h malloc.h netdb.h netinet/in.h \
                   stddef.h stdint.h stdlib.h string.h sys/file.h sys/socket.h \
                   unistd.h],

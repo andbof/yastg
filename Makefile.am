@@ -21,9 +21,20 @@ AM_YFLAGS = -d
 TESTS = test/stringtree_test test/config_test
 BUILT_SOURCES = parseconfig-yacc.c parseconfig-lex.c
 
+confdir = $(sysconfdir)/xdg/yastg
 bin_PROGRAMS = yastg
 check_PROGRAMS = test/stringtree_test test/config_test test/conntest
 check_LTLIBRARIES = test_module.la
+dist_conf_DATA = data/firstnames \
+		 data/items \
+		 data/placenames \
+		 data/placeprefix \
+		 data/placesuffix \
+		 data/planets \
+		 data/ports \
+		 data/ships \
+		 data/surnames \
+		 data/yastg.conf
 
 # optflags: -O3 -funroll-loops
 yastg_SOURCES = asciiart.c \
@@ -44,6 +55,8 @@ yastg_SOURCES = asciiart.c \
 		item.c \
 		item.h \
 		list.h \
+		loadconfig.c \
+		loadconfig.h \
 		log.c \
 		log.h \
 		main.c \
