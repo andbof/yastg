@@ -10,7 +10,7 @@ struct item {
 	struct list_head list;
 };
 
-int load_all_items(struct list_head * const root, struct list_head * const item_tree);
+int load_all_items();
 void item_free(struct item * const item);
 
 #endif

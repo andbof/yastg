@@ -11,6 +11,6 @@ struct ship_type {
 };
 
 void ship_type_free(struct ship_type * const type);
-int load_all_ships(struct list_head * const root);
+int load_all_ships();
 
 #endif

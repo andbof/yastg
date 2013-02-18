@@ -224,7 +224,7 @@ static int build_command_tree(struct list_head *root)
 	return 0;
 }
 
-int load_all_planets(struct list_head * const root)
+int load_all_planets()
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
@@ -259,7 +259,7 @@ int load_all_planets(struct list_head * const root)
 			}
 		}
 
-		list_add_tail(&pl_type->list, root);
+		list_add_tail(&pl_type->list, &univ.planet_types);
 	}
 
 	destroy_config(&conf_root);

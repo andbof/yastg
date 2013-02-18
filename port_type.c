@@ -201,7 +201,7 @@ static int build_command_tree(struct list_head *root)
 	return 0;
 }
 
-int load_all_ports(struct list_head * const root)
+int load_all_ports()
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
@@ -259,7 +259,7 @@ int load_all_ports(struct list_head * const root)
 			goto err;
 		}
 
-		list_add(&type->list, root);
+		list_add(&type->list, &univ.port_types);
 	}
 
 	destroy_config(&conf_root);
@@ -268,7 +268,7 @@ int load_all_ports(struct list_head * const root)
 	return 0;
 
 err:
-	destroy_config(root);
+	destroy_config(&univ.port_types);
 	st_destroy(&item_root, ST_DONT_FREE_DATA);
 	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return -1;

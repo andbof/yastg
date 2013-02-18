@@ -6,6 +6,7 @@
 #include "list.h"
 #include "parseconfig.h"
 #include "stringtree.h"
+#include "universe.h"
 
 static void set_base_price(struct item *item, struct config *conf)
 {
@@ -23,7 +24,7 @@ static void build_command_tree(struct list_head *root)
 	st_add_string(root, "weight", set_weight);
 }
 
-int load_all_items(struct list_head * const root, struct list_head * const item_tree)
+int load_all_items()
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
@@ -47,7 +48,7 @@ int load_all_items(struct list_head * const root, struct list_head * const item_
 			goto err;
 		}
 
-		if (st_add_string(item_tree, item->name, item)) {
+		if (st_add_string(&univ.item_names, item->name, item)) {
 			free(item->name);
 			free(item);
 			goto err;
@@ -63,7 +64,7 @@ int load_all_items(struct list_head * const root, struct list_head * const item_
 			func(item, child);
 		}
 
-		list_add(&item->list, root);
+		list_add(&item->list, &univ.items);
 	}
 
 	destroy_config(&conf_root);
