@@ -66,7 +66,7 @@ static int _st_add_string(struct list_head * const root, char *string, void *dat
 	}
 }
 
-int st_add_string(struct list_head * const root, char *_string, void *data)
+int st_add_string(struct list_head * const root, const char *_string, void *data)
 {
 	char *string;
 	int r;

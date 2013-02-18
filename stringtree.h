@@ -45,7 +45,7 @@ struct st_node {
 void st_init(struct st_node * const node);
 void st_destroy(struct list_head * const root, const int do_free_data);
 
-int st_add_string(struct list_head * const root, char *string, void *data);
+int st_add_string(struct list_head * const root, const char *_string, void *data);
 
 void* st_lookup_string(const struct list_head * const root, const char * const string);
 void* st_lookup_exact(const struct list_head * const root, const char * const string);
