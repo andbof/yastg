@@ -12,7 +12,8 @@ struct name_list {
 
 void names_init(struct name_list *l);
 void names_free(struct name_list *l);
-void names_load(struct name_list *l, char *prefix, char *first, char *second, char *suffix);
+void names_load(struct name_list *l, const char * const prefix, const char * const first,
+		const char * const second, const char * const suffix);
 char* create_unique_name(struct name_list *l);
 
 #endif

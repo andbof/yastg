@@ -23,7 +23,8 @@ void names_free(struct name_list *l)
 	ptrarray_free(l->suffix);
 }
 
-void names_load(struct name_list *l, char *prefix, char *first, char *second, char *suffix)
+void names_load(struct name_list *l, const char * const prefix, const char * const first,
+		const char * const second, const char * const suffix)
 {
 	if (prefix)
 		l->prefix = file_to_ptrarray(prefix, l->prefix);
