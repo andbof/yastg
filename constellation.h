@@ -7,7 +7,6 @@
 #define CONSTELLATION_PHI_RANDOM 1.0
 #define CONSTELLATION_MAXNUM 128
 
-int loadconstellations();
-int addconstellation(char* cname);
+int spawn_constellations(struct universe *u);
 
 #endif

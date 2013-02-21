@@ -31,6 +31,7 @@ struct universe {
 	pthread_rwlock_t portnames_lock;
 	struct list_head civs;
 	struct list_head list;
+	struct name_list avail_constellations;
 	struct name_list avail_port_names;
 	struct name_list avail_player_names;
 };

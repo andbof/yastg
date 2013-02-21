@@ -397,6 +397,7 @@ int main(int argc, char **argv)
 		die("%s", "Could not register console commands");
 
 	universe_init(&univ);
+	names_init(&univ.avail_constellations);
 	names_init(&univ.avail_port_names);
 	names_init(&univ.avail_player_names);
 
@@ -441,6 +442,7 @@ int main(int argc, char **argv)
 		free(cv);
 	}
 
+	names_free(&univ.avail_constellations);
 	names_free(&univ.avail_port_names);
 	names_free(&univ.avail_player_names);
 

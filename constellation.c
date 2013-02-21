@@ -14,37 +14,7 @@
 #include "ptrlist.h"
 #include "stringtree.h"
 
-int loadconstellations()
-{
-	struct config *conf;
-	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
-	unsigned int ncons = 0;
-
-	if (parse_config_file("data/constellations", &conf_root)) {
-		destroy_config(&conf_root);
-		return -1;
-	}
-
-	list_for_each_entry(conf, &conf_root, list) {
-		if (ncons >= CONSTELLATION_MAXNUM)
-			break;
-
-		printf("Adding constellation %s\n", conf->key);
-		if (addconstellation(conf->key))
-			goto err;
-
-		ncons++;
-	}
-
-	destroy_config(&conf_root);
-	return 0;
-
-err:
-	destroy_config(&conf_root);
-	return -1;
-}
-
-int addconstellation(char* cname)
+static int addconstellation(const char * const cname)
 {
 	unsigned long nums, numc, i;
 	char *string;
@@ -131,4 +101,20 @@ int addconstellation(char* cname)
 err:
 	pthread_rwlock_unlock(&univ.systemnames_lock);
 	return -1;
+}
+
+int spawn_constellations(struct universe *u)
+{
+	char *name;
+	for (size_t ncons = 0; ncons < CONSTELLATION_MAXNUM; ncons++) {
+		name = create_unique_name(&u->avail_constellations);
+		printf("Adding constellation %s\n", name);
+		if (addconstellation(name)) {
+			free(name);
+			return -1;
+		}
+		free(name);
+	}
+
+	return 0;
 }

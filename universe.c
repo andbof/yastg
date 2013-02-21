@@ -279,7 +279,7 @@ int universe_genesis(struct universe *univ)
 	 * 1. Decide number of constellations in universe.
 	 * 2. For each constellation, create a number of systems, grouping them together.
 	 */
-	if (loadconstellations(univ))
+	if (spawn_constellations(univ))
 		return -1;
 
 	/*

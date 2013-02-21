@@ -129,6 +129,7 @@ static int do_load_from_files(const struct config_type configs[], const size_t l
 static int load_names_from_files(const struct config_type configs[], const size_t len)
 {
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
+	const char *constellations = NULL;
 	const char *first = NULL;
 	const char *sur = NULL;
 	const char *place = NULL;
@@ -140,6 +141,7 @@ static int load_names_from_files(const struct config_type configs[], const size_
 	};
 
 	struct key_val key_vals[] = {
+		{ .key = "constellations",	.val = &constellations },
 		{ .key = "firstnames",		.val = &first, },
 		{ .key = "surnames",		.val = &sur, },
 		{ .key = "placenames",		.val = &place },
@@ -162,6 +164,9 @@ static int load_names_from_files(const struct config_type configs[], const size_
 		*s = list_first_entry(&configs[i].head, struct file_list, list)->name;
 		assert(*s);
 	}
+
+	if (constellations)
+		names_load(&univ.avail_constellations, NULL, constellations, NULL, NULL);
 
 	if (first || sur) {
 		if (first && sur)
@@ -196,6 +201,7 @@ static int load_config(struct universe * const universe, struct list_head * cons
 	 */
 	struct config_type configs[] = {
 		{ .key = "civilizations",	.func = load_all_civs, },
+		{ .key = "constellations",	.func = NULL, },
 		{ .key = "firstnames",		.func = NULL, },
 		{ .key = "surnames",		.func = NULL, },
 		{ .key = "placenames",		.func = NULL, },
