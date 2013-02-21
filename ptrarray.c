@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include "list.h"
+#include "parseconfig.h"
 #include "ptrarray.h"
 
 struct ptrarray* ptrarray_create()
@@ -45,67 +47,23 @@ struct ptrarray* ptrarray_add(struct ptrarray *a, void *ptr)
 
 struct ptrarray* file_to_ptrarray(const char * const fn, struct ptrarray *a)
 {
-	FILE *f;
-	off_t size;
-	char *begin, *ptr, *end;
+	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
+	struct config *conf;
+	char *name;
 
-	if ((f = fopen(fn, "r")) == NULL)
-		goto load_return;
+	if (parse_config_file(fn, &conf_root))
+		return NULL;
 
-	if (flock(fileno(f), LOCK_SH) != 0)
-		goto load_close;
-
-	if (fseek(f, 0, SEEK_END) != 0)
-		goto load_close;
-	
-	if ((size = ftell(f)) < 0)
-		goto load_close;
-
-	if (fseek(f, 0, SEEK_SET) != 0)
-		goto load_close;
-
-	if ((begin = mmap(NULL, size, PROT_READ,
-			MAP_SHARED | MAP_POPULATE, fileno(f), 0)) == NULL)
-		goto load_close;
-
-	end = begin + size;
-	ptr = begin;
-
-	unsigned int len;
-	char *name, *name_end;
-	while (ptr < end) {
-		while (ptr <= end && isspace(*ptr))
-			ptr++;
-		name_end = ptr;
-		while (name_end <= end && *name_end != '\n' && *name_end != '#')
-			name_end++;
-
-		len = name_end - ptr;
-		if (len > 0) {
-			name = malloc(len + 1);
-			if (name == NULL)
-				goto load_munmap;
-			memcpy(name, ptr, len);
-			while (isspace(name[len - 1]))
-				len--;
-			name[len] = '\0';
-			a = ptrarray_add(a, name);
+	list_for_each_entry(conf, &conf_root, list) {
+		name = strdup(conf->key);
+		if (!name) {
+			destroy_config(&conf_root);
+			return NULL;
 		}
-
-		/* Skip any comment following */
-		while (*name_end != '\n' && name_end <= end)
-			name_end++;
-
-		ptr = name_end + 1;
+		a = ptrarray_add(a, name);
 	}
 
-load_munmap:
-	munmap(ptr, size);
-
-load_close:
-	fclose(f);
-
-load_return:
+	destroy_config(&conf_root);
 	return a;
 }
 
