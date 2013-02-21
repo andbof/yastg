@@ -461,7 +461,7 @@ int main(int argc, char **argv)
 
 	/*
 	 * This will also automatically kill all player threads and terminate all connections
-	 * */
+	 */
 	kill_server_thread(&server);
 
 	log_printfn("main", "cleaning up");

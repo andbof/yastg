@@ -41,7 +41,7 @@ int cli_add_cmd(struct list_head *root, char *cmd, int (*func)(void*, char*), vo
  * remove any tree nodes: this is a feature to keep the number of malloc()/free()s
  * to a sane level, as the cli trees for logged in users are constantly in a
  * state of flux and the nodes will probably be reused very soon.
- * */
+ */
 int cli_rm_cmd(struct list_head *root, char *cmd)
 {
 	struct st_node *node;
