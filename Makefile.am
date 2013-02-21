@@ -26,6 +26,8 @@ bin_PROGRAMS = yastg
 check_PROGRAMS = test/stringtree_test test/config_test test/conntest
 check_LTLIBRARIES = test_module.la
 dist_conf_DATA = data/firstnames \
+		 data/foociv \
+		 data/grazny \
 		 data/items \
 		 data/placenames \
 		 data/placeprefix \
@@ -34,6 +36,7 @@ dist_conf_DATA = data/firstnames \
 		 data/ports \
 		 data/ships \
 		 data/surnames \
+		 data/terran \
 		 data/yastg.conf
 
 # optflags: -O3 -funroll-loops

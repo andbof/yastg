@@ -224,51 +224,29 @@ void loadciv(struct civ *c, const struct list_head * const config_root)
 	}
 }
 
-int load_all_civs()
+int load_all_civs(const char * const file)
 {
-	DIR *dirp;
-	struct dirent *de;
-	struct civ *cv;
+	struct civ *civ;
 	struct list_head conf = LIST_HEAD_INIT(conf);
-	char* path = NULL;
-	int pathlen = 0;
-	int r = 0;
 
-	if (!(dirp = opendir("civs")))
-		die("%s", "opendir() on civs failed");
-
-	while ((de = readdir(dirp)) != NULL) {
-		if (de->d_name[0] != '.') {
-			if ((int)strlen(de->d_name) > pathlen-6) {
-				free(path);
-				pathlen = strlen(de->d_name)+6;
-				path = malloc(pathlen);
-			}
-
-			sprintf(path, "%s/%s", "civs", de->d_name);
-			if (parse_config_file(path, &conf)) {
-				destroy_config(&conf);
-				r = -1;
-				goto close;
-			}
-
-			cv = malloc(sizeof(*cv));
-			if (!cv) {
-				r = -1;
-				goto close;
-			}
-
-			loadciv(cv, &conf);
-			destroy_config(&conf);
-			list_add_tail(&cv->list, &univ.civs);
-		}
+	if (parse_config_file(file, &conf)) {
+		destroy_config(&conf);
+		goto err;
 	}
 
-close:
-	free(path);
-	closedir(dirp);
+	civ = malloc(sizeof(*civ));
+	if (!civ) {
+		goto err;
+	}
 
-	return r;
+	loadciv(civ, &conf);
+	destroy_config(&conf);
+	list_add_tail(&civ->list, &univ.civs);
+	return 0;
+
+err:
+	destroy_config(&conf);
+	return -1;
 }
 
 void civ_free(struct civ *civ)

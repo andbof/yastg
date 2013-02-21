@@ -195,6 +195,7 @@ static int load_config(struct universe * const universe, struct list_head * cons
 	 * must be loaded before others (e.g. planets).
 	 */
 	struct config_type configs[] = {
+		{ .key = "civilizations",	.func = load_all_civs, },
 		{ .key = "firstnames",		.func = NULL, },
 		{ .key = "surnames",		.func = NULL, },
 		{ .key = "placenames",		.func = NULL, },
@@ -258,12 +259,6 @@ int parse_config_files(struct universe * const universe)
 	destroy_config(&conf);
 	free(c);
 	xdgWipeHandle(&xdg_handle);
-
-	printf("  civilizations: ");
-	if (load_all_civs())
-		return -1;
-
-	printf("done, %lu civs loaded.\n", list_len(&univ.civs));
 
 	return 0;
 }
