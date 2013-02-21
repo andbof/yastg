@@ -1,6 +1,7 @@
 #ifndef _HAS_NAMES_H
 #define _HAS_NAMES_H
 
+#include "list.h"
 #include "ptrarray.h"
 
 struct name_list {
@@ -8,6 +9,7 @@ struct name_list {
 	struct ptrarray *first;
 	struct ptrarray *second;
 	struct ptrarray *suffix;
+	struct list_head taken;
 };
 
 void names_init(struct name_list *l);

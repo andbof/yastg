@@ -6,6 +6,7 @@
 #include "names.h"
 #include "ptrarray.h"
 #include "mtrandom.h"
+#include "stringtree.h"
 
 void names_init(struct name_list *l)
 {
@@ -17,6 +18,7 @@ void names_init(struct name_list *l)
 
 void names_free(struct name_list *l)
 {
+	st_destroy(&l->taken, ST_DONT_FREE_DATA);
 	ptrarray_free(l->prefix);
 	ptrarray_free(l->first);
 	ptrarray_free(l->second);
@@ -26,6 +28,7 @@ void names_free(struct name_list *l)
 void names_load(struct name_list *l, const char * const prefix, const char * const first,
 		const char * const second, const char * const suffix)
 {
+	INIT_LIST_HEAD(&l->taken);
 	if (prefix)
 		l->prefix = file_to_ptrarray(prefix, l->prefix);
 	if (first)
@@ -36,7 +39,7 @@ void names_load(struct name_list *l, const char * const prefix, const char * con
 		l->suffix = file_to_ptrarray(suffix, l->suffix);
 }
 
-char* create_unique_name(struct name_list *l)
+static char* create_name(struct name_list *l)
 {
 	char *pr = NULL;
 	char *fi = NULL;
@@ -97,6 +100,28 @@ char* create_unique_name(struct name_list *l)
 	}
 	if (*(p - 1) == ' ')
 		*(p - 1) = '\0';
+
+	return name;
+}
+
+char* create_unique_name(struct name_list *l)
+{
+	char *name = NULL;
+
+	do {
+		free(name);
+		name = create_name(l);
+	} while (st_lookup_exact(&l->taken, name));
+
+	/*
+	 * The data pointer in the string tree merely needs to evaluate to true,
+	 * because it will never be dereferenced. Using the name string itself
+	 * is fine, even though it might not be a valid pointer in the future.
+	 */
+	if (st_add_string(&l->taken, name, name)) {
+		free(name);
+		return NULL;
+	}
 
 	return name;
 }

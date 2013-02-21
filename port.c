@@ -84,11 +84,7 @@ static int port_genesis(struct port *port, struct planet *planet)
 			ptrlist_push(&cargo->requires, st_lookup_string(&port->item_names, req->item->name));
 	}
 
-	/* FIXME: limit loop */
-	do {
-		free(port->name);
-		port->name = create_unique_name(&univ.avail_port_names);
-	} while (st_lookup_exact(&univ.portnames, port->name));
+	port->name = create_unique_name(&univ.avail_port_names);
 
 	list_add(&port->list, &univ.ports);
 
