@@ -4,6 +4,6 @@
 #include "civ.h"
 #include "universe.h"
 
-int parse_config_files(struct universe * const universe, struct civ * const civs);
+int parse_config_files(struct universe * const universe);
 
 #endif

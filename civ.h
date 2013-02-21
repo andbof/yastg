@@ -21,9 +21,9 @@ struct civ {
 
 void loadciv(struct civ *c, const struct list_head * const config_root);
 void civ_init(struct civ *c);
-int civ_load_all(struct civ *civs);
+int load_all_civs();
 
-void civ_spawncivs(struct universe *u, struct civ *civs);
+void civ_spawncivs(struct universe *u);
 void civ_free(struct civ *civ);
 
 #endif

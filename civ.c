@@ -83,7 +83,7 @@ static int grow_civ(struct universe *u, struct civ *c)
 }
 
 #define INITIAL_MIN_INTERCIV_DISTANCE_LY (10 * CIV_MIN_BORDER_WIDTH)
-static void spawn_civilizations(struct universe *u, struct civ *civs)
+static void spawn_civilizations(struct universe *u)
 {
 	struct civ *c;
 	struct system *s;
@@ -91,7 +91,7 @@ static void spawn_civilizations(struct universe *u, struct civ *civs)
 	struct ptrlist neigh;
 	struct list_head *lh;
 
-	list_for_each_entry(c, &civs->list, list) {
+	list_for_each_entry(c, &u->civs, list) {
 		tries = 0;
 		do {
 			tries++;
@@ -123,15 +123,15 @@ static void spawn_civilizations(struct universe *u, struct civ *civs)
 		c->home = s;
 		ptrlist_push(&c->systems, s);
 		ptrlist_push(&c->border_systems, s);
-		univ.inhabited_systems++;
+		u->inhabited_systems++;
 	}
 }
 
-static void remove_civs_without_homes(struct universe *u, struct civ *civs)
+static void remove_civs_without_homes(struct list_head *civs)
 {
 	struct civ *c, *_c;
 
-	list_for_each_entry_safe(c, _c, &civs->list, list) {
+	list_for_each_entry_safe(c, _c, civs, list) {
 		if (c->home)
 			continue;
 
@@ -142,7 +142,7 @@ static void remove_civs_without_homes(struct universe *u, struct civ *civs)
 }
 
 #define UNIVERSE_CIV_FRAC 0.4
-static void grow_all_civs(struct universe *u, struct civ *civs)
+static void grow_all_civs(struct universe *u)
 {
 	unsigned long goal_hab, total_power;
 	struct civ *c, *_c;
@@ -152,21 +152,21 @@ static void grow_all_civs(struct universe *u, struct civ *civs)
 	goal_hab = ptrlist_len(&u->systems) * UNIVERSE_CIV_FRAC;
 
 	total_power = 0;
-	list_for_each_entry(c, &civs->list, list) {
+	list_for_each_entry(c, &u->civs, list) {
 		total_power += c->power;
 	}
 
 	struct list_head growing_civs = LIST_HEAD_INIT(growing_civs);
-	list_for_each_entry(c, &civs->list, list)
+	list_for_each_entry(c, &u->civs, list)
 		list_add(&c->growing, &growing_civs);
 
-	while (univ.inhabited_systems < goal_hab && !list_empty(&growing_civs)) {
+	while (u->inhabited_systems < goal_hab && !list_empty(&growing_civs)) {
 		list_for_each_entry_safe(c, _c, &growing_civs, growing) {
 			if (mtrandom_ulong(total_power) >= c->power)
 				continue;
 
 			if (!grow_civ(u, c))
-				univ.inhabited_systems++;
+				u->inhabited_systems++;
 			else
 				list_del(&c->growing);
 		}
@@ -175,20 +175,20 @@ static void grow_all_civs(struct universe *u, struct civ *civs)
 	mprintf("done.\n");
 }
 
-void civ_spawncivs(struct universe *u, struct civ *civs)
+void civ_spawncivs(struct universe *u)
 {
 	struct civ *c;
 
-	spawn_civilizations(u, civs);
+	spawn_civilizations(u);
 
-	remove_civs_without_homes(u, civs);
+	remove_civs_without_homes(&u->civs);
 
-	grow_all_civs(u, civs);
+	grow_all_civs(u);
 
 	mprintf("Civilization stats:\n");
-	list_for_each_entry(c, &civs->list, list)
-		mprintf("  %s has %lu systems (%.2f%%) with power %u\n", c->name, ptrlist_len(&c->systems), ptrlist_len(&c->systems)/(float)univ.inhabited_systems*100, c->power);
-	mprintf("%lu systems of %lu are inhabited (%.2f%%)\n", univ.inhabited_systems, ptrlist_len(&u->systems), univ.inhabited_systems/(float)ptrlist_len(&u->systems)*100);
+	list_for_each_entry(c, &u->civs, list)
+		mprintf("  %s has %lu systems (%.2f%%) with power %u\n", c->name, ptrlist_len(&c->systems), ptrlist_len(&c->systems)/(float)u->inhabited_systems*100, c->power);
+	mprintf("%lu systems of %lu are inhabited (%.2f%%)\n", u->inhabited_systems, ptrlist_len(&u->systems), u->inhabited_systems/(float)ptrlist_len(&u->systems)*100);
 }
 
 void civ_init(struct civ *c)
@@ -224,7 +224,7 @@ void loadciv(struct civ *c, const struct list_head * const config_root)
 	}
 }
 
-int civ_load_all(struct civ *civs)
+int load_all_civs()
 {
 	DIR *dirp;
 	struct dirent *de;
@@ -260,7 +260,7 @@ int civ_load_all(struct civ *civs)
 
 			loadciv(cv, &conf);
 			destroy_config(&conf);
-			list_add_tail(&(cv->list), &(civs->list));
+			list_add_tail(&cv->list, &univ.civs);
 		}
 	}
 

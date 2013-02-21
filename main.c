@@ -341,11 +341,11 @@ err:
 	return -1;
 }
 
-static int create_universe(struct universe * const u, struct civ * const civs)
+static int create_universe(struct universe * const u)
 {
 	printf("Creating universe\n");
 
-	if (universe_genesis(u, civs))
+	if (universe_genesis(u))
 		return -1;
 
 	return 0;
@@ -384,7 +384,6 @@ int main(int argc, char **argv)
 	char *line = malloc(256); /* FIXME */
 	struct civ *cv;
 	struct system *s;
-	struct civ civs;
 	struct server server;
 	LIST_HEAD(cli_root);
 
@@ -401,10 +400,10 @@ int main(int argc, char **argv)
 	names_init(&univ.avail_port_names);
 	names_init(&univ.avail_player_names);
 
-	if (parse_config_files(&univ, &civs))
+	if (parse_config_files(&univ))
 		die("%s", "Could not parse config files");
 
-	if (create_universe(&univ, &civs))
+	if (create_universe(&univ))
 		die("%s", "Could not create universe");
 
 	if (start_server_thread(&server))
@@ -435,13 +434,12 @@ int main(int argc, char **argv)
 		system_free(s);
 	}
 
-	list_for_each_safe(p, q, &civs.list) {
+	list_for_each_safe(p, q, &univ.civs) {
 		cv = list_entry(p, struct civ, list);
 		list_del(p);
 		civ_free(cv);
 		free(cv);
 	}
-	civ_free(&civs);
 
 	names_free(&univ.avail_port_names);
 	names_free(&univ.avail_player_names);

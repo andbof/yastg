@@ -270,9 +270,10 @@ void universe_init(struct universe *u)
 	pthread_rwlock_init(&u->planetnames_lock, NULL);
 	INIT_LIST_HEAD(&u->portnames);
 	pthread_rwlock_init(&u->portnames_lock, NULL);
+	INIT_LIST_HEAD(&u->civs);
 }
 
-int universe_genesis(struct universe *univ, struct civ *civs)
+int universe_genesis(struct universe *univ)
 {
 	/*
 	 * 1. Decide number of constellations in universe.
@@ -285,7 +286,7 @@ int universe_genesis(struct universe *univ, struct civ *civs)
 	 * 3. Randomly distribute civilizations
 	 * 4. Let civilizations grow and create hyperspace links
 	 */
-	civ_spawncivs(univ, civs);
+	civ_spawncivs(univ);
 
 	return 0;
 }

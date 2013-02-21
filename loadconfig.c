@@ -233,7 +233,7 @@ cleanup:
 }
 
 #define CONFIG_FILE "yastg/yastg.conf"
-int parse_config_files(struct universe * const universe, struct civ * const civs)
+int parse_config_files(struct universe * const universe)
 {
 	struct list_head conf = LIST_HEAD_INIT(conf);
 	char *c;
@@ -260,11 +260,10 @@ int parse_config_files(struct universe * const universe, struct civ * const civs
 	xdgWipeHandle(&xdg_handle);
 
 	printf("  civilizations: ");
-	civ_init(civs);
-	if (civ_load_all(civs))
+	if (load_all_civs())
 		return -1;
 
-	printf("done, %lu civs loaded.\n", list_len(&civs->list));
+	printf("done, %lu civs loaded.\n", list_len(&univ.civs));
 
 	return 0;
 }

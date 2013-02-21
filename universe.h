@@ -29,6 +29,7 @@ struct universe {
 	pthread_rwlock_t planetnames_lock;
 	struct list_head portnames;
 	pthread_rwlock_t portnames_lock;
+	struct list_head civs;
 	struct list_head list;
 	struct name_list avail_port_names;
 	struct name_list avail_player_names;
@@ -39,7 +40,7 @@ extern struct universe univ;
 void universe_free(struct universe *u);
 struct universe* universe_create();
 void universe_init(struct universe *u);
-int universe_genesis(struct universe *univ, struct civ *civs);
+int universe_genesis(struct universe *univ);
 
 unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
 		const struct system * const origin, const long max_distance);
