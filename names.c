@@ -72,6 +72,7 @@ static char* create_name(struct name_list *l)
 	name = malloc(len);
 	if (!name)
 		return NULL;
+	*name = '\0';
 
 	char *p = name;
 	if (pr) {
@@ -98,6 +99,7 @@ static char* create_name(struct name_list *l)
 		*p = ' ';
 		p++;
 	}
+	assert(*name);		/* Fails if nothing has been added to the string at all */
 	if (*(p - 1) == ' ')
 		*(p - 1) = '\0';
 
