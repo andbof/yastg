@@ -57,7 +57,7 @@ int load_all_items()
 		list_for_each_entry(child, &conf->children, list) {
 			func = st_lookup_string(&cmd_root, child->key);
 			if (!func) {
-				log_printfn("config", "unknown item key: \"%s\"", child->key);
+				log_printfn(LOG_CONFIG, "unknown item key: \"%s\"", child->key);
 				goto err;
 			}
 

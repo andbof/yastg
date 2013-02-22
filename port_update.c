@@ -119,7 +119,7 @@ static void* port_update_worker(void *ptr)
 	return NULL;
 
 clock_err:
-	log_printfn("port_update", "clock_gettime() failed");
+	log_printfn(LOG_PORT_UPDATE, "clock_gettime() failed");
 	return NULL;
 }
 

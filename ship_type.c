@@ -79,12 +79,12 @@ int load_all_ships()
 		list_for_each_entry(child, &conf->children, list) {
 			func = st_lookup_string(&cmd_root, child->key);
 			if (!func) {
-				log_printfn("config", "unknown ship type key: \"%s\"", child->key);
+				log_printfn(LOG_CONFIG, "unknown ship type key: \"%s\"", child->key);
 				continue;
 			}
 
 			if (func(sh_type, child)) {
-				log_printfn("config", "syntax error or out of memory when processing ship type key \"%s\"", child->key);
+				log_printfn(LOG_CONFIG, "syntax error or out of memory when processing ship type key \"%s\"", child->key);
 				continue;
 			}
 		}

@@ -29,7 +29,7 @@ struct state {
 
 static void yyerror(void *yyscanner, const char * const msg)
 {
-	log_printfn("config", "parse error on line %d: %s", yyget_lineno(yyscanner) + 1, msg);
+	log_printfn(LOG_CONFIG, "parse error on line %d: %s", yyget_lineno(yyscanner) + 1, msg);
 }
 
 static void init_config(struct config * const config)
@@ -201,7 +201,7 @@ int parse_config_mmap(char *begin, const off_t size, struct list_head * const ro
 	list_add(&state.list, &state_root);
 
 	if (!has_proper_terminators(begin, size)) {
-		log_printfn("config", "file contains NULLs and cannot be parsed");
+		log_printfn(LOG_CONFIG, "file contains NULLs and cannot be parsed");
 		return -1;
 	}
 
@@ -233,11 +233,11 @@ int parse_config_file(const char * const fname, struct list_head * const root)
 	begin[s.st_size] = '\0';
 	begin[s.st_size + 1] = '\0';
 
-	log_printfn("config", "parsing \"%s\"", fname);
+	log_printfn(LOG_CONFIG, "parsing \"%s\"", fname);
 	if (parse_config_mmap(begin, s.st_size + 2, root))
 		goto err_unmap;
 
-	log_printfn("config", "successfully parsed \"%s\"", fname);
+	log_printfn(LOG_CONFIG, "successfully parsed \"%s\"", fname);
 
 	munmap(begin, s.st_size);
 	close(fd);

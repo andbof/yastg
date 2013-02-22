@@ -43,7 +43,7 @@ struct watcher_list {
 static void disconnect_peer(struct ev_loop *loop, struct connection *conn)
 {
 	struct connection *c, *_c;
-	log_printfn("server", "now terminating connection %x", conn->id);
+	log_printfn(LOG_SERVER, "now terminating connection %x", conn->id);
 
 	ev_io_stop(loop, &conn->data_watcher);
 	ev_async_stop(loop, &conn->kill_watcher);
@@ -68,7 +68,7 @@ static void disconnect_peer(struct ev_loop *loop, struct connection *conn)
 	list_del(&conn->list);
 	pthread_rwlock_unlock(&conn_list_lock);
 
-	log_printfn("server", "connection %x successfully terminated", conn->id);
+	log_printfn(LOG_SERVER, "connection %x successfully terminated", conn->id);
 	connection_free(conn);
 	free(conn);
 }
@@ -84,7 +84,7 @@ void server_disconnect_nicely(struct connection *conn)
 	if (conn->terminate)
 		return;
 
-	log_printfn("server", "asking nicely to terminate connection %x", conn->id);
+	log_printfn(LOG_SERVER, "asking nicely to terminate connection %x", conn->id);
 	conn->terminate = 1;
 	ev_async_send(loop, &conn->kill_watcher);
 }
@@ -102,14 +102,14 @@ static void disconnect_peers(struct ev_loop *loop)
 static void server_handlesignal(struct ev_loop *loop, struct signal *msg, char *data)
 {
 	struct connection *cd;
-	log_printfn("server", "received signal %d", msg->type);
+	log_printfn(LOG_SERVER, "received signal %d", msg->type);
 	switch (msg->type) {
 	case MSG_TERM:
 		/* This will break all event loops, especially the main server loop in server_main() */
 		ev_unloop(EV_A_ EVUNLOOP_ALL);
 		break;
 	case MSG_WALL:
-		log_printfn("server", "walling all users: %s", data);
+		log_printfn(LOG_SERVER, "walling all users: %s", data);
 		pthread_rwlock_rdlock(&conn_list_lock);
 		list_for_each_entry(cd, &conn_list, list)
 			conn_send(cd, "\nMessage to all connected users:\n"
@@ -118,7 +118,7 @@ static void server_handlesignal(struct ev_loop *loop, struct signal *msg, char *
 		pthread_rwlock_unlock(&conn_list_lock);
 		break;
 	case MSG_PAUSE:
-		log_printfn("server", "pausing the entire universe");
+		log_printfn(LOG_SERVER, "pausing the entire universe");
 		pthread_rwlock_rdlock(&conn_list_lock);
 		list_for_each_entry(cd, &conn_list, list) {
 			ev_io_stop(loop, &cd->data_watcher);
@@ -129,7 +129,7 @@ static void server_handlesignal(struct ev_loop *loop, struct signal *msg, char *
 		break;
 	case MSG_CONT:
 		/* FIXME: CONT */
-		log_printfn("server", "universe continuing");
+		log_printfn(LOG_SERVER, "universe continuing");
 		pthread_rwlock_rdlock(&conn_list_lock);
 		list_for_each_entry(cd, &conn_list, list) {
 			ev_io_start(loop, &cd->data_watcher);
@@ -138,7 +138,7 @@ static void server_handlesignal(struct ev_loop *loop, struct signal *msg, char *
 		pthread_rwlock_unlock(&conn_list_lock);
 		break;
 	default:
-		log_printfn("server", "unknown message received: %d", msg->type);
+		log_printfn(LOG_SERVER, "unknown message received: %d", msg->type);
 	}
 }
 
@@ -274,12 +274,12 @@ static void receive_peer_data(struct connection *data)
 
 	data->rbufi += recv(data->peerfd, data->rbuf + data->rbufi, data->rbufs - data->rbufi, 0);
 	if (data->rbufi< 1) {
-		log_printfn("server", "peer %s disconnected, terminating connection %x", data->peer, data->id);
+		log_printfn(LOG_SERVER, "peer %s disconnected, terminating connection %x", data->peer, data->id);
 		server_disconnect_nicely(data);
 	}
 	if ((data->rbufi == data->rbufs) && (data->rbuf[data->rbufi - 1] != '\n')) {
 		if (data->rbufs == CONN_MAXBUFSIZE) {
-			log_printfn("server", "peer sent more data than allowed (%u), connection %x terminated", CONN_MAXBUFSIZE, data->id);
+			log_printfn(LOG_SERVER, "peer sent more data than allowed (%u), connection %x terminated", CONN_MAXBUFSIZE, data->id);
 			server_disconnect_nicely(data);
 		}
 		data->rbufs <<= 1;
@@ -287,7 +287,7 @@ static void receive_peer_data(struct connection *data)
 			data->rbufs = CONN_MAXBUFSIZE;
 		if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
 			data->rbufs >>= 1;
-			log_printfn("server", "unable to increase receive buffer size, connection %x terminated", data->id);
+			log_printfn(LOG_SERVER, "unable to increase receive buffer size, connection %x terminated", data->id);
 			server_disconnect_nicely(data);
 		} else {
 			data->rbuf = ptr;
@@ -321,7 +321,7 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 
 	cd = malloc(sizeof(*cd));
 	if (!cd) {
-		log_printfn("server", "failed creating connection data structure");
+		log_printfn(LOG_SERVER, "failed creating connection data structure");
 		return -1;
 	}
 	conn_init(cd);
@@ -330,10 +330,10 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 	if (cd->peerfd < 0) {
 		r = errno;
 		if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-			log_printfn("server", "a peer disconnected before connection could be properly accepted");
+			log_printfn(LOG_SERVER, "a peer disconnected before connection could be properly accepted");
 			goto err_free;
 		} else {
-			log_printfn("server", "could not accept socket connection: %s", strerror(errno));
+			log_printfn(LOG_SERVER, "could not accept socket connection: %s", strerror(errno));
 			goto err_free;
 		}
 	}
@@ -341,7 +341,7 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 	socklen_t len = sizeof(cd->sock);
 	getpeername(cd->peerfd, (struct sockaddr*)&cd->sock, &len);
 	pretty_print_peer(cd->peer, sizeof(cd->peer), cd->sock);
-	log_printfn("server", "new connection %x from %s", cd->id, cd->peer);
+	log_printfn(LOG_SERVER, "new connection %x from %s", cd->id, cd->peer);
 
 	pthread_rwlock_wrlock(&conn_list_lock);
 
@@ -355,9 +355,9 @@ int server_accept_connection(struct ev_loop * const loop, int fd)
 
 	ev_async_start(loop, &cd->kill_watcher);
 
-	log_printfn("server", "serving new connection %x", cd->id);
+	log_printfn(LOG_SERVER, "serving new connection %x", cd->id);
 	if (conn_fulfixinit(cd)) {
-		log_printfn("server", "unable to initialize connection\n");
+		log_printfn(LOG_SERVER, "unable to initialize connection\n");
 		r = -1;
 		goto err_stop;
 	}
@@ -385,7 +385,7 @@ static void enable_accept_after_timer(struct ev_loop * const loop, ev_timer * co
 	ev_timer_stop(loop, t);
 	ev_io_start(loop, server_watcher);
 	free(t);
-	log_printfn("server", "server now accepting connections again");
+	log_printfn(LOG_SERVER, "server now accepting connections again");
 }
 
 static void disable_accept_for_a_while(struct ev_loop * const loop, ev_io * const server_watcher, unsigned int const seconds)
@@ -408,8 +408,8 @@ static void server_accept_cb(struct ev_loop * const loop, ev_io * const w, const
 	r = server_accept_connection(loop, s->fd);
 
 	if (r == EMFILE) {
-		log_printfn("server", "you should raise the ulimit for this process\n");
-		log_printfn("server", "disabling new connections for %d seconds to lessen system load", SERVER_EMFILE_SLEEP);
+		log_printfn(LOG_SERVER, "you should raise the ulimit for this process\n");
+		log_printfn(LOG_SERVER, "disabling new connections for %d seconds to lessen system load", SERVER_EMFILE_SLEEP);
 		disable_accept_for_a_while(loop, w, SERVER_EMFILE_SLEEP);
 	}
 }
@@ -484,7 +484,7 @@ void* server_main(void* p)
 
 	ev_io_start(loop, &msg_watcher);
 
-	log_printfn("server", "server is up waiting for connections on port %s", SERVER_PORT);
+	log_printfn(LOG_SERVER, "server is up waiting for connections on port %s", SERVER_PORT);
 
 	ev_run(loop, 0);
 

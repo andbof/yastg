@@ -100,7 +100,7 @@ static int set_item_requires(struct cargo *cargo, struct list_head *item_names, 
 	struct cargo *req = st_lookup_string(item_names, conf->str);
 
 	if (!req) {
-		log_printfn("config", "item '%s' does not exist in this port", conf->str);
+		log_printfn(LOG_CONFIG, "item '%s' does not exist in this port", conf->str);
 		return -1;
 	}
 
@@ -139,7 +139,7 @@ static int add_item(struct port_type *type, struct config *conf)
 	list_for_each_entry(child, &conf->children, list) {
 		func = st_lookup_string(&cmd_root, child->key);
 		if (!func) {
-			log_printfn("config", "unknown port type item key: \"%s\"\n", child->key);
+			log_printfn(LOG_CONFIG, "unknown port type item key: \"%s\"\n", child->key);
 			continue;
 		}
 
@@ -160,13 +160,13 @@ static int pre_add_item(struct port_type *type, struct config *conf)
 	struct cargo *cargo = NULL;
 
 	if (!conf->str) {
-		log_printfn("config", "syntax error after \"item\"");
+		log_printfn(LOG_CONFIG, "syntax error after \"item\"");
 		goto err;
 	}
 
 	struct item *item = st_lookup_string(&univ.item_names, conf->str);
 	if (!item) {
-		log_printfn("config", "unknown item: \"%s\"", conf->str);
+		log_printfn(LOG_CONFIG, "unknown item: \"%s\"", conf->str);
 		goto err;
 	}
 
@@ -239,7 +239,7 @@ int load_all_ports()
 		list_for_each_entry(child, &conf->children, list) {
 			func = st_lookup_string(&cmd_root, child->key);
 			if (!func) {
-				log_printfn("config", "unknown port type key: \"%s\"\n", child->key);
+				log_printfn(LOG_CONFIG, "unknown port type key: \"%s\"\n", child->key);
 				continue;
 			}
 

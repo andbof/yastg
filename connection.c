@@ -41,7 +41,7 @@ int conn_init(struct connection *conn)
 	conn->rbufs = CONN_BUFSIZE;
 
 	if ((conn->rbuf = malloc(conn->rbufs)) == NULL) {
-		log_printfn("connection", "failed allocating receive buffer for connection");
+		log_printfn(LOG_CONN, "failed allocating receive buffer for connection");
 		connection_free(conn);
 		return 1;
 	}
@@ -49,7 +49,7 @@ int conn_init(struct connection *conn)
 	conn->sbufs = CONN_MAXBUFSIZE;
 
 	if ((conn->sbuf = malloc(conn->sbufs)) == NULL) {
-		log_printfn("connection", "failed allocating send buffer for connection");
+		log_printfn(LOG_CONN, "failed allocating send buffer for connection");
 		connection_free(conn);
 		return 1;
 	}
@@ -90,7 +90,7 @@ void __attribute__((format(printf, 2, 3))) conn_send(struct connection *data, ch
 	va_start(ap, format);
 	len = vsnprintf(data->sbuf, data->sbufs, format, ap);
 	if (len >= data->sbufs)
-		log_printfn("connection", "warning: send buffer overflow on connection %x (wanted to send %zu bytes but buffer size is %zu bytes), truncating data", data->id, len, data->sbufs);
+		log_printfn(LOG_CONN, "warning: send buffer overflow on connection %x (wanted to send %zu bytes but buffer size is %zu bytes), truncating data", data->id, len, data->sbufs);
 	va_end(ap);
 
 	size_t sb = 0;
@@ -99,7 +99,7 @@ void __attribute__((format(printf, 2, 3))) conn_send(struct connection *data, ch
 	do {
 		i = send(data->peerfd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
 		if (i < 1) {
-			log_printfn("connection", "send error (connection %x), terminating connection", data->id);
+			log_printfn(LOG_CONN, "send error (connection %x), terminating connection", data->id);
 			server_disconnect_nicely(data);
 		}
 		sb += i;
@@ -161,7 +161,7 @@ void* connection_worker(void *_w)
 
 		if (conn->worker) {
 			pthread_mutex_unlock(&conn->worker_lock);
-			log_printfn("connection", "Got new data too fast -- old worker is still busy");
+			log_printfn(LOG_CONN, "Got new data too fast -- old worker is still busy");
 			continue;
 		}
 		conn->worker = 1;
@@ -182,7 +182,7 @@ void* connection_worker(void *_w)
 
 int conn_fulfixinit(struct connection *data)
 {
-	log_printfn("connection", "initializing connection from peer %s", data->peer);
+	log_printfn(LOG_CONN, "initializing connection from peer %s", data->peer);
 
 	if (list_len(&univ.ship_types) == 0)
 		return -1;
@@ -205,7 +205,7 @@ int conn_fulfixinit(struct connection *data)
 
 	conn_send(data, PROMPT);
 
-	log_printfn("connection", "peer %s successfully logged in as %s", data->peer, data->pl->name);
+	log_printfn(LOG_CONN, "peer %s successfully logged in as %s", data->peer, data->pl->name);
 
 	return 0;
 }

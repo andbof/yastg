@@ -291,8 +291,8 @@ static int cmd_quit(void *_server, char *param)
 static void open_log_file()
 {
 	log_init("yastg.log");
-	log_printfn("main", "YASTG initializing");
-	log_printfn("main", "This is %s, built %s %s", PACKAGE_VERSION, __DATE__, __TIME__);
+	log_printfn(LOG_MAIN, "YASTG initializing");
+	log_printfn(LOG_MAIN, "This is %s, built %s %s", PACKAGE_VERSION, __DATE__, __TIME__);
 }
 
 static void initialize_server(struct server * const server)
@@ -416,7 +416,7 @@ static void kill_server_thread(struct server * const server)
 	if (write(server->fd[1], &signal, sizeof(signal)) < 1)
 		bug("%s", "server signalling fd seems closed when sending signal");
 
-	log_printfn("main", "waiting for server to terminate");
+	log_printfn(LOG_MAIN, "waiting for server to terminate");
 	pthread_join(server->thread, NULL);
 }
 
@@ -464,7 +464,7 @@ int main(int argc, char **argv)
 	 */
 	kill_server_thread(&server);
 
-	log_printfn("main", "cleaning up");
+	log_printfn(LOG_MAIN, "cleaning up");
 	mprintf("Cleaning up ... ");
 
 	struct list_head *p, *q;

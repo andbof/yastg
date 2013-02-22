@@ -72,14 +72,14 @@ extern const char* roman[ROMAN_N];
 #define die(FMT, ...)						\
 	do {							\
 		printf("yastg: panic in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);		\
-		log_printfn("panic", "in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
+		log_printfn(LOG_PANIC, "in %s:%d: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
 		exit(EXIT_FAILURE);				\
 	} while(0)
 
 #define bug(FMT, ...)						\
 	do {							\
 		printf("yastg: Oops! YASTG has encountered an internal bug in %s:%d and is crashing: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);		\
-		log_printfn("panic", "Oops! YASTG has encountered an internal bug in %s:%d and is crashing: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
+		log_printfn(LOG_PANIC, "Oops! YASTG has encountered an internal bug in %s:%d and is crashing: " FMT "\n", __FILE__, __LINE__, __VA_ARGS__);	\
 		exit(EXIT_FAILURE);				\
 	} while(0)
 
