@@ -40,10 +40,13 @@ struct st_node {
 	struct list_head list;
 };
 
-#define ST_DO_FREE_DATA 1
-#define ST_DONT_FREE_DATA 0
+enum st_free_data {
+	ST_DONT_FREE_DATA,
+	ST_DO_FREE_DATA
+};
+
 void st_init(struct st_node * const node);
-void st_destroy(struct list_head * const root, const int do_free_data);
+void st_destroy(struct list_head * const root, const enum st_free_data do_free_data);
 
 int st_add_string(struct list_head * const root, const char *_string, void *data);
 

@@ -19,7 +19,7 @@ void st_init(struct st_node * const node)
 	INIT_LIST_HEAD(&node->list);
 }
 
-void st_destroy(struct list_head * const root, const int do_free_data)
+void st_destroy(struct list_head * const root, const enum st_free_data do_free_data)
 {
 	struct st_node *node, *_node;
 
@@ -29,7 +29,7 @@ void st_destroy(struct list_head * const root, const int do_free_data)
 		if (!list_empty(&node->children))
 			st_destroy(&node->children, do_free_data);
 		list_del(&node->list);
-		if (do_free_data)
+		if (do_free_data == ST_DO_FREE_DATA)
 			free(node->data);
 		free(node);
 	}

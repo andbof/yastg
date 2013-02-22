@@ -67,12 +67,12 @@ int load_all_items(struct list_head * const root, struct list_head * const item_
 	}
 
 	destroy_config(&conf_root);
-	st_destroy(&cmd_root, 0);
+	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return 0;
 
 err:
 	destroy_config(&conf_root);
-	st_destroy(&cmd_root, 0);
+	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return -1;
 }
 

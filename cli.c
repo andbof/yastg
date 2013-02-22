@@ -13,7 +13,7 @@ struct cli_data {
 
 void cli_tree_destroy(struct list_head *root)
 {
-	st_destroy(root, 1);
+	st_destroy(root, ST_DO_FREE_DATA);
 }
 
 int cli_add_cmd(struct list_head *root, char *cmd, int (*func)(void*, char*), void *ptr, char *help)

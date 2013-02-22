@@ -263,11 +263,11 @@ int load_all_planets(struct list_head * const root)
 	}
 
 	destroy_config(&conf_root);
-	st_destroy(&cmd_root, 0);
+	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return 0;
 
 err:
 	destroy_config(&conf_root);
-	st_destroy(&cmd_root, 0);
+	st_destroy(&cmd_root, ST_DONT_FREE_DATA);
 	return -1;
 }
