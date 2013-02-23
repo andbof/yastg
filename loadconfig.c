@@ -239,6 +239,59 @@ cleanup:
 	return r;
 }
 
+static int is_config_sane(struct universe * const universe)
+{
+	int r = 1;
+
+	if (list_empty(&universe->items)) {
+		log_printfn(LOG_CONFIG, "error: no items loaded");
+		r = 0;
+	} else {
+		assert(!list_empty(&universe->item_names));
+	}
+
+	if (list_empty(&universe->port_types)) {
+		log_printfn(LOG_CONFIG, "error: no ports loaded");
+		r = 0;
+	} else {
+		assert(!list_empty(&universe->port_type_names));
+	}
+
+	if (list_empty(&universe->planet_types)) {
+		log_printfn(LOG_CONFIG, "error: no planet types loaded");
+		r = 0;
+	}
+
+	if (list_empty(&universe->ship_types)) {
+		log_printfn(LOG_CONFIG, "error: no ship types loaded");
+		r = 0;
+	} else {
+		assert(!list_empty(&universe->ship_type_names));
+	}
+
+	if (list_empty(&universe->civs)) {
+		log_printfn(LOG_CONFIG, "error: no civilizations loaded");
+		r = 0;
+	}
+
+	if (!is_names_loaded(&universe->avail_constellations)) {
+		log_printfn(LOG_CONFIG, "error: no constellations loaded");
+		r = 0;
+	}
+
+	if (!is_names_loaded(&universe->avail_port_names)) {
+		log_printfn(LOG_CONFIG, "error: no port names loaded");
+		r = 0;
+	}
+
+	if (!is_names_loaded(&universe->avail_player_names)) {
+		log_printfn(LOG_CONFIG, "error: no player names loaded");
+		r = 0;
+	}
+
+	return r;
+}
+
 #define CONFIG_FILE "yastg/yastg.conf"
 int parse_config_files(struct universe * const universe)
 {
@@ -265,6 +318,9 @@ int parse_config_files(struct universe * const universe)
 	destroy_config(&conf);
 	free(c);
 	xdgWipeHandle(&xdg_handle);
+
+	if (!is_config_sane(universe))
+		return -1;
 
 	return 0;
 }
