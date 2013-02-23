@@ -6,26 +6,26 @@
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
-#include "port.h"
-#include "port_type.h"
+#include "universe.h"
 #include "cargo.h"
 #include "cli.h"
 #include "common.h"
-#include "server.h"
 #include "connection.h"
-#include "stringtree.h"
 #include "item.h"
 #include "log.h"
+#include "map.h"
+#include "names.h"
+#include "port.h"
+#include "port_type.h"
 #include "planet.h"
 #include "planet_type.h"
 #include "player.h"
 #include "ptrlist.h"
+#include "server.h"
 #include "ship.h"
-#include "system.h"
 #include "star.h"
-#include "universe.h"
-#include "names.h"
-#include "map.h"
+#include "stringtree.h"
+#include "system.h"
 
 #define player_talk(PLAYER, ...)	\
 	conn_send(PLAYER->conn, __VA_ARGS__)

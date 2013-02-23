@@ -1,9 +1,10 @@
 #include <alloca.h>
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <basedir.h>
 #include <basedir_fs.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "list.h"
 #include "loadconfig.h"
 #include "log.h"

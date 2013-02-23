@@ -1,8 +1,8 @@
 #ifndef _HAS_STAR_H
 #define _HAS_STAR_H
 
-#include "system.h"
 #include "parseconfig.h"
+#include "system.h"
 
 #define STELLAR_LUM_N 9
 #define STELLAR_CLS_N 7

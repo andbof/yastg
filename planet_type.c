@@ -2,14 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include "port.h"
+#include "universe.h"
 #include "common.h"
-#include "stringtree.h"
 #include "log.h"
+#include "planet_type.h"
+#include "port.h"
 #include "parseconfig.h"
 #include "ptrlist.h"
-#include "planet_type.h"
-#include "universe.h"
+#include "stringtree.h"
 
 const char planet_life_desc[PLANET_LIFE_NUM][PLANET_LIFE_DESC_LEN] = {
 	"Toxic to life",

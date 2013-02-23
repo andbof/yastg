@@ -7,7 +7,6 @@
 #include <ev.h>
 #include "player.h"
 #include "server.h"
-#include "ptrlist.h"
 
 #define CONN_BUFSIZE 1500
 #define CONN_MAXBUFSIZE 10240

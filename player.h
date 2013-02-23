@@ -2,7 +2,6 @@
 #define _HAS_PLAYER_H
 
 #include "list.h"
-#include "ptrlist.h"
 #include "ship.h"
 
 struct player {

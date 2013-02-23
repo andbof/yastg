@@ -1,13 +1,11 @@
 #ifndef _HAS_SYSTEM_H
 #define _HAS_SYSTEM_H
 
+#include "civ.h"
 #include "list.h"
 #include "rbtree.h"
 #include "ptrlist.h"
-
-struct universe;
-struct ptrlist;
-struct config;
+#include "universe.h"
 
 struct system {
 	char *name;

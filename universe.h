@@ -2,10 +2,10 @@
 #define _HAS_UNIVERSE_H
 
 #include "list.h"
-#include "rbtree.h"
-#include "civ.h"
-#include "system.h"
 #include "names.h"
+#include "ptrlist.h"
+#include "rbtree.h"
+#include "system.h"
 
 struct universe {
 	size_t id;			/* ID of the universe (or the game?) */

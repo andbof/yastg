@@ -2,9 +2,9 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <common.h>
 #include "ship.h"
 #include "cargo.h"
+#include "common.h"
 #include "item.h"
 #include "stringtree.h"
 

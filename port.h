@@ -1,10 +1,12 @@
 #ifndef _HAS_PORT_H
 #define _HAS_PORT_H
 
-#include "ptrlist.h"
+#include <pthread.h>
 #include "list.h"
 #include "parseconfig.h"
+#include "planet.h"
 #include "port_type.h"
+#include "ptrlist.h"
 
 struct port {
 	char *name;

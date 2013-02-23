@@ -2,6 +2,8 @@
 #define _HAS_PLANET_TYPE_H
 
 #include "list.h"
+#include "ptrlist.h"
+#include "universe.h"
 
 enum planet_zone {
 	HOT,

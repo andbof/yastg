@@ -1,10 +1,11 @@
+#include <alloca.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <alloca.h>
-#include "map.h"
+#include <string.h>
 #include "asciiart.h"
-#include "system.h"
 #include "universe.h"
+#include "map.h"
+#include "system.h"
 
 static char* flatten_array(char * out, size_t out_len,
 		const size_t buf_size_x, const size_t buf_size_y,

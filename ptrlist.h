@@ -1,7 +1,6 @@
 #ifndef _HAS_PTRLIST_H
 #define _HAS_PTRLIST_H
 
-#include <stdio.h>
 #include "list.h"
 #include "mtrandom.h"
 

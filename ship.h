@@ -2,8 +2,8 @@
 #define _HAS_SHIP_H
 
 #include <pthread.h>
-#include "list.h"
 #include "cargo.h"
+#include "list.h"
 #include "ship_type.h"
 
 enum postype {

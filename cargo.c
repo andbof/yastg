@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "cargo.h"
 
 void cargo_init(struct cargo *cargo)

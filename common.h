@@ -1,8 +1,6 @@
 #ifndef _HAS_COMMON_H
 #define _HAS_COMMON_H
 
-#include <string.h>
-#include <stdlib.h>
 #include <stdint.h>
 
 /* Global struct definitions */

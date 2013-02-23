@@ -1,10 +1,9 @@
 #ifndef _HAS_PLANET_H
 #define _HAS_PLANET_H
 
-#include "system.h"
-#include "parseconfig.h"
 #include "list.h"
 #include "ptrlist.h"
+#include "system.h"
 
 struct planet {
 	char *name;

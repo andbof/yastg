@@ -1,19 +1,20 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
 #include <pthread.h>
-#include "port.h"
+#include "universe.h"
+#include "planet.h"
 #include "common.h"
-#include "stringtree.h"
 #include "log.h"
 #include "mtrandom.h"
+#include "port.h"
 #include "parseconfig.h"
-#include "planet.h"
 #include "planet_type.h"
 #include "ptrlist.h"
+#include "stringtree.h"
 #include "system.h"
-#include "universe.h"
 
 static void planet_init(struct planet *p)
 {

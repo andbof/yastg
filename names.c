@@ -1,6 +1,7 @@
-#include <stdio.h>
-#include <limits.h>
 #include <assert.h>
+#include <limits.h>
+#include <stdio.h>
+#include <string.h>
 #include "common.h"
 #include "log.h"
 #include "names.h"

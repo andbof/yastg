@@ -2,7 +2,6 @@
 #define _HAS_PORT_TYPE_H
 
 #include "list.h"
-#include "ptrlist.h"
 #include "universe.h"
 
 enum port_zone {

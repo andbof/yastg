@@ -1,6 +1,7 @@
+#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include "common.h"
 #include "log.h"
 #include "universe.h"
