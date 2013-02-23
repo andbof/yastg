@@ -127,3 +127,11 @@ char* create_unique_name(struct name_list *l)
 
 	return name;
 }
+
+int is_names_loaded(struct name_list *l)
+{
+	if (l->prefix->used || l->first->used || l->second->used || l->suffix->used)
+		return 1;
+	else
+		return 0;
+}

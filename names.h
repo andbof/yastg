@@ -17,5 +17,6 @@ void names_free(struct name_list *l);
 void names_load(struct name_list *l, const char * const prefix, const char * const first,
 		const char * const second, const char * const suffix);
 char* create_unique_name(struct name_list *l);
+int is_names_loaded(struct name_list *l);
 
 #endif
