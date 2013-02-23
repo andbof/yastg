@@ -1,0 +1,85 @@
+Yet Another Space Trading Game
+Copyright (C) 2013 Andreas Bofjäll <andreas@gazonk.org>
+
+WHERE TO GET THE GAME
+
+  The official repository is at github, see [1].
+
+BASIC INSTALLATION
+
+  Run "./configure" and correct any errors reported, such as installing
+  missing packages. If "configure" doesn't exist, you've most likely cloned
+  the git repository, and you need to run "./bootstrap" first (if bootstrap
+  complains about missing files, you need to install autoconf and automake;
+  see your distributions documentation on how to do that).
+
+  Compile by running "make", followed by "sudo make install" to do a standard
+  system-wide installation. If you want to install into another directory, such
+  as into your home, run "./configure --prefix=/full/installation/path",
+  followed by "make" and "make install".
+
+CONFIGURING THE GAME
+
+  yastg places its configuration files according to the XDG Base Directory
+  Specification[2].
+
+  Most stuff is configurable in the configuration files, which are most probably
+  installed in /etc/xdg/yastg (or prefixed by whatever you specified using
+  --prefix=, if you did so). Start by looking into yastg.conf; what you want to
+  edit is either in that file or in another file listed there.
+
+  Your personal configurations files will override the system-wide ones.
+  Personal configuration files normally go in ~/.config/yastg, or in whatever
+  directory specified by $XDG_CONFIG_HOME/yastg, if that variable is set.
+
+  If you just want to launch a game, you don't have to change anything. The
+  default settings will work fine.
+
+  If you do want to change something, the configuration syntax should be fairly
+  self-explanatory if you look in the respective configuration file. Worth
+  knowing is:
+
+  - Strings containing spaces must be enclosed within " and " (i.e.
+    "this is one identifier"), but identifiers only one word long don't have
+    to be.
+
+  - Numbers can be entered in decimal (10), hexadecimal (0x0a), or scientific
+    notation (1e1). Numbers should _not_ be quoted between " and ".
+
+  - The left brace "{" cannot be preceded by a line break, and right brace "}"
+    must be. This is standard K&R bracing, i.e. this is valid:
+
+    identifier {
+      key value
+    }
+
+    but this is NOT:
+
+    identifier
+    {
+      key value
+    }
+
+    and NOT this either:
+
+    identifier { key value }
+
+  - Recommended indentation is one tab character per indentation level, but any
+    amount of whitespace (including zero) is syntactically correct. You are
+    recommended to have one whitespace character between identifiers and left
+    curly brackets.
+
+  - File names in configuration files are case sensitive, but keywords are not.
+
+  - All identifiers are shortest-uniquely matched, i.e. if "Iron ore" is the
+    only item beginning with an "i", just writing an "i" is enough to match it.
+
+RUNNING THE GAME
+
+  Launch the binary (yastg). It will start listening on port 2049 by default.
+  Connect using your favourite client.
+
+REFERENCES
+
+  [1] https://github.com/andbof/yastg
+  [2] http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html

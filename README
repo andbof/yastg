@@ -11,3 +11,5 @@ The project has a few (very long-term) goals:
 The game is playable in the sense that you can connect and move around, but no
 other stuff has been implemented. The rest will come when the Time is
 Right(tm).
+
+See the INSTALL file for installation and configuration instructions.
