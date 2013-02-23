@@ -108,7 +108,8 @@ static void plot_items_in_map(struct list_head *items,
 	return;
 }
 
-char* generate_map(char *out, size_t len, struct system *origin, unsigned long radius, unsigned int width)
+char* generate_map(char * const out, const size_t len, struct system *origin,
+		const unsigned long radius, const unsigned int width)
 {
 	const unsigned int x_size = width;
 	const unsigned int y_size = x_size / ASCII_X_TO_Y;

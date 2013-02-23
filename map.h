@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "system.h"
 
-char* generate_map(char *out, size_t len, struct system *origin,
-		unsigned long radius, unsigned int width);
+char* generate_map(char * const out, const size_t len, struct system *origin,
+		const unsigned long radius, const unsigned int width);
 
 #endif
