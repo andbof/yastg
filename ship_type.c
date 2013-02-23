@@ -51,7 +51,7 @@ static int build_command_tree(struct list_head *root)
 	return 0;
 }
 
-int load_all_ships(const char * const file)
+int load_ships_from_file(const char * const file, struct universe * const universe)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
@@ -91,12 +91,12 @@ int load_all_ships(const char * const file)
 			}
 		}
 
-		if (st_add_string(&univ.ship_type_names, sh_type->name, sh_type)) {
+		if (st_add_string(&universe->ship_type_names, sh_type->name, sh_type)) {
 			ship_type_free(sh_type);
 			free(sh_type);
 			goto err;
 		}
-		list_add_tail(&sh_type->list, &univ.ship_types);
+		list_add_tail(&sh_type->list, &universe->ship_types);
 	}
 
 	destroy_config(&conf_root);

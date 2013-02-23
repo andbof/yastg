@@ -23,7 +23,7 @@ struct file_list {
 struct config_type {
 	const char key[16];
 	struct list_head head;
-	int (*func)(const char * const file);
+	int (*func)(const char * const file, struct universe * const);
 };
 
 static xdgHandle xdg_handle;
@@ -98,7 +98,8 @@ err:
 	return -1;
 }
 
-static int do_load_from_files(const struct config_type configs[], const size_t len)
+static int do_load_from_files(const struct config_type configs[], const size_t len,
+		struct universe * const universe)
 {
 	struct file_list *f;
 	int r;
@@ -110,7 +111,7 @@ static int do_load_from_files(const struct config_type configs[], const size_t l
 
 		list_for_each_entry(f, &configs[i].head, list) {
 			if (configs[i].func) {
-				r = configs[i].func(f->name);
+				r = configs[i].func(f->name, universe);
 				if (r)
 					return r;
 			}
@@ -200,17 +201,17 @@ static int load_config(struct universe * const universe, struct list_head * cons
 	 * must be loaded before others (e.g. planets).
 	 */
 	struct config_type configs[] = {
-		{ .key = "civilizations",	.func = load_all_civs, },
+		{ .key = "civilizations",	.func = load_civs_from_file, },
 		{ .key = "constellations",	.func = NULL, },
 		{ .key = "firstnames",		.func = NULL, },
 		{ .key = "surnames",		.func = NULL, },
 		{ .key = "placenames",		.func = NULL, },
 		{ .key = "placeprefix",		.func = NULL, },
 		{ .key = "placesuffix",		.func = NULL, },
-		{ .key = "items",		.func = load_all_items, },
-		{ .key = "ships",		.func = load_all_ships, },
-		{ .key = "ports",		.func = load_all_ports, },
-		{ .key = "planets",		.func = load_all_planets, },
+		{ .key = "items",		.func = load_items_from_file, },
+		{ .key = "ships",		.func = load_ships_from_file, },
+		{ .key = "ports",		.func = load_ports_from_file, },
+		{ .key = "planets",		.func = load_planets_from_file, },
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(configs); i++)
@@ -220,7 +221,7 @@ static int load_config(struct universe * const universe, struct list_head * cons
 	if (r)
 		goto cleanup;
 
-	r = do_load_from_files(configs, ARRAY_SIZE(configs));
+	r = do_load_from_files(configs, ARRAY_SIZE(configs), universe);
 	if (r)
 		goto cleanup;
 

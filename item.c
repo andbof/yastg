@@ -25,7 +25,7 @@ static void build_command_tree(struct list_head *root)
 	st_add_string(root, "weight", set_weight);
 }
 
-int load_all_items(const char * const file)
+int load_items_from_file(const char * const file, struct universe * const universe)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
 	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
@@ -50,7 +50,7 @@ int load_all_items(const char * const file)
 			goto err;
 		}
 
-		if (st_add_string(&univ.item_names, item->name, item)) {
+		if (st_add_string(&universe->item_names, item->name, item)) {
 			free(item->name);
 			free(item);
 			goto err;
@@ -66,7 +66,7 @@ int load_all_items(const char * const file)
 			func(item, child);
 		}
 
-		list_add(&item->list, &univ.items);
+		list_add(&item->list, &universe->items);
 	}
 
 	destroy_config(&conf_root);

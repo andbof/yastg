@@ -224,7 +224,7 @@ void loadciv(struct civ *c, const struct list_head * const config_root)
 	}
 }
 
-int load_all_civs(const char * const file)
+int load_civs_from_file(const char * const file, struct universe * const universe)
 {
 	struct civ *civ;
 	struct list_head conf = LIST_HEAD_INIT(conf);
@@ -241,7 +241,7 @@ int load_all_civs(const char * const file)
 
 	loadciv(civ, &conf);
 	destroy_config(&conf);
-	list_add_tail(&civ->list, &univ.civs);
+	list_add_tail(&civ->list, &universe->civs);
 	return 0;
 
 err:

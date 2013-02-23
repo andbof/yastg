@@ -3,6 +3,7 @@
 
 #include "list.h"
 #include "ptrlist.h"
+#include "universe.h"
 
 enum port_zone {
 	OCEAN,
@@ -23,7 +24,7 @@ struct port_type {
 	int zones[PORT_ZONE_NUM];
 };
 
-int load_all_ports(const char * const file);
+int load_ports_from_file(const char * const file, struct universe * const universe);
 void port_type_free(struct port_type *type);
 
 #endif

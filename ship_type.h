@@ -2,6 +2,7 @@
 #define _HAS_SHIP_TYPE_H
 
 #include "list.h"
+#include "universe.h"
 
 struct ship_type {
 	char *name;
@@ -11,6 +12,6 @@ struct ship_type {
 };
 
 void ship_type_free(struct ship_type * const type);
-int load_all_ships(const char * const file);
+int load_ships_from_file(const char * const file, struct universe * const universe);
 
 #endif
