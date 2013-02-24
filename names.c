@@ -11,6 +11,7 @@
 
 void names_init(struct name_list *l)
 {
+	INIT_LIST_HEAD(&l->taken);
 	l->prefix = ptrarray_create();
 	l->first  = ptrarray_create();
 	l->second = ptrarray_create();
@@ -29,7 +30,6 @@ void names_free(struct name_list *l)
 void names_load(struct name_list *l, const char * const prefix, const char * const first,
 		const char * const second, const char * const suffix)
 {
-	INIT_LIST_HEAD(&l->taken);
 	if (prefix)
 		l->prefix = file_to_ptrarray(prefix, l->prefix);
 	if (first)
