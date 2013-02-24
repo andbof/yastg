@@ -17,9 +17,42 @@ void cli_tree_destroy(struct list_head *root)
 	st_destroy(root, ST_DO_FREE_DATA);
 }
 
+static char* trim_and_validate(char *string)
+{
+	size_t last;
+
+	if (!string || string[0] == '\0')
+		return NULL;
+
+	while (isspace(*string))
+		string++;
+
+	last = strlen(string);
+	if (!last)
+		return NULL;
+
+	last--;
+	while (isspace(string[last])) {
+		string[last] = '\0';
+		if (last)
+			last--;
+		else
+			break;
+	}
+
+	if (!*string)
+		return NULL;
+
+	return string;
+}
+
 int cli_add_cmd(struct list_head *root, char *cmd, int (*func)(void*, char*), void *ptr, char *help)
 {
 	struct cli_data *node;
+
+	cmd = trim_and_validate(cmd);
+	if (!cmd)
+		return -1;
 
 	node = malloc(sizeof(*node));
 	if (!node)
@@ -53,35 +86,6 @@ int cli_rm_cmd(struct list_head *root, char *cmd)
 
 	free(node);
 	return 0;
-}
-
-static char* trim_and_validate(char *string)
-{
-	size_t last;
-
-	if (!string || string[0] == '\0')
-		return NULL;
-
-	while (isspace(*string))
-		string++;
-
-	last = strlen(string);
-	if (!last)
-		return NULL;
-
-	last--;
-	while (isspace(string[last])) {
-		string[last] = '\0';
-		if (last)
-			last--;
-		else
-			break;
-	}
-
-	if (!*string)
-		return NULL;
-
-	return string;
 }
 
 int cli_run_cmd(struct list_head *root, char *string)
