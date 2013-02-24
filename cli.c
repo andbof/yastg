@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "cli.h"
@@ -88,40 +87,45 @@ int cli_rm_cmd(struct list_head *root, char *cmd)
 	return 0;
 }
 
-int cli_run_cmd(struct list_head *root, char *string)
+int cli_run_cmd(struct list_head * const root, const char * const string)
 {
-	int ret;
+	int r;
 	unsigned int i, len;
-	char *cmd;
-	char *param;
+	char *cmd, *param;
+	char *line = NULL;
 	struct cli_data *node;
 
-	string = trim_and_validate(string);
 	if (!string)
 		return -1;
 
-	len = strlen(string);
+	line = strdup(string);
+	if (!line)
+		return -1;
 
-	for (i = 0; i < len && string[i] != ' '; i++);
-
-	cmd = alloca(i + 1);
-	memcpy(cmd, string, i);
-	cmd[i] = '\0';
-
-	param = NULL;
-	if (i < len - 1) {
-		param = alloca(len - i + 1);
-		memcpy(param, string + i + 1, len - i);
-		param[len - i] = '\0';
+	cmd = trim_and_validate(line);
+	if (!cmd) {
+		free(line);
+		return -1;
 	}
+
+	len = strlen(cmd);
+
+	for (i = 0; i < len && !isspace(line[i]); i++);
+	line[i] = '\0';
+
+	if (i < len - 1)
+		param = trim_and_validate(cmd + i + 1);
+	else
+		param = NULL;
 
 	node = st_lookup_string(root, cmd);
 	if (node && node->func)
-		ret = node->func(node->data, param);
+		r = node->func(node->data, param);
 	else
-		ret = -1;
+		r = -1;
 
-	return ret;
+	free(line);
+	return r;
 }
 
 static void __cli_print_help(FILE *f, struct list_head *root, char *buf, size_t idx, const size_t len)

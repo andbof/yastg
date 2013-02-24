@@ -8,7 +8,7 @@ void cli_tree_destroy(struct list_head *root);
 
 int cli_add_cmd(struct list_head *root, char *cmd, int (*func)(void*, char*), void *ptr, char *help);
 int cli_rm_cmd(struct list_head *root, char *cmd);
-int cli_run_cmd(struct list_head *root, char *cmd);
+int cli_run_cmd(struct list_head * const root, const char * const string);
 
 void cli_print_help(FILE *f, struct list_head *root);
 
