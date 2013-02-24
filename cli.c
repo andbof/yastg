@@ -1,7 +1,8 @@
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include "cli.h"
 #include "stringtree.h"
 
@@ -61,17 +62,23 @@ static char* trim_and_validate(char *string)
 	if (!string || string[0] == '\0')
 		return NULL;
 
-	while (string[0] == ' ')
+	while (isspace(*string))
 		string++;
 
 	last = strlen(string);
-	if (last) {
-		last--;
-		while (last > 0 && string[last] == ' ')
-			string[last--] = '\0';
+	if (!last)
+		return NULL;
+
+	last--;
+	while (isspace(string[last])) {
+		string[last] = '\0';
+		if (last)
+			last--;
+		else
+			break;
 	}
 
-	if (last == 0)
+	if (!*string)
 		return NULL;
 
 	return string;
