@@ -80,8 +80,6 @@ static int create_universe(struct universe * const u)
 
 int main(int argc, char **argv)
 {
-	struct civ *cv;
-	struct system *s;
 	struct server server;
 
 	open_log_file();
@@ -120,14 +118,15 @@ int main(int argc, char **argv)
 	log_printfn(LOG_MAIN, "cleaning up");
 	mprintf("Cleaning up ... ");
 
-	struct list_head *p, *q;
-	ptrlist_for_each_entry(s, &univ.systems, p) {
+	struct list_head *lh;
+	struct system *s;
+	ptrlist_for_each_entry(s, &univ.systems, lh) {
 		system_free(s);
 	}
 
-	list_for_each_safe(p, q, &univ.civs) {
-		cv = list_entry(p, struct civ, list);
-		list_del(p);
+	struct civ *cv, *_cv;
+	list_for_each_entry_safe(cv, _cv, &univ.civs, list) {
+		list_del(&cv->list);
 		civ_free(cv);
 		free(cv);
 	}
