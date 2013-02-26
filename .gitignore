@@ -40,6 +40,7 @@ libtool
 ltmain.sh
 ylwrap
 autom4te.cache
+test/cli_test
 test/config_test
 test/conntest
 test/stringtree_test
