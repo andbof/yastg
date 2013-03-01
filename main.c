@@ -78,6 +78,37 @@ static int create_universe(struct universe * const u)
 	return 0;
 }
 
+static int wait_for_exit()
+{
+	sigset_t set;
+	int signal;
+
+	if (sigfillset(&set))
+		goto err;
+	if (pthread_sigmask(SIG_SETMASK, &set, NULL))
+		goto err;
+
+	if (sigemptyset(&set))
+		goto err;
+	if (sigaddset(&set, SIGHUP))
+		goto err;
+	if (sigaddset(&set, SIGINT))
+		goto err;
+	if (sigaddset(&set, SIGTERM))
+		goto err;
+	if (sigaddset(&set, SIGQUIT))
+		goto err;
+
+	if (sigwait(&set, &signal))
+		goto err;
+
+	log_printfn(LOG_MAIN, "process received signal %d", signal);
+	return 0;
+
+err:
+	return -1;
+}
+
 int main(int argc, char **argv)
 {
 	struct server server;
@@ -109,12 +140,15 @@ int main(int argc, char **argv)
 	if (start_console(&console))
 		die("%s", "Could not start console thread");
 
-	pthread_join(console.thread, NULL);
+	if (wait_for_exit())
+		die("%s", "Signal handling error");
 
 	/*
 	 * This will also automatically kill all player threads and terminate all connections
 	 */
+	stop_console(&console);
 	stop_server(&server);
+	pthread_join(console.thread, NULL);
 	pthread_join(server.thread, NULL);
 
 	log_printfn(LOG_MAIN, "cleaning up");

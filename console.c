@@ -241,6 +241,7 @@ static int cmd_quit(void *_console, char *param)
 	struct console *console = _console;
 	printf("Bye!\n");
 	console->running = 0;
+	kill(0, SIGTERM);
 	return 0;
 }
 
