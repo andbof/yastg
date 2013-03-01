@@ -7,7 +7,6 @@
 struct server {
 	pthread_t thread;
 	int fd[2];
-	int running;
 };
 
 struct signal {

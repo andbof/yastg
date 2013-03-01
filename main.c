@@ -81,10 +81,9 @@ static int create_universe(struct universe * const u)
 int main(int argc, char **argv)
 {
 	struct server server;
+	struct console console;
 
 	open_log_file();
-
-	initialize_server(&server);
 
 	if (parse_command_line(argc, argv))
 		die("%s", "Syntax error on command line");
@@ -106,8 +105,11 @@ int main(int argc, char **argv)
 	if (start_server(&server))
 		die("%s", "Could not start server thread");
 
-	if (run_console(&server))
-		die("%s", "Console returned error");
+	console_init(&console, &server);
+	if (start_console(&console))
+		die("%s", "Could not start console thread");
+
+	pthread_join(console.thread, NULL);
 
 	/*
 	 * This will also automatically kill all player threads and terminate all connections
@@ -117,6 +119,8 @@ int main(int argc, char **argv)
 
 	log_printfn(LOG_MAIN, "cleaning up");
 	printf("Cleaning up ... ");
+
+	console_free(&console);
 
 	struct list_head *lh;
 	struct system *s;

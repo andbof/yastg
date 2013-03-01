@@ -236,15 +236,15 @@ static int cmd_stats(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_quit(void *_server, char *param)
+static int cmd_quit(void *_console, char *param)
 {
-	struct server *server = _server;
+	struct console *console = _console;
 	printf("Bye!\n");
-	server->running = 0;
+	console->running = 0;
 	return 0;
 }
 
-static int register_console_commands(struct list_head * const cli_root, struct server * server)
+static int register_console_commands(struct list_head * const cli_root, struct console * const console)
 {
 	if (cli_add_cmd(cli_root, "ports", cmd_ports, cli_root, "List available ports"))
 		goto err;
@@ -256,13 +256,13 @@ static int register_console_commands(struct list_head * const cli_root, struct s
 		goto err;
 	if (cli_add_cmd(cli_root, "lsmod", cmd_lsmod, NULL, "List modules currently loaded"))
 		goto err;
-	if (cli_add_cmd(cli_root, "wall", cmd_wall, server, "Send a message to all connected players"))
+	if (cli_add_cmd(cli_root, "wall", cmd_wall, console->server, "Send a message to all connected players"))
 		goto err;
-	if (cli_add_cmd(cli_root, "pause", cmd_pause, server, "Pause all players"))
+	if (cli_add_cmd(cli_root, "pause", cmd_pause, console->server, "Pause all players"))
 		goto err;
-	if (cli_add_cmd(cli_root, "planets", cmd_planets, server, "List available planet types"))
+	if (cli_add_cmd(cli_root, "planets", cmd_planets, console->server, "List available planet types"))
 		goto err;
-	if (cli_add_cmd(cli_root, "resume", cmd_resume, server, "Resume all players"))
+	if (cli_add_cmd(cli_root, "resume", cmd_resume, console->server, "Resume all players"))
 		goto err;
 	if (cli_add_cmd(cli_root, "rmmod", cmd_rmmod, NULL, "Unload a loadable module"))
 		goto err;
@@ -272,7 +272,7 @@ static int register_console_commands(struct list_head * const cli_root, struct s
 		goto err;
 	if (cli_add_cmd(cli_root, "memstat", cmd_memstat, NULL, "Display memory statistics"))
 		goto err;
-	if (cli_add_cmd(cli_root, "quit", cmd_quit, server, "Terminate the server"))
+	if (cli_add_cmd(cli_root, "quit", cmd_quit, console, "Terminate the server"))
 		goto err;
 
 	return 0;
@@ -282,18 +282,19 @@ err:
 	return -1;
 }
 
-int run_console(struct server *server)
+static void* console_main(void *_console)
 {
+	struct console *console = _console;
 	char line[256];	/* FIXME */
 	LIST_HEAD(cli_root);
 
-	if (register_console_commands(&cli_root, server))
+	if (register_console_commands(&cli_root, console))
 		die("%s", "Could not register console commands");
 
 	printf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
 	printf("Universe has %lu systems in total\n", ptrlist_len(&univ.systems));
 
-	while (server->running) {
+	while (console->running) {
 		printf("console> ");
 		fgets(line, sizeof(line), stdin); /* FIXME */
 		chomp(line);
@@ -305,4 +306,49 @@ int run_console(struct server *server)
 	cli_tree_destroy(&cli_root);
 
 	return 0;
+}
+
+void console_init(struct console * const console, struct server * const server)
+{
+	memset(console, 0, sizeof(*console));
+	console->server = server;
+	pthread_mutex_init(&console->running_lock, NULL);
+}
+
+void console_free(struct console * const console)
+{
+	pthread_mutex_destroy(&console->running_lock);
+}
+
+int start_console(struct console * const console)
+{
+	sigset_t old, new;
+
+	sigfillset(&new);
+
+	if (pthread_sigmask(SIG_SETMASK, &new, &old))
+		goto err;
+
+	pthread_mutex_lock(&console->running_lock);
+	console->running = 1;
+	pthread_mutex_unlock(&console->running_lock);
+	if (pthread_create(&console->thread, NULL, console_main, console) != 0)
+		goto err;
+
+	if (pthread_sigmask(SIG_SETMASK, &old, NULL))
+		goto err_cancel;
+
+	return 0;
+
+err_cancel:
+	pthread_cancel(console->thread);
+err:
+	return -1;
+}
+
+void stop_console(struct console * const console)
+{
+	pthread_mutex_lock(&console->running_lock);
+	console->running = 0;
+	pthread_mutex_unlock(&console->running_lock);
 }

@@ -516,11 +516,6 @@ static void* server_main(void *_server)
 	return NULL;
 }
 
-void initialize_server(struct server * const server)
-{
-	server->running = 1;
-}
-
 int start_server(struct server * const server)
 {
 	sigset_t old, new;
