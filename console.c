@@ -27,7 +27,7 @@ static void write_msg(int fd, struct signal *msg, char *msgdata)
 		bug("%s", "server signalling fd is closed");
 }
 
-static int cmd_ports(void *ptr, char *param)
+static int cmd_ports(void *_console, char *param)
 {
 	struct port_type *type;
 
@@ -45,16 +45,15 @@ static int cmd_ports(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_help(void *_cli_root, char *param)
+static int cmd_help(void *_console, char *param)
 {
-	struct list_head *cli_root = _cli_root;
-
-	cli_print_help(stdout, cli_root);
+	struct console *console = _console;
+	cli_print_help(stdout, &console->cli);
 
 	return 0;
 }
 
-static int cmd_insmod(void *ptr, char *param)
+static int cmd_insmod(void *_console, char *param)
 {
 	int r;
 
@@ -72,7 +71,7 @@ static int cmd_insmod(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_items(void *ptr, char *param)
+static int cmd_items(void *_console, char *param)
 {
 	struct item *i;
 
@@ -83,7 +82,7 @@ static int cmd_items(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_lsmod(void *ptr, char *param)
+static int cmd_lsmod(void *_console, char *param)
 {
 	struct module *m;
 
@@ -99,33 +98,33 @@ static int cmd_lsmod(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_wall(void *_server, char *message)
+static int cmd_wall(void *_console, char *message)
 {
-	struct server *server = _server;
+	struct console *console = _console;
 	if (message) {
 		struct signal msg = {
 			.cnt = strlen(message) + 1,
 			.type = MSG_WALL
 		};
-		write_msg(server->fd[1], &msg, message);
+		write_msg(console->server->fd[1], &msg, message);
 	} else {
 		printf("usage: wall <message>\n");
 	}
 	return 0;
 }
 
-static int cmd_pause(void *_server, char *param)
+static int cmd_pause(void *_console, char *param)
 {
-	struct server *server = _server;
+	struct console *console = _console;
 	struct signal msg = {
 		.cnt = 0,
 		.type = MSG_PAUSE
 	};
-	write_msg(server->fd[1], &msg, NULL);
+	write_msg(console->server->fd[1], &msg, NULL);
 	return 0;
 }
 
-static int cmd_planets(void *ptr, char *param)
+static int cmd_planets(void *_console, char *param)
 {
 	struct planet_type *type;
 
@@ -145,14 +144,14 @@ static int cmd_planets(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_resume(void *_server, char *param)
+static int cmd_resume(void *_console, char *param)
 {
-	struct server *server = _server;
+	struct console *console = _console;
 	struct signal msg = {
 		.cnt = 0,
 		.type = MSG_CONT
 	};
-	write_msg(server->fd[1], &msg, NULL);
+	write_msg(console->server->fd[1], &msg, NULL);
 	return 0;
 }
 
@@ -167,7 +166,7 @@ static void _cmd_rmmod(struct module *m)
 		       );
 }
 
-static int cmd_rmmod(void *ptr, char *name)
+static int cmd_rmmod(void *_console, char *name)
 {
 	struct module *m;
 
@@ -187,7 +186,7 @@ static int cmd_rmmod(void *ptr, char *name)
 	return 0;
 }
 
-static int cmd_ships(void *ptr, char *param)
+static int cmd_ships(void *_console, char *param)
 {
 	struct ship_type *type;
 
@@ -200,7 +199,7 @@ static int cmd_ships(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_memstat(void *ptr, char *param)
+static int cmd_memstat(void *_console, char *param)
 {
 	struct mallinfo minfo = mallinfo();
 	printf("Memory statistics:\n"
@@ -216,7 +215,7 @@ static int cmd_memstat(void *ptr, char *param)
 	return 0;
 }
 
-static int cmd_stats(void *ptr, char *param)
+static int cmd_stats(void *_console, char *param)
 {
 	struct tm t;
 	char created[32];
@@ -245,41 +244,41 @@ static int cmd_quit(void *_console, char *param)
 	return 0;
 }
 
-static int register_console_commands(struct list_head * const cli_root, struct console * const console)
+static int register_console_commands(struct console * console)
 {
-	if (cli_add_cmd(cli_root, "ports", cmd_ports, cli_root, "List available ports"))
+	if (cli_add_cmd(&console->cli, "ports", cmd_ports, console, "List available ports"))
 		goto err;
-	if (cli_add_cmd(cli_root, "help", cmd_help, cli_root, "Display this help text"))
+	if (cli_add_cmd(&console->cli, "help", cmd_help, console, "Display this help text"))
 		goto err;
-	if (cli_add_cmd(cli_root, "insmod", cmd_insmod, NULL, "Insert a loadable module"))
+	if (cli_add_cmd(&console->cli, "insmod", cmd_insmod, console, "Insert a loadable module"))
 		goto err;
-	if (cli_add_cmd(cli_root, "items", cmd_items, NULL, "List available items"))
+	if (cli_add_cmd(&console->cli, "items", cmd_items, console, "List available items"))
 		goto err;
-	if (cli_add_cmd(cli_root, "lsmod", cmd_lsmod, NULL, "List modules currently loaded"))
+	if (cli_add_cmd(&console->cli, "lsmod", cmd_lsmod, console, "List modules currently loaded"))
 		goto err;
-	if (cli_add_cmd(cli_root, "wall", cmd_wall, console->server, "Send a message to all connected players"))
+	if (cli_add_cmd(&console->cli, "wall", cmd_wall, console, "Send a message to all connected players"))
 		goto err;
-	if (cli_add_cmd(cli_root, "pause", cmd_pause, console->server, "Pause all players"))
+	if (cli_add_cmd(&console->cli, "pause", cmd_pause, console, "Pause all players"))
 		goto err;
-	if (cli_add_cmd(cli_root, "planets", cmd_planets, console->server, "List available planet types"))
+	if (cli_add_cmd(&console->cli, "planets", cmd_planets, console, "List available planet types"))
 		goto err;
-	if (cli_add_cmd(cli_root, "resume", cmd_resume, console->server, "Resume all players"))
+	if (cli_add_cmd(&console->cli, "resume", cmd_resume, console, "Resume all players"))
 		goto err;
-	if (cli_add_cmd(cli_root, "rmmod", cmd_rmmod, NULL, "Unload a loadable module"))
+	if (cli_add_cmd(&console->cli, "rmmod", cmd_rmmod, console, "Unload a loadable module"))
 		goto err;
-	if (cli_add_cmd(cli_root, "ships", cmd_ships, NULL, "List available ship types"))
+	if (cli_add_cmd(&console->cli, "ships", cmd_ships, console, "List available ship types"))
 		goto err;
-	if (cli_add_cmd(cli_root, "stats", cmd_stats, NULL, "Display statistics"))
+	if (cli_add_cmd(&console->cli, "stats", cmd_stats, console, "Display statistics"))
 		goto err;
-	if (cli_add_cmd(cli_root, "memstat", cmd_memstat, NULL, "Display memory statistics"))
+	if (cli_add_cmd(&console->cli, "memstat", cmd_memstat, console, "Display memory statistics"))
 		goto err;
-	if (cli_add_cmd(cli_root, "quit", cmd_quit, console, "Terminate the server"))
+	if (cli_add_cmd(&console->cli, "quit", cmd_quit, console, "Terminate the server"))
 		goto err;
 
 	return 0;
 
 err:
-	cli_tree_destroy(cli_root);
+	cli_tree_destroy(&console->cli);
 	return -1;
 }
 
@@ -287,9 +286,9 @@ static void* console_main(void *_console)
 {
 	struct console *console = _console;
 	char line[256];	/* FIXME */
-	LIST_HEAD(cli_root);
+	INIT_LIST_HEAD(&console->cli);
 
-	if (register_console_commands(&cli_root, console))
+	if (register_console_commands(console))
 		die("%s", "Could not register console commands");
 
 	printf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
@@ -300,11 +299,11 @@ static void* console_main(void *_console)
 		fgets(line, sizeof(line), stdin); /* FIXME */
 		chomp(line);
 
-		if (strlen(line) > 0 && cli_run_cmd(&cli_root, line) < 0)
+		if (strlen(line) > 0 && cli_run_cmd(&console->cli, line) < 0)
 			printf("Unknown command or syntax error.\n");
 	}
 
-	cli_tree_destroy(&cli_root);
+	cli_tree_destroy(&console->cli);
 
 	return 0;
 }

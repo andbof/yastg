@@ -7,6 +7,7 @@
 
 struct console {
 	struct server *server;
+	struct list_head cli;
 	int running;
 	pthread_mutex_t running_lock;
 	pthread_t thread;
