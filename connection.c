@@ -39,15 +39,8 @@ int conn_init(struct connection *conn)
 	memset(conn, 0, sizeof(*conn));
 	pthread_mutex_init(&conn->worker_lock, NULL);
 	conn->id = mtrandom_uint(UINT32_MAX);
+	buffer_init(&conn->send);
 	buffer_init(&conn->recv);
-
-	conn->sbufs = CONN_MAXBUFSIZE;
-
-	if ((conn->sbuf = malloc(conn->sbufs)) == NULL) {
-		log_printfn(LOG_CONN, "failed allocating send buffer for connection");
-		connection_free(conn);
-		return 1;
-	}
 
 	INIT_LIST_HEAD(&conn->list);
 	INIT_LIST_HEAD(&conn->work);
@@ -68,38 +61,10 @@ void connection_free(struct connection *conn)
 
 	if (conn->peerfd)
 		close(conn->peerfd);
+	buffer_free(&conn->send);
 	buffer_free(&conn->recv);
-	free(conn->sbuf);
 	if (conn->pl)
 		player_free(conn->pl);
-}
-
-void __attribute__((format(printf, 2, 3))) conn_send(struct connection *data, char *format, ...)
-{
-	va_list ap;
-	size_t len;
-
-	if (data->terminate)
-		return;
-
-	va_start(ap, format);
-	len = vsnprintf(data->sbuf, data->sbufs, format, ap);
-	if (len >= data->sbufs)
-		log_printfn(LOG_CONN, "warning: send buffer overflow on connection %x (wanted to send %zu bytes but buffer size is %zu bytes), truncating data", data->id, len, data->sbufs);
-	va_end(ap);
-
-	size_t sb = 0;
-	int i;
-	len = strlen(data->sbuf);
-	do {
-		i = send(data->peerfd, data->sbuf + sb, len - sb, MSG_NOSIGNAL);
-		if (i < 1) {
-			log_printfn(LOG_CONN, "send error (connection %x), terminating connection", data->id);
-			server_disconnect_nicely(data);
-		}
-		sb += i;
-	} while (sb < len);
-
 }
 
 void __attribute__((format(printf, 2, 3))) conn_error(struct connection *data, char *format, ...)
@@ -212,6 +177,18 @@ void conn_do_work(struct conn_data *data, struct connection *conn)
 	list_add_tail(&conn->work, &data->work_items);
 	pthread_cond_signal(&data->workers_cond);
 	pthread_mutex_unlock(&data->workers_lock);
+}
+
+void conn_send_buffer(struct connection * const data)
+{
+	assert(data);
+	assert(data->peerfd);
+	if (write_buffer_into_fd(data->peerfd, &data->send)) {
+		log_printfn(LOG_CONN,
+				"send error (connection %x), terminating connection",
+				data->id);
+		server_disconnect_nicely(data);
+	}
 }
 
 static int start_new_worker(struct conn_data *data)

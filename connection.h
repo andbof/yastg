@@ -12,6 +12,14 @@
 #define CONN_BUFSIZE 1500
 #define CONN_MAXBUFSIZE 10240
 
+#define conn_send(data, ...)					\
+	do {							\
+		if (!data->terminate) {				\
+			bufprintf(&data->send, __VA_ARGS__);	\
+			conn_send_buffer(data);			\
+		}						\
+	} while (0)
+
 struct connection {
 	uint32_t id;
 	ev_io data_watcher;
@@ -21,9 +29,7 @@ struct connection {
 	struct sockaddr_storage sock;
 	char peer[INET6_ADDRSTRLEN + 7];
 	struct player *pl;
-	size_t sbufs;
-	struct buffer recv;
-	char *sbuf;
+	struct buffer send, recv;
 	int paused;
 	int terminate;
 	struct list_head list, work;
@@ -48,13 +54,13 @@ struct conn_worker_list {
 int conn_init(struct connection *conn);
 void connection_free(struct connection *conn);
 void* conn_main(void *dataptr);
-void __attribute__((format(printf, 2, 3))) conn_send(struct connection *data, char *format, ...);
 void conn_cleanexit(struct connection *data);
 void __attribute__((format(printf, 2, 3))) conn_error(struct connection *data, char *format, ...);
 void* connection_worker(void *_data);
 int conn_fulfixinit(struct connection *data);
 
 void conn_do_work(struct conn_data *data, struct connection *conn);
+void conn_send_buffer(struct connection * const data);
 
 int conndata_init(struct conn_data *data);
 void conn_shutdown(struct conn_data *data);
