@@ -163,5 +163,5 @@ void cli_print_help(FILE *f, struct list_head *root)
 	char buf[MAX_CMD_LEN];
 	memset(buf, 0, sizeof(buf));
 
-	__cli_print_help(f, root, buf, 0, MAX_CMD_LEN);
+	__cli_print_help(f, root, buf, 0, sizeof(buf));
 }
