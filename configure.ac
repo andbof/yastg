@@ -1,5 +1,5 @@
 AC_PREREQ([2.67])
-AC_INIT([yastg],[m4_esyscmd_s([git describe --always])])
+AC_INIT([yastg],[m4_esyscmd_s([git describe --always --dirty])])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
