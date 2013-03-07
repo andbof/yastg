@@ -43,6 +43,8 @@ dist_conf_DATA = data/constellations \
 # optflags: -O3 -funroll-loops
 yastg_SOURCES = asciiart.c \
 		asciiart.h \
+		buffer.c \
+		buffer.h \
 		cargo.c \
 		cargo.h \
 		civ.c \
