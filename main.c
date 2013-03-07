@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 	pthread_join(server.thread, NULL);
 
 	log_printfn(LOG_MAIN, "cleaning up");
-	mprintf("Cleaning up ... ");
+	printf("Cleaning up ... ");
 
 	struct list_head *lh;
 	struct system *s;

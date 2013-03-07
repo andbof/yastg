@@ -118,7 +118,7 @@ static void spawn_civilizations(struct universe *u)
 		if (tries >= 100)
 			break;
 
-		mprintf("Chose %s as home system for %s\n", s->name, c->name);
+		printf("Chose %s as home system for %s\n", s->name, c->name);
 		s->owner = c;
 		c->home = s;
 		ptrlist_push(&c->systems, s);
@@ -147,7 +147,7 @@ static void grow_all_civs(struct universe *u)
 	unsigned long goal_hab, total_power;
 	struct civ *c, *_c;
 
-	mprintf("Growing civilizations ...\n");
+	printf("Growing civilizations ...\n");
 
 	goal_hab = ptrlist_len(&u->systems) * UNIVERSE_CIV_FRAC;
 
@@ -172,7 +172,7 @@ static void grow_all_civs(struct universe *u)
 		}
 	}
 
-	mprintf("done.\n");
+	printf("done.\n");
 }
 
 void civ_spawncivs(struct universe *u)
@@ -185,10 +185,10 @@ void civ_spawncivs(struct universe *u)
 
 	grow_all_civs(u);
 
-	mprintf("Civilization stats:\n");
+	printf("Civilization stats:\n");
 	list_for_each_entry(c, &u->civs, list)
-		mprintf("  %s has %lu systems (%.2f%%) with power %u\n", c->name, ptrlist_len(&c->systems), ptrlist_len(&c->systems)/(float)u->inhabited_systems*100, c->power);
-	mprintf("%lu systems of %lu are inhabited (%.2f%%)\n", u->inhabited_systems, ptrlist_len(&u->systems), u->inhabited_systems/(float)ptrlist_len(&u->systems)*100);
+		printf("  %s has %lu systems (%.2f%%) with power %u\n", c->name, ptrlist_len(&c->systems), ptrlist_len(&c->systems)/(float)u->inhabited_systems*100, c->power);
+	printf("%lu systems of %lu are inhabited (%.2f%%)\n", u->inhabited_systems, ptrlist_len(&u->systems), u->inhabited_systems/(float)ptrlist_len(&u->systems)*100);
 }
 
 void civ_init(struct civ *c)

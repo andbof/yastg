@@ -31,11 +31,11 @@ static int cmd_ports(void *ptr, char *param)
 {
 	struct port_type *type;
 
-	mprintf("%-26s %-26s %-8s %-8s %-8s %-8s\n",
+	printf("%-26s %-26s %-8s %-8s %-8s %-8s\n",
 			"Name", "Description", "OCEAN", "SURFACE",
 			"ORBIT", "ROGUE");
 	list_for_each_entry(type, &univ.port_types, list)
-		mprintf("%-26.26s %-26.26s %-8s %-8s %-8s %-8s\n",
+		printf("%-26.26s %-26.26s %-8s %-8s %-8s %-8s\n",
 				type->name, type->desc,
 				(type->zones[OCEAN] ? "Yes" : "No"),
 				(type->zones[SURFACE] ? "Yes" : "No"),
@@ -59,13 +59,13 @@ static int cmd_insmod(void *ptr, char *param)
 	int r;
 
 	if (!param) {
-		mprintf("usage: insmod <file name.so>\n");
+		printf("usage: insmod <file name.so>\n");
 		return 0;
 	}
 
 	r = module_insert(param);
 	if (r != 0)
-		mprintf("Error inserting module: %s\n",
+		printf("Error inserting module: %s\n",
 				(r == MODULE_DL_ERROR ? dlerror() : module_strerror(r))
 		       );
 
@@ -76,9 +76,9 @@ static int cmd_items(void *ptr, char *param)
 {
 	struct item *i;
 
-	mprintf("%-24s %-8s\n", "Name", "Weight");
+	printf("%-24s %-8s\n", "Name", "Weight");
 	list_for_each_entry(i, &univ.items, list)
-		mprintf("%-24.24s %-8ld\n", i->name, i->weight);
+		printf("%-24.24s %-8ld\n", i->name, i->weight);
 
 	return 0;
 }
@@ -88,13 +88,13 @@ static int cmd_lsmod(void *ptr, char *param)
 	struct module *m;
 
 	if (list_empty(&modules_loaded)) {
-		mprintf("No modules are currently loaded\n");
+		printf("No modules are currently loaded\n");
 		return 0;
 	}
 
-	mprintf("%-16s %-8s\n", "Module", "Size");
+	printf("%-16s %-8s\n", "Module", "Size");
 	list_for_each_entry(m, &modules_loaded, list)
-		mprintf("%-16s %-8d\n", m->name, m->size);
+		printf("%-16s %-8d\n", m->name, m->size);
 
 	return 0;
 }
@@ -109,7 +109,7 @@ static int cmd_wall(void *_server, char *message)
 		};
 		write_msg(server->fd[1], &msg, message);
 	} else {
-		mprintf("usage: wall <message>\n");
+		printf("usage: wall <message>\n");
 	}
 	return 0;
 }
@@ -129,11 +129,11 @@ static int cmd_planets(void *ptr, char *param)
 {
 	struct planet_type *type;
 
-	mprintf("%-5s %-26s %-4s %-4s %-4s %-12s %-12s %-10s\n",
+	printf("%-5s %-26s %-4s %-4s %-4s %-12s %-12s %-10s\n",
 			"Class", "Name", "HOT", "ECO", "COLD",
 			"Min life", "Max life", "Port types");
 	list_for_each_entry(type, &univ.planet_types, list)
-		mprintf("%c     %-26.26s %-4.4s %-4.4s %-4.4s %-12.12s %-12.12s %-10lu\n",
+		printf("%c     %-26.26s %-4.4s %-4.4s %-4.4s %-12.12s %-12.12s %-10lu\n",
 				type->c, type->name,
 				(type->zones[HOT] ? "Yes" : "No"),
 				(type->zones[ECO] ? "Yes" : "No"),
@@ -162,7 +162,7 @@ static void _cmd_rmmod(struct module *m)
 
 	r = module_remove(m);
 	if (r)
-		mprintf("Error removing module: %s\n",
+		printf("Error removing module: %s\n",
 				(r == MODULE_DL_ERROR ? dlerror() : module_strerror(r))
 		       );
 }
@@ -172,7 +172,7 @@ static int cmd_rmmod(void *ptr, char *name)
 	struct module *m;
 
 	if (!name) {
-		mprintf("usage: rmmod <module>\n");
+		printf("usage: rmmod <module>\n");
 		return 0;
 	}
 
@@ -183,7 +183,7 @@ static int cmd_rmmod(void *ptr, char *name)
 		}
 	}
 
-	mprintf("Module %s is not currently loaded\n", name);
+	printf("Module %s is not currently loaded\n", name);
 	return 0;
 }
 
@@ -191,10 +191,10 @@ static int cmd_ships(void *ptr, char *param)
 {
 	struct ship_type *type;
 
-	mprintf("%-26s %-26s %-12s\n",
+	printf("%-26s %-26s %-12s\n",
 			"Name", "Description", "Carry weight");
 	list_for_each_entry(type, &univ.ship_types, list)
-		mprintf("%-26.26s %-26.26s %-12d\n",
+		printf("%-26.26s %-26.26s %-12d\n",
 				type->name, type->desc, type->carry_weight);
 
 	return 0;
@@ -203,7 +203,7 @@ static int cmd_ships(void *ptr, char *param)
 static int cmd_memstat(void *ptr, char *param)
 {
 	struct mallinfo minfo = mallinfo();
-	mprintf("Memory statistics:\n"
+	printf("Memory statistics:\n"
 			"  Memory allocated with sbrk by malloc:           %d bytes\n"
 			"  Number of chunks not in use:                    %d\n"
 			"  Number of chunks allocated with mmap:           %d\n"
@@ -225,7 +225,7 @@ static int cmd_stats(void *ptr, char *param)
 	localtime_r(&univ.created, &t);
 	strftime(created, sizeof(created), "%c", &t);
 
-	mprintf("Statistics:\n"
+	printf("Statistics:\n"
 			"  Size of universe:          %lu systems\n"
 			"  Universe created:          %s\n"
 			"  Number of users known:     %s\n"
@@ -239,7 +239,7 @@ static int cmd_stats(void *ptr, char *param)
 static int cmd_quit(void *_server, char *param)
 {
 	struct server *server = _server;
-	mprintf("Bye!\n");
+	printf("Bye!\n");
 	server->running = 0;
 	return 0;
 }
@@ -290,16 +290,16 @@ int run_console(struct server *server)
 	if (register_console_commands(&cli_root, server))
 		die("%s", "Could not register console commands");
 
-	mprintf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
-	mprintf("Universe has %lu systems in total\n", ptrlist_len(&univ.systems));
+	printf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
+	printf("Universe has %lu systems in total\n", ptrlist_len(&univ.systems));
 
 	while (server->running) {
-		mprintf("console> ");
+		printf("console> ");
 		fgets(line, sizeof(line), stdin); /* FIXME */
 		chomp(line);
 
 		if (strlen(line) > 0 && cli_run_cmd(&cli_root, line) < 0)
-			mprintf("Unknown command or syntax error.\n");
+			printf("Unknown command or syntax error.\n");
 	}
 
 	cli_tree_destroy(&cli_root);

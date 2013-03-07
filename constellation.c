@@ -34,7 +34,7 @@ static int addconstellation(const char * const cname)
 	if (nums == 0)
 		nums = 1;
 
-	mprintf("addconstellation: will create %lu systems (universe has %lu so far)\n", nums, ptrlist_len(&univ.systems));
+	printf("addconstellation: will create %lu systems (universe has %lu so far)\n", nums, ptrlist_len(&univ.systems));
 
 	pthread_rwlock_wrlock(&univ.systemnames_lock);
 
@@ -87,7 +87,7 @@ static int addconstellation(const char * const cname)
 				ptrlist_pull(&work);
 		}
 
-		mprintf("Created %s (%p) at %ldx%ld\n", s->name, s, s->x, s->y);
+		printf("Created %s (%p) at %ldx%ld\n", s->name, s, s->x, s->y);
 
 	}
 

@@ -298,7 +298,7 @@ static void receive_peer_data(struct connection *data)
 		data->rbuf[data->rbufi - 1] = '\0';
 		chomp(data->rbuf);
 
-		mprintf("debug: received \"%s\" on socket\n", data->rbuf);
+		printf("debug: received \"%s\" on socket\n", data->rbuf);
 		
 		conn_do_work(&conn_data, data);
 

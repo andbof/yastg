@@ -99,13 +99,6 @@ extern const char* roman[ROMAN_N];
 #define MIN(x, y)			\
 	((x < y) ? x : y)
 
-#define mprintf(...)			\
-	do {				\
-		flockfile(stdout);	\
-		printf(__VA_ARGS__);	\
-		funlockfile(stdout);	\
-	} while(0)
-
 /* Misc functions */
 
 void downcase_valid(char *c);
