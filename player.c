@@ -654,7 +654,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 		cli_add_cmd(&player->cli, "leave", cmd_leave_planet, player, cmd_leave_planet_help);
 		break;
 	case NONE:
-		/* Fall through to default as NONE can only valid right after init */
+		/* Fall through to default as NONE is only valid right after init */
 	default:
 		bug("I don't know where player %s with connection %p is\n", player->name, player->conn);
 	}
