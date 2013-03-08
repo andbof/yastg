@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <ev.h>
+#include "buffer.h"
 #include "player.h"
 #include "server.h"
 
@@ -20,9 +21,8 @@ struct connection {
 	struct sockaddr_storage sock;
 	char peer[INET6_ADDRSTRLEN + 7];
 	struct player *pl;
-	size_t rbufs, sbufs;
-	size_t rbufi;
-	char *rbuf;
+	size_t sbufs;
+	struct buffer recv;
 	char *sbuf;
 	int paused;
 	int terminate;

@@ -18,6 +18,7 @@
 #include <ev.h>
 
 #include "common.h"
+#include "buffer.h"
 #include "log.h"
 #include "connection.h"
 #include "server.h"
@@ -38,13 +39,7 @@ int conn_init(struct connection *conn)
 	memset(conn, 0, sizeof(*conn));
 	pthread_mutex_init(&conn->worker_lock, NULL);
 	conn->id = mtrandom_uint(UINT32_MAX);
-	conn->rbufs = CONN_BUFSIZE;
-
-	if ((conn->rbuf = malloc(conn->rbufs)) == NULL) {
-		log_printfn(LOG_CONN, "failed allocating receive buffer for connection");
-		connection_free(conn);
-		return 1;
-	}
+	buffer_init(&conn->recv);
 
 	conn->sbufs = CONN_MAXBUFSIZE;
 
@@ -73,7 +68,7 @@ void connection_free(struct connection *conn)
 
 	if (conn->peerfd)
 		close(conn->peerfd);
-	free(conn->rbuf);
+	buffer_free(&conn->recv);
 	free(conn->sbuf);
 	if (conn->pl)
 		player_free(conn->pl);
@@ -167,8 +162,9 @@ void* connection_worker(void *_w)
 		conn->worker = 1;
 		pthread_mutex_unlock(&conn->worker_lock);
 
-		if (conn->rbuf[0] != '\0' && cli_run_cmd(&conn->pl->cli, conn->rbuf) < 0)
-			conn_send(conn, "Unknown command or syntax error: \"%s\"\n", conn->rbuf);
+		if (conn->recv.buf[0] != '\0' && cli_run_cmd(&conn->pl->cli, conn->recv.buf) < 0)
+			conn_send(conn, "Unknown command or syntax error: \"%s\"\n", conn->recv.buf);
+		buffer_reset(&conn->recv);
 		conn_send(conn, PROMPT);
 
 		pthread_mutex_lock(&conn->worker_lock);

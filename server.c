@@ -18,6 +18,7 @@
 
 #include "port_update.h"
 #include "common.h"
+#include "buffer.h"
 #include "log.h"
 #include "server.h"
 #include "connection.h"
@@ -268,41 +269,16 @@ static void server_msg_cb(struct ev_loop * const loop, ev_io * const w, const in
 	server_handlesignal(loop, &msg, data);
 }
 
-static void receive_peer_data(struct connection *data)
+static void receive_peer_data(struct connection * data)
 {
-	void *ptr;
+	read_into_buffer(data->peerfd, &data->recv);
 
-	data->rbufi += recv(data->peerfd, data->rbuf + data->rbufi, data->rbufs - data->rbufi, 0);
-	if (data->rbufi< 1) {
-		log_printfn(LOG_SERVER, "peer %s disconnected, terminating connection %x", data->peer, data->id);
-		server_disconnect_nicely(data);
-	}
-	if ((data->rbufi == data->rbufs) && (data->rbuf[data->rbufi - 1] != '\n')) {
-		if (data->rbufs == CONN_MAXBUFSIZE) {
-			log_printfn(LOG_SERVER, "peer sent more data than allowed (%u), connection %x terminated", CONN_MAXBUFSIZE, data->id);
-			server_disconnect_nicely(data);
-		}
-		data->rbufs <<= 1;
-		if (data->rbufs > CONN_MAXBUFSIZE)
-			data->rbufs = CONN_MAXBUFSIZE;
-		if ((ptr = realloc(data->rbuf, data->rbufs)) == NULL) {
-			data->rbufs >>= 1;
-			log_printfn(LOG_SERVER, "unable to increase receive buffer size, connection %x terminated", data->id);
-			server_disconnect_nicely(data);
-		} else {
-			data->rbuf = ptr;
-		}
-	}
-
-	if (data->rbufi != 0 && data->rbuf[data->rbufi - 1] == '\n') {
-		data->rbuf[data->rbufi - 1] = '\0';
-		chomp(data->rbuf);
-
-		printf("debug: received \"%s\" on socket\n", data->rbuf);
+	if (!buffer_terminate_line(&data->recv)) {
+		printf("debug: received \"%s\" on socket\n", data->recv.buf);
 		
 		conn_do_work(&conn_data, data);
 
-		data->rbufi = 0;
+		buffer_reset(&data->recv);
 	}
 }
 
