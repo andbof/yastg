@@ -1,6 +1,7 @@
 #ifndef _HAS_CONSOLE_H
 #define _HAS_CONSOLE_H
 
+#include <ev.h>
 #include <pthread.h>
 #include "list.h"
 #include "server.h"
@@ -8,9 +9,12 @@
 struct console {
 	struct server *server;
 	struct list_head cli;
-	int running;
-	pthread_mutex_t running_lock;
+	struct ev_loop *loop;
+	int sleep;
+	ev_async kill_watcher;
+	ev_io cmd_watcher;
 	pthread_t thread;
+	struct buffer buffer;
 };
 
 void console_init(struct console * const console, struct server * const server);

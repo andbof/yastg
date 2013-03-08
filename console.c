@@ -5,9 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ev.h>
 #include <config.h>
 #include "console.h"
 #include "common.h"
+#include "buffer.h"
 #include "cli.h"
 #include "item.h"
 #include "list.h"
@@ -25,6 +27,12 @@ static void write_msg(int fd, struct signal *msg, char *msgdata)
 		bug("%s", "server signalling fd is closed");
 	if (msg->cnt && write(fd, msgdata, msg->cnt) < 1)
 		bug("%s", "server signalling fd is closed");
+}
+
+static void enter_sleep(struct console * const console)
+{
+	console->sleep = 1;
+	ev_io_stop(console->loop, &console->cmd_watcher);
 }
 
 static int cmd_ports(void *_console, char *param)
@@ -239,7 +247,7 @@ static int cmd_quit(void *_console, char *param)
 {
 	struct console *console = _console;
 	printf("Bye!\n");
-	console->running = 0;
+	enter_sleep(console);
 	kill(0, SIGTERM);
 	return 0;
 }
@@ -282,28 +290,62 @@ err:
 	return -1;
 }
 
+#define CONSOLE_PROMPT "console> "
+static void console_cmd_cb(struct ev_loop * const loop, ev_io * const w, const int revents)
+{
+	struct console *console = w->data;
+
+	if (read_into_buffer(STDIN_FILENO, &console->buffer))
+		return;
+
+	if (!buffer_terminate_line(&console->buffer)) {
+		if (strlen(console->buffer.buf) > 0 && cli_run_cmd(&console->cli, console->buffer.buf) < 0)
+			printf("Unknown command or syntax error.\n");
+
+		if (console->sleep)
+			return;
+
+		buffer_reset(&console->buffer);
+		printf(CONSOLE_PROMPT);
+		fflush(stdout);
+	}
+}
+
+static void console_kill_cb(struct ev_loop * const loop, struct ev_async *w, int revents)
+{
+	ev_break(loop, EVBREAK_ALL);
+}
+
 static void* console_main(void *_console)
 {
 	struct console *console = _console;
-	char line[256];	/* FIXME */
 	INIT_LIST_HEAD(&console->cli);
+
+	console->loop = ev_loop_new(EVFLAG_AUTO | EVFLAG_NOSIGMASK);
+	if (!console->loop)
+		die("%s", "Could not initialize event loop");
 
 	if (register_console_commands(console))
 		die("%s", "Could not register console commands");
 
+	ev_async_init(&console->kill_watcher, console_kill_cb);
+	ev_io_init(&console->cmd_watcher, console_cmd_cb, STDIN_FILENO, EV_READ);
+	console->kill_watcher.data = console;
+	console->cmd_watcher.data = console;
+	ev_async_start(console->loop, &console->kill_watcher);
+	ev_io_start(console->loop, &console->cmd_watcher);
+
 	printf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
 	printf("Universe has %lu systems in total\n", ptrlist_len(&univ.systems));
+	printf("\n" CONSOLE_PROMPT);
+	fflush(stdout);
 
-	while (console->running) {
-		printf("console> ");
-		fgets(line, sizeof(line), stdin); /* FIXME */
-		chomp(line);
+	ev_run(console->loop, 0);
 
-		if (strlen(line) > 0 && cli_run_cmd(&console->cli, line) < 0)
-			printf("Unknown command or syntax error.\n");
-	}
-
+	ev_io_stop(console->loop, &console->cmd_watcher);
+	ev_async_stop(console->loop, &console->kill_watcher);
 	cli_tree_destroy(&console->cli);
+	ev_loop_destroy(console->loop);
 
 	return 0;
 }
@@ -312,12 +354,12 @@ void console_init(struct console * const console, struct server * const server)
 {
 	memset(console, 0, sizeof(*console));
 	console->server = server;
-	pthread_mutex_init(&console->running_lock, NULL);
+	buffer_init(&console->buffer);
 }
 
 void console_free(struct console * const console)
 {
-	pthread_mutex_destroy(&console->running_lock);
+	buffer_free(&console->buffer);
 }
 
 int start_console(struct console * const console)
@@ -329,9 +371,6 @@ int start_console(struct console * const console)
 	if (pthread_sigmask(SIG_SETMASK, &new, &old))
 		goto err;
 
-	pthread_mutex_lock(&console->running_lock);
-	console->running = 1;
-	pthread_mutex_unlock(&console->running_lock);
 	if (pthread_create(&console->thread, NULL, console_main, console) != 0)
 		goto err;
 
@@ -348,7 +387,9 @@ err:
 
 void stop_console(struct console * const console)
 {
-	pthread_mutex_lock(&console->running_lock);
-	console->running = 0;
-	pthread_mutex_unlock(&console->running_lock);
+	/*
+	 * The asynchronous stuff in libev is the only stuff that is thread-safe,
+	 * that's why we need this complexity for killing the console thread.
+	 */
+	ev_async_send(console->loop, &console->kill_watcher);
 }
