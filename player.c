@@ -606,6 +606,80 @@ static int cmd_inventory(void *ptr, char *param)
 }
 static char cmd_inventory_help[] = "Display ship cargo manifest";
 
+static struct system* current_player_system(struct player *player)
+{
+	struct ship *ship;
+
+	switch (player->postype) {
+	case SYSTEM:
+		return player->pos;
+	case PORT:
+		return ((struct port*)player->pos)->system;
+	case PLANET:
+		return ((struct planet*)player->pos)->system;
+	case SHIP:
+		ship = player->pos;
+		switch (ship->postype) {
+		case SYSTEM:
+			return ship->pos;
+		case PORT:
+			return ((struct port*)ship->pos)->system;
+		case PLANET:
+			return ((struct planet*)ship->pos)->system;
+		default:
+			bug("I don't know where ship %s (player %s, connection %p) is"
+					"(postype is %d)\n",
+					ship->name, player->name, player->conn,
+					player->postype);
+		}
+	default:
+		bug("I don't know where player %s with connection %p is (postype is %d)\n",
+				player->name, player->conn, player->postype);
+	}
+}
+
+#define DEF_PORT_RADIUS "50"
+static int cmd_ports(void *_player, char *param)
+{
+	struct list_head *lh;
+	struct ptrlist neigh;
+	struct port *port;
+	struct player *player = _player;
+	struct system *origin = current_player_system(player);
+	long dist;
+
+	if (str_to_long((param ? param : DEF_PORT_RADIUS), &dist)) {
+		player_talk(player, "error: radius is not numeric\n");
+		return 0;
+	}
+	dist *= TICK_PER_LY;
+
+	ptrlist_init(&neigh);
+	get_neighbouring_ports(&neigh, origin, dist);
+
+	if (!ptrlist_len(&neigh)) {
+		player_talk(player, "There are no ports within %zu lys\n",
+				dist / TICK_PER_LY);
+		goto end;
+	}
+
+	player_talk(player, "List of ports within %ld lys (%lu ports)\n"
+			"%-26s %-26s %-26s %-9s\n",
+			dist / TICK_PER_LY, ptrlist_len(&neigh),
+			"Name", "Type", "On / orbiting", "Light yrs");
+
+	ptrlist_for_each_entry(port, &neigh, lh)
+		player_talk(player, "%-26s %-26s %-26s %9.1f\n",
+				port->name, port->type->name,
+				(port->planet ? port->planet->name : port->system->name),
+				system_distance(origin, port->system) / (double)TICK_PER_LY);
+
+end:
+	ptrlist_free(&neigh);
+	return 0;
+}
+static char cmd_ports_help[] = "List ports within radius; if none is specified, default is " DEF_PORT_RADIUS;
+
 void player_go(struct player *player, enum postype postype, void *pos)
 {
 	assert(player->postype == SHIP);
@@ -678,6 +752,7 @@ int player_init(struct player *player)
 	cli_add_cmd(&player->cli, "look", cmd_look, player, cmd_look_help);
 	cli_add_cmd(&player->cli, "ships", cmd_show_ships, player, cmd_show_ships_help);
 	cli_add_cmd(&player->cli, "map", cmd_map, player, cmd_map_help);
+	cli_add_cmd(&player->cli, "ports", cmd_ports, player, cmd_ports_help);
 
 	return 0;
 }

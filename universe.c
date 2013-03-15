@@ -194,6 +194,35 @@ unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
 	return neighbour_count;
 }
 
+unsigned long get_neighbouring_ports(struct ptrlist * const neighbours,
+		struct system *origin, const long max_distance)
+{
+	struct list_head *lh, *li, *lj;
+	struct planet *planet;
+	struct port *port;
+	struct system *system;
+	struct ptrlist systems;
+
+	ptrlist_init(&systems);
+	get_neighbouring_systems(&systems, origin, max_distance);
+	ptrlist_push(&systems, origin);
+	ptrlist_sort(&systems, origin, cmp_system_distances);
+
+	ptrlist_for_each_entry(system, &systems, lh) {
+		ptrlist_for_each_entry(port, &system->ports, li)
+			ptrlist_push(neighbours, port);
+
+		ptrlist_for_each_entry(planet, &system->planets, li) {
+			ptrlist_for_each_entry(port, &planet->ports, lj)
+				ptrlist_push(neighbours, port);
+		}
+	}
+
+	ptrlist_free(&systems);
+
+	return 0;
+}
+
 static struct system* get_system_at_x(const long x)
 {
 	struct rb_node *node = univ.x_rbtree.rb_node;

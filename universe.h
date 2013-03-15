@@ -46,6 +46,8 @@ int universe_genesis(struct universe *univ);
 int cmp_system_distances(const void *_system1, const void *_system2, void *_origin);
 unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
 		const struct system * const origin, const long max_distance);
+unsigned long get_neighbouring_ports(struct ptrlist * const neighbours,
+		struct system *origin, const long max_distance);
 
 int system_move(struct system * const s, const long x, const long y);
 int makeneighbours(struct system *s1, struct system *s2, unsigned long min, unsigned long max);
