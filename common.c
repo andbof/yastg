@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -92,4 +93,24 @@ unsigned int limit_long_to_uint(const long l)
 		return UINT_MAX;
 	else
 		return l;
+}
+
+int str_to_long(const char * const str, long *out)
+{
+	long l;
+	char *end;
+
+	errno = 0;
+	l = strtol(str, &end, 10);
+
+	if (errno)
+		return -1;
+	if (end == str)
+		return -1;
+	if (*end != '\0')
+		return -1;
+
+	*out = l;
+
+	return 0;
 }
