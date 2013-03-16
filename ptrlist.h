@@ -20,6 +20,8 @@ void* ptrlist_entry(const struct ptrlist * const l, const unsigned long n);
 unsigned long ptrlist_len(const struct ptrlist * const l);
 void* ptrlist_random(const struct ptrlist * const l);
 void ptrlist_rm(struct ptrlist *l, const unsigned long n);
+void ptrlist_sort(struct ptrlist * const l, void *data,
+		int (*cmp)(const void*, const void*, void*));
 
 #define ptrlist_data(pos)	\
 	list_entry((pos), struct ptrlist, list)->data

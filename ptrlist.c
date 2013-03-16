@@ -108,3 +108,25 @@ void ptrlist_rm(struct ptrlist *l, const unsigned long n)
 
 	l->len--;
 }
+
+void ptrlist_sort(struct ptrlist * const l, void *data,
+		int (*cmp)(const void*, const void*, void*))
+{
+	const size_t len = ptrlist_len(l);
+	void* list[len];
+
+	/*
+	 * This is a bit ugly, but enables us to use standard glibc functions
+	 * instead of rolling our own stuff. Consider refactoring it in the
+	 * future to a proper linked list sort.
+	 */
+	size_t n = 0;
+	while (ptrlist_len(l)) {
+		list[n++] = ptrlist_entry(l, 0);
+		ptrlist_rm(l, 0);
+	}
+	qsort_r(list, len, sizeof(void*), cmp, data);
+
+	for (n = 0; n < len; n++)
+		ptrlist_push(l, list[n]);
+}
