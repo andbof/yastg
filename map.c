@@ -34,20 +34,6 @@ static char* flatten_array(char * out, size_t out_len,
 	return out;
 }
 
-static int map_compare(const void *_system1, const void *_system2, void *_origin)
-{
-	const struct system *system1 = *(const struct system**)_system1;
-	const struct system *system2 = *(const struct system**)_system2;
-	const struct system *origin = _origin;
-
-	if (system1 == origin)
-		return -1;
-	else if (system2 == origin)
-		return 1;
-	else
-		return (long)system_distance(origin, system1) - (long)system_distance(origin, system2);
-}
-
 struct map_item {
 	int x;
 	int y;
@@ -117,7 +103,7 @@ char* generate_map(char * const out, const size_t len, struct system *origin,
 	const unsigned int max_x = x_size + 29;
 	const unsigned int max_y = y_size + 3;
 
-	struct ptrlist _neigh;
+	struct ptrlist neigh;
 	struct list_head *lh;
 	struct system *s;
 	char buf[max_y][max_x];
@@ -134,19 +120,11 @@ char* generate_map(char * const out, const size_t len, struct system *origin,
 	if (draw_square(max_x, max_y, buf, 0, 0, width))
 		return NULL;
 
-	ptrlist_init(&_neigh);
-	get_neighbouring_systems(&_neigh, origin, radius);
+	ptrlist_init(&neigh);
+	get_neighbouring_systems(&neigh, origin, radius);
+	ptrlist_push(&neigh, origin);
 
-	const size_t num = ptrlist_len(&_neigh) + 1;	/* 1 for origin */
-	struct system* neigh[num];
-
-	size_t n = 1;
-	neigh[0] = origin;
-	ptrlist_for_each_entry(s, &_neigh, lh)
-		neigh[n++] = s;
-
-	ptrlist_free(&_neigh);
-	qsort_r(neigh, num, sizeof(struct system*), map_compare, origin);
+	ptrlist_sort(&neigh, origin, cmp_system_distances);
 
 	szprintf(&buf[0][2], "%s", "SYSTEM MAP");
 	szprintf(&buf[0][x_size / 2], "|<- %lu ly ", radius / TICK_PER_LY);
@@ -157,10 +135,8 @@ char* generate_map(char * const out, const size_t len, struct system *origin,
 	struct map_item *map_item;
 	LIST_HEAD(map_head);
 
-	for (n = 0; n < num; n++) {
+	ptrlist_for_each_entry(s, &neigh, lh) {
 		map_item = alloca(sizeof(*map_item));
-
-		s = neigh[n];
 
 		map_item->x = (s->x - origin->x)/tick_x;
 		map_item->y = (s->y - origin->y)/tick_y;
@@ -168,6 +144,8 @@ char* generate_map(char * const out, const size_t len, struct system *origin,
 
 		list_add_tail(&map_item->list, &map_head);
 	}
+
+	ptrlist_free(&neigh);
 
 	plot_items_in_map(&map_head, max_x, max_y, 0, 0, x_size - 1, y_size - 1, buf);
 

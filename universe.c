@@ -141,6 +141,20 @@ static struct system* get_first_system_after_x(const struct rb_root * const root
 	return rb_entry(parent, struct system, x_rbtree);
 }
 
+int cmp_system_distances(const void *_system1, const void *_system2, void *_origin)
+{
+	const struct system *system1 = *(const struct system**)_system1;
+	const struct system *system2 = *(const struct system**)_system2;
+	const struct system *origin = _origin;
+
+	if (system1 == origin)
+		return -1;
+	else if (system2 == origin)
+		return 1;
+	else
+		return (long)system_distance(origin, system1) - (long)system_distance(origin, system2);
+}
+
 unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
 		const struct system * const origin, const long max_distance)
 {

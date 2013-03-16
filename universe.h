@@ -43,6 +43,7 @@ struct universe* universe_create();
 void universe_init(struct universe *u);
 int universe_genesis(struct universe *univ);
 
+int cmp_system_distances(const void *_system1, const void *_system2, void *_origin);
 unsigned long get_neighbouring_systems(struct ptrlist * const neighbours,
 		const struct system * const origin, const long max_distance);
 
