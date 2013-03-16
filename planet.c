@@ -112,35 +112,61 @@ static void planet_genesis(struct planet *planet, struct system *system)
 	port_populate_planet(planet);
 }
 
+static int cmp_planet_distances(const void *_p1, const void *_p2, void *data)
+{
+	const struct planet *p1 = *(const struct planet**)_p1;
+	const struct planet *p2 = *(const struct planet**)_p2;
+
+	if (p1->dist < p2->dist)
+		return -1;
+	else if (p1->dist > p2->dist)
+		return 1;
+	else
+		return 0;
+}
+
 int planet_populate_system(struct system* system)
 {
 	struct planet *p;
 	int num = planet_gennum();
+	int i;
 
 	pthread_rwlock_wrlock(&univ.planetnames_lock);
 
-	for (int i = 0; i < num; i++) {
+	for (i = 0; i < num; i++) {
 		p = malloc(sizeof(*p));
 		if (!p)
-			return -1;
+			goto err;
 
 		planet_init(p);
 		planet_genesis(p, system);
+		ptrlist_push(&system->planets, p);
+	}
 
+	ptrlist_sort(&system->planets, NULL, cmp_planet_distances);
+
+	struct list_head *lh;
+	i = 0;
+	ptrlist_for_each_entry(p, &system->planets, lh) {
 		p->name = malloc(strlen(system->name) + ROMAN_LEN + 2);
 		if (!p->name) {
 			free(p);
-			return -1;
+			goto err;
 		}
 
-		sprintf(p->name, "%s %s", system->name, roman[i]);	/* FIXME: Wait with naming until all are made, sort on mean distance from sun. */
-		ptrlist_push(&system->planets, p);
+		sprintf(p->name, "%s %s", system->name, roman[i]);
 		st_add_string(&univ.planetnames, p->name, p);
 		if (p->gname)
 			st_add_string(&univ.planetnames, p->gname, p);
+
+		i++;
 	}
 
 	pthread_rwlock_unlock(&univ.planetnames_lock);
 
 	return 0;
+
+err:
+	ptrlist_free(&system->planets);
+	return -1;
 }
