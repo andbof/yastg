@@ -46,6 +46,7 @@ static void port_init(struct port *port)
 static int port_genesis(struct port *port, struct planet *planet)
 {
 	port->planet = planet;
+	port->system = planet->system;
 	port->type = ptrlist_random(&planet->type->port_types);
 	port->docks = 1; /* FIXME */
 
