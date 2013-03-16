@@ -26,6 +26,8 @@ void ptrlist_free(struct ptrlist *l)
 		list_del(&e->list);
 		free(e);
 	}
+
+	l->len = 0;
 }
 
 int ptrlist_push(struct ptrlist *l, void *e)
