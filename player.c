@@ -119,6 +119,7 @@ static void player_showsystem(struct player *player, struct system *system)
 
 	player_talk(player, "Systems within 50 lys are:\n");
 	get_neighbouring_systems(&neigh, system, 50 * TICK_PER_LY);
+	ptrlist_sort(&neigh, system, cmp_system_distances);
 	if (!list_empty(&neigh.list)) {
 		ptrlist_for_each_entry(t, &neigh, lh) {
 			if (t != system)
