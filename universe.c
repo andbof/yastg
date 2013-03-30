@@ -143,8 +143,8 @@ static struct system* get_first_system_after_x(const struct rb_root * const root
 
 int cmp_system_distances(const void *_system1, const void *_system2, void *_origin)
 {
-	const struct system *system1 = *(const struct system**)_system1;
-	const struct system *system2 = *(const struct system**)_system2;
+	const struct system *system1 = _system1;
+	const struct system *system2 = _system2;
 	const struct system *origin = _origin;
 
 	if (system1 == origin)

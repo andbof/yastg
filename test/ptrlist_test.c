@@ -8,7 +8,7 @@
 
 int cmp(const void *q, const void *p, void *data)
 {
-	return **(int**)q - **(int**)p;
+	return *(int*)q - *(int*)p;
 }
 
 static void assert_sorted(struct ptrlist * const l)

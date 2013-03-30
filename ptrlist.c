@@ -110,24 +110,73 @@ void ptrlist_rm(struct ptrlist *l, const unsigned long n)
 	l->len--;
 }
 
+/*
+ * Remember: the comparison function is defined as returning a value greater than,
+ * equal to, or less than zero, if the first argument is respectively greather than
+ * equal to, or less than the second argument.
+ */
+
+static void merge_lists(struct ptrlist *left, struct ptrlist *right,
+		void *data, size_t lenl, size_t lenr,
+		int (*cmp)(const void*, const void*, void*))
+{
+	struct ptrlist *next;
+	struct ptrlist *target = list_entry(left->list.prev, struct ptrlist, list);
+
+	while (lenl || lenr) {
+		if (!lenl || (lenr && cmp(left->data, right->data, data) > 0)) {
+			next = list_entry(right->list.next, struct ptrlist, list);
+			list_move(&right->list, &target->list);
+			target = right;
+			right = next;
+			lenr--;
+		} else {
+			next = list_entry(left->list.next, struct ptrlist, list);
+			list_move(&left->list, &target->list);
+			target = left;
+			left = next;
+			lenl--;
+		}
+	}
+}
+
+static void merge_chunk(struct ptrlist * const l,
+		void *data, const size_t chunk,
+		int (*cmp)(const void*, const void*, void*))
+{
+	struct ptrlist *left = ptrlist_get(l, 0);
+	struct ptrlist *right = left;
+	struct ptrlist *next = left;
+	size_t lenl, lenr;
+
+	while (next != l) {
+		for (lenl = 0; lenl < chunk && right != l; lenl++)
+			right = list_entry(right->list.next, struct ptrlist, list);
+
+		next = right;
+		for (lenr = 0; lenr < chunk && next != l; lenr++)
+			next = list_entry(next->list.next, struct ptrlist, list);
+
+		merge_lists(left, right, data, lenl, lenr, cmp);
+
+		left = next;
+		right = next;
+	}
+}
+
 void ptrlist_sort(struct ptrlist * const l, void *data,
 		int (*cmp)(const void*, const void*, void*))
 {
+	assert(l);
 	const size_t len = ptrlist_len(l);
-	void* list[len];
+
+	if (len < 2)
+		return;
 
 	/*
-	 * This is a bit ugly, but enables us to use standard glibc functions
-	 * instead of rolling our own stuff. Consider refactoring it in the
-	 * future to a proper linked list sort.
+	 * chunk < len also handles lists of lengths not evenly divisible
+	 * by 2, in contrast to chunk < len / 2
 	 */
-	size_t n = 0;
-	while (ptrlist_len(l)) {
-		list[n++] = ptrlist_entry(l, 0);
-		ptrlist_rm(l, 0);
-	}
-	qsort_r(list, len, sizeof(void*), cmp, data);
-
-	for (n = 0; n < len; n++)
-		ptrlist_push(l, list[n]);
+	for (size_t chunk = 1; chunk < len; chunk *= 2)
+		merge_chunk(l, data, chunk, cmp);
 }

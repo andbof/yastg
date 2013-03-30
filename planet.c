@@ -114,8 +114,8 @@ static void planet_genesis(struct planet *planet, struct system *system)
 
 static int cmp_planet_distances(const void *_p1, const void *_p2, void *data)
 {
-	const struct planet *p1 = *(const struct planet**)_p1;
-	const struct planet *p2 = *(const struct planet**)_p2;
+	const struct planet *p1 = _p1;
+	const struct planet *p2 = _p2;
 
 	if (p1->dist < p2->dist)
 		return -1;
