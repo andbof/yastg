@@ -2,7 +2,6 @@
 #define _HAS_PTRLIST_H
 
 #include "list.h"
-#include "mtrandom.h"
 
 struct ptrlist {
 	void *data;

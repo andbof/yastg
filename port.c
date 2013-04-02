@@ -9,6 +9,7 @@
 #include "stringtree.h"
 #include "item.h"
 #include "log.h"
+#include "mtrandom.h"
 #include "planet.h"
 #include "planet_type.h"
 #include "universe.h"

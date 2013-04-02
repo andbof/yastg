@@ -1,12 +1,10 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include "common.h"
 #include "list.h"
-#include "log.h"
+#include "mtrandom.h"
 #include "ptrlist.h"
-#include "system.h"
 
 int ptrlist_init(struct ptrlist *l)
 {
