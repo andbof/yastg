@@ -73,10 +73,11 @@ struct ptrlist* ptrlist_get(const struct ptrlist * const l, const unsigned long 
 	unsigned long i = 0;
 	list_for_each(ptr, &l->list) {
 		if (i == n)
-			break;
+			return list_entry(ptr, struct ptrlist, list);
 		i++;
 	}
-	return list_entry(ptr, struct ptrlist, list);
+
+	return NULL;
 }
 
 void* ptrlist_entry(const struct ptrlist * const l, const unsigned long n)
