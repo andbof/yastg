@@ -1,17 +1,3 @@
-MAINTAINERCLEANFILES = Makefile.in \
-		       aclocal.m4 \
-		       config.h.in \
-		       configure \
-		       depcomp \
-		       missing \
-		       install-sh \
-		       config.guess \
-		       config.h.in~ \
-		       config.sub \
-		       ltmain.sh \
-		       libtool \
-		       m4/*.m4
-
 ACLOCAL_AMFLAGS = -I m4
 
 AM_CPPFLAGS = -D_GNU_SOURCE
