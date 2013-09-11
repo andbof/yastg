@@ -44,5 +44,6 @@ test-driver
 test/cli_test
 test/config_test
 test/conntest
+test/ptrlist_test
 test/stringtree_test
 TODO
