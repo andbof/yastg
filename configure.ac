@@ -31,13 +31,7 @@ AC_CHECK_LIB([rt],[clock_gettime],
 	     [],
 	     [AC_MSG_ERROR([librt not found])])
 
-AC_CHECK_LIB([ev],[ev_now],
-	     [],
-	     [AC_MSG_ERROR([libev not found])])
-AC_CHECK_FUNC([ev_run],
-	      [],
-	      [AC_DEFINE([ev_run], [ev_loop],
-			 [in libev3 in contrast to libev4, ev_run is called ev_loop])])
+AX_LIB_EV
 
 AC_CHECK_LIB([dl],[dlopen],
 	     [],
