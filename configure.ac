@@ -18,8 +18,11 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])    # Fixes automake 1.12 (where -Wall impli
 AC_LANG_C
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
-AC_PROG_YACC
 AM_PROG_LEX
+
+AX_PROG_BISON([],
+              AS_IF([test ! -f "$srcdir/parseconfig-yacc.c"],
+                    [AC_MSG_ERROR([bison not found - unable to compile parseconfig.c])]))
 
 AC_CHECK_LIB([m],[floor],
              [],
