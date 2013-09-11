@@ -23,7 +23,7 @@
 #include "server.h"
 #include "connection.h"
 
-static int sockfd, signfdw, signfdr;
+static int signfdw, signfdr;
 static struct ev_loop *loop;
 
 static struct conn_data conn_data;
@@ -486,8 +486,6 @@ static void* server_main(void *_server)
 		connection_free(cd);
 		free(cd);
 	}
-
-	close(sockfd);
 
 	return NULL;
 }
