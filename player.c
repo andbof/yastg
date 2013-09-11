@@ -687,6 +687,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 	struct ship *ship = player->pos;
 	switch (ship->postype) {
 	case SYSTEM:
+		cli_rm_cmd(&player->cli, "go");
 		cli_rm_cmd(&player->cli, "jump");
 		cli_rm_cmd(&player->cli, "dock");
 		cli_rm_cmd(&player->cli, "orbit");
@@ -714,6 +715,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 
 	switch (ship->postype) {
 	case SYSTEM:
+		cli_add_cmd(&player->cli, "go", cmd_hyper, player, cmd_hyper_help);
 		cli_add_cmd(&player->cli, "jump", cmd_jump, player, cmd_jump_help);
 		cli_add_cmd(&player->cli, "dock", cmd_dock, player, cmd_dock_help);
 		cli_add_cmd(&player->cli, "orbit", cmd_orbit, player, cmd_orbit_help);
@@ -748,7 +750,6 @@ int player_init(struct player *player)
 
 	cli_add_cmd(&player->cli, "help", cmd_help, player, cmd_help_help);
 	cli_add_cmd(&player->cli, "inventory", cmd_inventory, player, cmd_inventory_help);
-	cli_add_cmd(&player->cli, "go", cmd_hyper, player, cmd_hyper_help);
 	cli_add_cmd(&player->cli, "quit", cmd_quit, player, cmd_quit_help);
 	cli_add_cmd(&player->cli, "look", cmd_look, player, cmd_look_help);
 	cli_add_cmd(&player->cli, "ships", cmd_show_ships, player, cmd_show_ships_help);
