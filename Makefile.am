@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CPPFLAGS = -D_GNU_SOURCE
+AM_CPPFLAGS = -D_GNU_SOURCE ${libev_CFLAGS}
 AM_CFLAGS = -g -O0 -Wall -Werror -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -ftrapv -Wno-unused-parameter -Wtype-limits -fstack-protector-all -fno-strict-aliasing -Wno-format-y2k
 AM_YFLAGS = -d
 
@@ -34,6 +34,7 @@ dist_conf_DATA = data/constellations \
 		 data/yastg.conf
 
 # optflags: -O3 -funroll-loops
+yastg_LDADD = ${libev_LIBS}
 yastg_SOURCES = asciiart.c \
 		asciiart.h \
 		buffer.c \
