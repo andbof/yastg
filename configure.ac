@@ -18,11 +18,12 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])    # Fixes automake 1.12 (where -Wall impli
 AC_LANG_C
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
-AM_PROG_LEX
-
 AX_PROG_BISON([],
               AS_IF([test ! -f "$srcdir/parseconfig-yacc.c"],
                     [AC_MSG_ERROR([bison not found - unable to compile parseconfig.c])]))
+AX_PROG_FLEX([],
+             AS_IF([test ! -f "$srcdir/parseconfig-lex.c"],
+                   [AC_MSG_ERROR([flex not found - unable to compile parseconfig-lex.c])]))
 
 AC_CHECK_LIB([m],[floor],
              [],
