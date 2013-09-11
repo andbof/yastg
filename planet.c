@@ -168,5 +168,6 @@ int planet_populate_system(struct system* system)
 
 err:
 	ptrlist_free(&system->planets);
+	pthread_rwlock_unlock(&univ.planetnames_lock);
 	return -1;
 }
