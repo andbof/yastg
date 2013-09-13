@@ -67,7 +67,8 @@ struct ptrarray* file_to_ptrarray(const char * const fn, struct ptrarray *a)
 	return a;
 }
 
-void* ptrarray_get(struct ptrarray *a, unsigned int idx) {
+void* ptrarray_get(struct ptrarray *a, unsigned int idx)
+{
 	if (idx >= a->used)
 		return NULL;
 

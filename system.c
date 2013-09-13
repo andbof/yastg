@@ -27,7 +27,8 @@ void system_init(struct system *s)
 	INIT_LIST_HEAD(&s->list);
 }
 
-void system_free(struct system *s) {
+void system_free(struct system *s)
+{
 	struct list_head *lh;
 	struct star *sol;
 	struct planet *planet;
@@ -85,7 +86,8 @@ int system_create(struct system *s, char *name)
 	return 0;
 }
 
-unsigned long system_distance(const struct system * const a, const struct system * const b) {
+unsigned long system_distance(const struct system * const a, const struct system * const b)
+{
 	long result = sqrt( (double)(b->x - a->x)*(b->x - a->x) +
 			(double)(b->y - a->y)*(b->y - a->y) );
 
