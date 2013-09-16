@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-/* Global struct definitions */
-
 struct ulong_ptr {
 	unsigned long i;
 	void *ptr;
@@ -28,44 +26,7 @@ enum msg {
 	MSG_RM		= 16
 };
 
-#define ERR_SYNTAX "Syntax error, see help"
-
-/* Global short helper functions */
-
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-#define GET_ID(x) *((size_t*)(x))
-#define GET_ULONG(x) *((unsigned long*)(x))
-/* #define GET_DLONG(x) *((signed long*)(x)) */
-#define GET_DOUBLE(x) *((double*)(x))
-#define QUOTE_(x) #x
-#define QUOTE(x) QUOTE_(x)
-#define __VER__ 0.1
-
-/* Greek alphabet */
-
-#define GREEK_N 24
-#define GREEK_LEN 7
-extern const char* greek[GREEK_N];
-
-/* Roman numerals */
-
-#define ROMAN_N 24
-#define ROMAN_LEN 5
-extern const char* roman[ROMAN_N];
-
-/* Astronomical constants */
-
-#define GM_PER_AU 150			/* gigameters per astronomical unit */
-#define AU_PER_LY 63241			/* Astronomical units per light year */
-#define GM_PER_LY (GM_PER_AU * AU_PER_LY)
-#define TICK_PER_LY 10000		/* Resolution of all coordinates (1/TICK_PER_LY lightyears) */
-/* The "real" values here should be habitable zone from 0.95 to 1.37 AU and snow line (i.e. the upper limit
- * for rocky planetary formation) at 2.7 AU in a sol like system.
- * For simplicity, we assume habend == snowline and change the values somewhat. */
-#define HAB_ZONE_START 0.95		/* Start of habitable zone in a sol like system, in AU */
-#define HAB_ZONE_END 1.50		/* End of habitable zone in a sol like system, in AU */
-
-/* Global longer helper functions */
 
 #define die(FMT, ...)						\
 	do {							\
@@ -99,12 +60,34 @@ extern const char* roman[ROMAN_N];
 #define MIN(x, y)			\
 	((x < y) ? x : y)
 
-/* Misc functions */
-
 void downcase_valid(char *c);
 void chomp(char *s);
 int limit_long_to_int(const long l);
 unsigned int limit_long_to_uint(const long l);
 int str_to_long(const char * const str, long *out);
+
+/* Greek alphabet */
+
+#define GREEK_N 24
+#define GREEK_LEN 7
+extern const char* greek[GREEK_N];
+
+/* Roman numerals */
+
+#define ROMAN_N 24
+#define ROMAN_LEN 5
+extern const char* roman[ROMAN_N];
+
+/* Astronomical constants */
+
+#define GM_PER_AU 150			/* gigameters per astronomical unit */
+#define AU_PER_LY 63241			/* Astronomical units per light year */
+#define GM_PER_LY (GM_PER_AU * AU_PER_LY)
+#define TICK_PER_LY 10000		/* Resolution of all coordinates (1/TICK_PER_LY lightyears) */
+/* The "real" values here should be habitable zone from 0.95 to 1.37 AU and snow line (i.e. the upper limit
+ * for rocky planetary formation) at 2.7 AU in a sol like system.
+ * For simplicity, we assume habend == snowline and change the values somewhat. */
+#define HAB_ZONE_START 0.95		/* Start of habitable zone in a sol like system, in AU */
+#define HAB_ZONE_END 1.50		/* End of habitable zone in a sol like system, in AU */
 
 #endif
