@@ -4,21 +4,29 @@ AM_CPPFLAGS = -D_GNU_SOURCE ${libev_CFLAGS}
 AM_CFLAGS = -g -O0 -Wall -Werror -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -ftrapv -Wno-unused-parameter -Wtype-limits -fstack-protector-all -fno-strict-aliasing -Wno-format-y2k
 AM_YFLAGS = -d
 
-TESTS = test/cli_test \
+TESTS = \
+	test/cli_test \
 	test/config_test \
 	test/ptrlist_test \
 	test/stringtree_test
+
 BUILT_SOURCES = parseconfig-yacc.c parseconfig-lex.c
 
 confdir = $(sysconfdir)/xdg/yastg
+
 bin_PROGRAMS = yastg
-check_PROGRAMS = test/cli_test \
+
+check_PROGRAMS = \
+		 test/cli_test \
 		 test/config_test \
 		 test/conntest \
 		 test/ptrlist_test \
 		 test/stringtree_test
+
 check_LTLIBRARIES = test_module.la
-dist_conf_DATA = data/constellations \
+
+dist_conf_DATA = \
+		 data/constellations \
 		 data/firstnames \
 		 data/foociv \
 		 data/grazny \
@@ -35,7 +43,8 @@ dist_conf_DATA = data/constellations \
 
 # optflags: -O3 -funroll-loops
 yastg_LDADD = ${libev_LIBS}
-yastg_SOURCES = asciiart.c \
+yastg_SOURCES = \
+		asciiart.c \
 		asciiart.h \
 		buffer.c \
 		buffer.h \
@@ -111,7 +120,8 @@ yastg_SOURCES = asciiart.c \
 
 test_conntest_SOURCES = test/conntest.c
 
-test_cli_test_SOURCES = test/cli_test.c \
+test_cli_test_SOURCES = \
+			test/cli_test.c \
 			cli.c \
 			cli.h \
 			common.c \
@@ -119,16 +129,19 @@ test_cli_test_SOURCES = test/cli_test.c \
 			stringtree.c \
 			stringtree.h
 
-test_ptrlist_test_SOURCES = test/ptrlist_test.c \
+test_ptrlist_test_SOURCES = \
+			    test/ptrlist_test.c \
 			    mt19937ar-cok.c \
 			    mtrandom.c \
 			    ptrlist.c
 
-test_stringtree_test_SOURCES = test/stringtree_test.c \
+test_stringtree_test_SOURCES = \
+			       test/stringtree_test.c \
 			       stringtree.c \
 			       common.c
 
-test_config_test_SOURCES = test/config_test.c \
+test_config_test_SOURCES = \
+			   test/config_test.c \
 			   log.c \
 			   log.h \
 			   parseconfig.h \
