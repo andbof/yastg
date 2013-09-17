@@ -688,6 +688,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 	switch (ship->postype) {
 	case SYSTEM:
 		cli_rm_cmd(&player->cli, "go");
+		cli_rm_cmd(&player->cli, "map");
 		cli_rm_cmd(&player->cli, "jump");
 		cli_rm_cmd(&player->cli, "dock");
 		cli_rm_cmd(&player->cli, "orbit");
@@ -716,6 +717,7 @@ void player_go(struct player *player, enum postype postype, void *pos)
 	switch (ship->postype) {
 	case SYSTEM:
 		cli_add_cmd(&player->cli, "go", cmd_hyper, player, cmd_hyper_help);
+		cli_add_cmd(&player->cli, "map", cmd_map, player, cmd_map_help);
 		cli_add_cmd(&player->cli, "jump", cmd_jump, player, cmd_jump_help);
 		cli_add_cmd(&player->cli, "dock", cmd_dock, player, cmd_dock_help);
 		cli_add_cmd(&player->cli, "orbit", cmd_orbit, player, cmd_orbit_help);
@@ -753,7 +755,6 @@ int player_init(struct player *player)
 	cli_add_cmd(&player->cli, "quit", cmd_quit, player, cmd_quit_help);
 	cli_add_cmd(&player->cli, "look", cmd_look, player, cmd_look_help);
 	cli_add_cmd(&player->cli, "ships", cmd_show_ships, player, cmd_show_ships_help);
-	cli_add_cmd(&player->cli, "map", cmd_map, player, cmd_map_help);
 	cli_add_cmd(&player->cli, "ports", cmd_ports, player, cmd_ports_help);
 
 	return 0;
