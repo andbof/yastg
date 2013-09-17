@@ -9,7 +9,10 @@ struct buffer {
 
 int read_into_buffer(const int fd, struct buffer * const buffer);
 int write_buffer_into_fd(const int fd, struct buffer * const buffer);
-int bufprintf(struct buffer * const buffer, char *format, ...);
+int vbufprintf(struct buffer * const buffer, const char *fmt, va_list ap)
+	__attribute__((format(printf, 2, 0)));
+int bufprintf(struct buffer * const buffer, char *format, ...)
+	__attribute__((format(printf, 2, 3)));
 int buffer_terminate_line(struct buffer * const buffer);
 void buffer_reset(struct buffer *buffer);
 void buffer_init(struct buffer * const buffer);

@@ -75,24 +75,41 @@ int write_buffer_into_fd(const int fd, struct buffer * const buffer)
 	return 0;
 }
 
-int bufprintf(struct buffer * const buffer, char *format, ...)
+__attribute__((format(printf, 2, 0)))
+int vbufprintf(struct buffer * const buffer, const char *fmt, va_list ap)
 {
-	assert(buffer);
+	va_list _ap;
 	size_t size, len;
-	va_list ap;
+	assert(buffer);
 
 	do {
 		size = buffer->size - buffer->idx;
-		va_start(ap, format);
-		len = vsnprintf(buffer->buf + buffer->idx, size, format, ap);
-		va_end(ap);
-		if (len >= size && enlarge_buffer(buffer, len + 1))
+
+		va_copy(_ap, ap);
+		len = vsnprintf(buffer->buf + buffer->idx, size, fmt, _ap);
+		va_end(_ap);
+
+		if (len >= size && enlarge_buffer(buffer, buffer->size * 2))
 			return -1;
 	} while (len >= size);
 
 	buffer->idx += len;
 
 	return 0;
+
+}
+
+__attribute__((format(printf, 2, 3)))
+int bufprintf(struct buffer * const buffer, char *format, ...)
+{
+	va_list ap;
+	int r;
+
+	va_start(ap, format);
+	r = vbufprintf(buffer, format, ap);
+	va_end(ap);
+
+	return r;
 }
 
 int buffer_terminate_line(struct buffer * const buffer)
