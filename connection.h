@@ -12,14 +12,6 @@
 #define CONN_BUFSIZE 1500
 #define CONN_MAXBUFSIZE 10240
 
-#define conn_send(data, ...)					\
-	do {							\
-		if (!data->terminate) {				\
-			bufprintf(&data->send, __VA_ARGS__);	\
-			conn_send_buffer(data);			\
-		}						\
-	} while (0)
-
 struct connection {
 	uint32_t id;
 	ev_io data_watcher;
@@ -61,6 +53,8 @@ int conn_fulfixinit(struct connection *data);
 
 void conn_do_work(struct conn_data *data, struct connection *conn);
 void conn_send_buffer(struct connection * const data);
+void conn_send(void *_conn, const char *fmt, ...)
+	__attribute__((format(printf, 2, 3)));
 
 int conndata_init(struct conn_data *data);
 void conn_shutdown(struct conn_data *data);

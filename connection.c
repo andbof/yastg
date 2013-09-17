@@ -291,3 +291,20 @@ void conn_destroy(struct conn_data *data)
 	list_for_each_entry_safe(w, p, &data->workers, list)
 		free(w);
 }
+
+__attribute__((format(printf, 2, 3)))
+void conn_send(void *_conn, const char *fmt, ...)
+{
+	struct connection *conn = _conn;
+	va_list ap;
+	assert(conn);
+
+	if (conn->terminate)
+		return;
+
+	va_start(ap, fmt);
+	vbufprintf(&conn->send, fmt, ap);
+	va_end(ap);
+
+	conn_send_buffer(conn);
+}
