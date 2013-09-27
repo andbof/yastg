@@ -42,6 +42,9 @@ int read_into_buffer(const int fd, struct buffer * const buffer)
 
 	ssize_t r;
 	r = read(fd, buffer->buf + buffer->idx, buffer->size - buffer->idx);
+	if (r < 0)
+		return r;
+
 	buffer->idx += r;
 
 	if ((buffer->idx >= buffer->size) && (buffer->buf[buffer->idx - 1] != '\n')) {
@@ -49,7 +52,7 @@ int read_into_buffer(const int fd, struct buffer * const buffer)
 			return -1;
 	}
 
-	return 0;
+	return r;
 }
 
 int write_buffer_into_fd(const int fd, struct buffer * const buffer)
@@ -65,14 +68,14 @@ int write_buffer_into_fd(const int fd, struct buffer * const buffer)
 	do {
 		r = write(fd, buffer->buf + sb, buffer->idx - sb);
 		if (r < 1)
-			return -1;
+			return r;
 
 		sb += r;
 	} while (sb < buffer->idx);
 
 	buffer->idx = 0;
 
-	return 0;
+	return sb;
 }
 
 __attribute__((format(printf, 2, 0)))

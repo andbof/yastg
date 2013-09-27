@@ -184,7 +184,7 @@ void conn_send_buffer(struct connection * const data)
 {
 	assert(data);
 	assert(data->peerfd);
-	if (write_buffer_into_fd(data->peerfd, &data->send)) {
+	if (write_buffer_into_fd(data->peerfd, &data->send) < 1) {
 		log_printfn(LOG_CONN,
 				"send error (connection %x), terminating connection",
 				data->id);

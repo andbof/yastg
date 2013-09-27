@@ -305,7 +305,7 @@ static void console_cmd_cb(struct ev_loop * const loop, ev_io * const w, const i
 {
 	struct console *c = w->data;
 
-	if (read_into_buffer(STDIN_FILENO, &c->buffer))
+	if (read_into_buffer(STDIN_FILENO, &c->buffer) < 1)
 		return;
 
 	if (!buffer_terminate_line(&c->buffer)) {
