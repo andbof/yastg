@@ -257,11 +257,21 @@ static void server_msg_cb(struct ev_loop * const loop, ev_io * const w, const in
 {
 	struct signal msg;
 	char *data;
+	ssize_t r;
 
-	read(signfdr, &msg, sizeof(msg));
+	r = read(signfdr, &msg, sizeof(msg));
+	if (r != sizeof(msg)) {
+		log_printfn(LOG_SERVER, "invalid message header received");
+		return;
+	}
+
 	if (msg.cnt > 0) {
 		data = alloca(msg.cnt);
-		read(signfdr, data, msg.cnt);	/* FIXME: Validate the number of bytes */
+		r = read(signfdr, data, msg.cnt);
+		if (r != sizeof(msg)) {
+			log_printfn(LOG_SERVER, "invalid message data received");
+			return;
+		}
 	} else {
 		data = NULL;
 	}
