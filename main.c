@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/wait.h>
@@ -104,6 +105,16 @@ err:
 	return -1;
 }
 
+__attribute__((format(printf, 2, 3)))
+static void print_to_stdout(void *junk, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vprintf(fmt, ap);
+	va_end(ap);
+}
+
 int main(int argc, char **argv)
 {
 	struct server server;
@@ -131,7 +142,7 @@ int main(int argc, char **argv)
 	if (start_server(&server))
 		die("%s", "Could not start server thread");
 
-	console_init(&console, &server);
+	console_init(&console, &server, print_to_stdout);
 	if (start_console(&console))
 		die("%s", "Could not start console thread");
 

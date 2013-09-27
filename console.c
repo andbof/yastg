@@ -36,15 +36,16 @@ static void enter_sleep(struct console * const console)
 	ev_io_stop(console->loop, &console->cmd_watcher);
 }
 
-static int cmd_ports(void *_console, char *param)
+static int cmd_ports(void *console, char *param)
 {
+	struct console *c = console;
 	struct port_type *type;
 
-	printf("%-26s %-26s %-8s %-8s %-8s %-8s\n",
+	c->print(c, "%-26s %-26s %-8s %-8s %-8s %-8s\n",
 			"Name", "Description", "OCEAN", "SURFACE",
 			"ORBIT", "ROGUE");
 	list_for_each_entry(type, &univ.port_types, list)
-		printf("%-26.26s %-26.26s %-8s %-8s %-8s %-8s\n",
+		c->print(c, "%-26.26s %-26.26s %-8s %-8s %-8s %-8s\n",
 				type->name, type->desc,
 				(type->zones[OCEAN] ? "Yes" : "No"),
 				(type->zones[SURFACE] ? "Yes" : "No"),
@@ -54,103 +55,98 @@ static int cmd_ports(void *_console, char *param)
 	return 0;
 }
 
-__attribute__((format(printf, 2, 3)))
-static void print_to_stdout(void *junk, const char *fmt, ...)
+static int cmd_help(void *console, char *param)
 {
-	va_list ap;
-	va_start(ap, fmt);
-	vprintf(fmt, ap);
-	va_end(ap);
-}
-
-static int cmd_help(void *_console, char *param)
-{
-	struct console *console = _console;
-	cli_print_help(&console->cli, print_to_stdout, NULL);
+	struct console *c = console;
+	cli_print_help(&c->cli, c->print, c);
 
 	return 0;
 }
 
-static int cmd_insmod(void *_console, char *param)
+static int cmd_insmod(void *console, char *param)
 {
+	struct console *c = console;
 	int r;
 
 	if (!param) {
-		printf("usage: insmod <file name.so>\n");
+		c->print(c, "usage: insmod <file name.so>\n");
 		return 0;
 	}
 
 	r = module_insert(param);
 	if (r != 0)
-		printf("Error inserting module: %s\n",
+		c->print(c, "Error inserting module: %s\n",
 				(r == MODULE_DL_ERROR ? dlerror() : module_strerror(r))
 		       );
 
 	return 0;
 }
 
-static int cmd_items(void *_console, char *param)
+static int cmd_items(void *console, char *param)
 {
+	struct console *c = console;
 	struct item *i;
 
-	printf("%-24s %-8s\n", "Name", "Weight");
+	c->print(c, "%-24s %-8s\n", "Name", "Weight");
 	list_for_each_entry(i, &univ.items, list)
-		printf("%-24.24s %-8ld\n", i->name, i->weight);
+		c->print(c, "%-24.24s %-8ld\n", i->name, i->weight);
 
 	return 0;
 }
 
-static int cmd_lsmod(void *_console, char *param)
+static int cmd_lsmod(void *console, char *param)
 {
+	struct console *c = console;
 	struct module *m;
 
 	if (list_empty(&modules_loaded)) {
-		printf("No modules are currently loaded\n");
+		c->print(c, "No modules are currently loaded\n");
 		return 0;
 	}
 
-	printf("%-16s %-8s\n", "Module", "Size");
+	c->print(c, "%-16s %-8s\n", "Module", "Size");
 	list_for_each_entry(m, &modules_loaded, list)
-		printf("%-16s %-8d\n", m->name, m->size);
+		c->print(c, "%-16s %-8d\n", m->name, m->size);
 
 	return 0;
 }
 
-static int cmd_wall(void *_console, char *message)
+static int cmd_wall(void *console, char *message)
 {
-	struct console *console = _console;
+	struct console *c = console;
 	if (message) {
 		struct signal msg = {
 			.cnt = strlen(message) + 1,
 			.type = MSG_WALL
 		};
-		write_msg(console->server->fd[1], &msg, message);
+		write_msg(c->server->fd[1], &msg, message);
 	} else {
-		printf("usage: wall <message>\n");
+		c->print(c, "usage: wall <message>\n");
 	}
 	return 0;
 }
 
-static int cmd_pause(void *_console, char *param)
+static int cmd_pause(void *console, char *param)
 {
-	struct console *console = _console;
+	struct console *c = console;
 	struct signal msg = {
 		.cnt = 0,
 		.type = MSG_PAUSE
 	};
-	write_msg(console->server->fd[1], &msg, NULL);
+	write_msg(c->server->fd[1], &msg, NULL);
 	return 0;
 }
 
-static int cmd_planets(void *_console, char *param)
+static int cmd_planets(void *console, char *param)
 {
+	struct console *c = console;
 	struct planet_type *type;
 
-	printf("%-5s %-26s %-4s %-4s %-4s %-12s %-12s %-10s\n",
+	c->print(c, "%-5s %-26s %-4s %-4s %-4s %-12s %-12s %-10s\n",
 			"Class", "Name", "HOT", "ECO", "COLD",
 			"Min life", "Max life", "Port types");
 	list_for_each_entry(type, &univ.planet_types, list)
-		printf("%c     %-26.26s %-4.4s %-4.4s %-4.4s %-12.12s %-12.12s %-10lu\n",
+		c->print(c, "%c     %-26.26s %-4.4s %-4.4s %-4.4s %-12.12s %-12.12s %-10lu\n",
 				type->c, type->name,
 				(type->zones[HOT] ? "Yes" : "No"),
 				(type->zones[ECO] ? "Yes" : "No"),
@@ -173,54 +169,57 @@ static int cmd_resume(void *_console, char *param)
 	return 0;
 }
 
-static void _cmd_rmmod(struct module *m)
+static void _cmd_rmmod(struct console *c, struct module *m)
 {
 	int r;
 
 	r = module_remove(m);
 	if (r)
-		printf("Error removing module: %s\n",
+		c->print(c, "Error removing module: %s\n",
 				(r == MODULE_DL_ERROR ? dlerror() : module_strerror(r))
 		       );
 }
 
-static int cmd_rmmod(void *_console, char *name)
+static int cmd_rmmod(void *console, char *name)
 {
+	struct console *c = console;
 	struct module *m;
 
 	if (!name) {
-		printf("usage: rmmod <module>\n");
+		c->print(c, "usage: rmmod <module>\n");
 		return 0;
 	}
 
 	list_for_each_entry(m, &modules_loaded, list) {
 		if (strcmp(m->name, name) == 0) {
-			_cmd_rmmod(m);
+			_cmd_rmmod(c, m);
 			return 0;
 		}
 	}
 
-	printf("Module %s is not currently loaded\n", name);
+	c->print(c, "Module %s is not currently loaded\n", name);
 	return 0;
 }
 
-static int cmd_ships(void *_console, char *param)
+static int cmd_ships(void *console, char *param)
 {
+	struct console *c = console;
 	struct ship_type *type;
 
-	printf("%-26s %-26s %-12s\n",
+	c->print(c, "%-26s %-26s %-12s\n",
 			"Name", "Description", "Carry weight");
 	list_for_each_entry(type, &univ.ship_types, list)
-		printf("%-26.26s %-26.26s %-12d\n",
+		c->print(c, "%-26.26s %-26.26s %-12d\n",
 				type->name, type->desc, type->carry_weight);
 
 	return 0;
 }
 
-static int cmd_memstat(void *_console, char *param)
+static int cmd_memstat(void *console, char *param)
 {
+	struct console *c = console;
 	struct mallinfo minfo = mallinfo();
-	printf("Memory statistics:\n"
+	c->print(c, "Memory statistics:\n"
 			"  Memory allocated with sbrk by malloc:           %d bytes\n"
 			"  Number of chunks not in use:                    %d\n"
 			"  Number of chunks allocated with mmap:           %d\n"
@@ -233,8 +232,9 @@ static int cmd_memstat(void *_console, char *param)
 	return 0;
 }
 
-static int cmd_stats(void *_console, char *param)
+static int cmd_stats(void *console, char *param)
 {
+	struct console *c = console;
 	struct tm t;
 	char created[32];
 	memset(created, 0, sizeof(created));
@@ -242,7 +242,7 @@ static int cmd_stats(void *_console, char *param)
 	localtime_r(&univ.created, &t);
 	strftime(created, sizeof(created), "%c", &t);
 
-	printf("Statistics:\n"
+	c->print(c, "Statistics:\n"
 			"  Size of universe:          %lu systems\n"
 			"  Universe created:          %s\n"
 			"  Number of users known:     %s\n"
@@ -253,10 +253,10 @@ static int cmd_stats(void *_console, char *param)
 	return 0;
 }
 
-static int cmd_quit(void *_console, char *param)
+static int cmd_quit(void *console, char *param)
 {
-	struct console *console = _console;
-	printf("Bye!\n");
+	struct console *c = console;
+	c->print(c, "Bye!\n");
 	enter_sleep(console);
 	kill(getpid(), SIGTERM);
 	return 0;
@@ -303,19 +303,19 @@ err:
 #define CONSOLE_PROMPT "console> "
 static void console_cmd_cb(struct ev_loop * const loop, ev_io * const w, const int revents)
 {
-	struct console *console = w->data;
+	struct console *c = w->data;
 
-	if (read_into_buffer(STDIN_FILENO, &console->buffer))
+	if (read_into_buffer(STDIN_FILENO, &c->buffer))
 		return;
 
-	if (!buffer_terminate_line(&console->buffer)) {
-		if (strlen(console->buffer.buf) > 0 && cli_run_cmd(&console->cli, console->buffer.buf) < 0)
-			printf("Unknown command or syntax error.\n");
+	if (!buffer_terminate_line(&c->buffer)) {
+		if (strlen(c->buffer.buf) > 0 && cli_run_cmd(&c->cli, c->buffer.buf) < 0)
+			c->print(c, "Unknown command or syntax error.\n");
 
-		if (console->sleep)
+		if (c->sleep)
 			return;
 
-		buffer_reset(&console->buffer);
+		buffer_reset(&c->buffer);
 		printf(CONSOLE_PROMPT);
 		fflush(stdout);
 	}
@@ -326,44 +326,46 @@ static void console_kill_cb(struct ev_loop * const loop, struct ev_async *w, int
 	ev_break(loop, EVBREAK_ALL);
 }
 
-static void* console_main(void *_console)
+static void* console_main(void *console)
 {
-	struct console *console = _console;
-	INIT_LIST_HEAD(&console->cli);
+	struct console *c = console;
+	INIT_LIST_HEAD(&c->cli);
 
-	console->loop = ev_loop_new(EVFLAG_AUTO | EVFLAG_NOSIGMASK);
-	if (!console->loop)
+	c->loop = ev_loop_new(EVFLAG_AUTO | EVFLAG_NOSIGMASK);
+	if (!c->loop)
 		die("%s", "Could not initialize event loop");
 
-	if (register_console_commands(console))
+	if (register_console_commands(c))
 		die("%s", "Could not register console commands");
 
-	ev_async_init(&console->kill_watcher, console_kill_cb);
-	ev_io_init(&console->cmd_watcher, console_cmd_cb, STDIN_FILENO, EV_READ);
-	console->kill_watcher.data = console;
-	console->cmd_watcher.data = console;
-	ev_async_start(console->loop, &console->kill_watcher);
-	ev_io_start(console->loop, &console->cmd_watcher);
+	ev_async_init(&c->kill_watcher, console_kill_cb);
+	ev_io_init(&c->cmd_watcher, console_cmd_cb, STDIN_FILENO, EV_READ);
+	c->kill_watcher.data = c;
+	c->cmd_watcher.data = c;
+	ev_async_start(c->loop, &c->kill_watcher);
+	ev_io_start(c->loop, &c->cmd_watcher);
 
-	printf("Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
-	printf("Universe has %lu systems in total\n", ptrlist_len(&univ.systems));
-	printf("\n" CONSOLE_PROMPT);
+	c->print(c, "Welcome to YASTG %s, built %s %s.\n\n", PACKAGE_VERSION, __DATE__, __TIME__);
+	c->print(c, "Universe has %lu systems in total\n", ptrlist_len(&univ.systems));
+	c->print(c, "\n" CONSOLE_PROMPT);
 	fflush(stdout);
 
-	ev_run(console->loop, 0);
+	ev_run(c->loop, 0);
 
-	ev_io_stop(console->loop, &console->cmd_watcher);
-	ev_async_stop(console->loop, &console->kill_watcher);
-	cli_tree_destroy(&console->cli);
-	ev_loop_destroy(console->loop);
+	ev_io_stop(c->loop, &c->cmd_watcher);
+	ev_async_stop(c->loop, &c->kill_watcher);
+	cli_tree_destroy(&c->cli);
+	ev_loop_destroy(c->loop);
 
 	return 0;
 }
 
-void console_init(struct console * const console, struct server * const server)
+void console_init(struct console * const console, struct server * const server,
+		void (*print)(void*, const char*, ...))
 {
 	memset(console, 0, sizeof(*console));
 	console->server = server;
+	console->print = print;
 	buffer_init(&console->buffer);
 }
 
