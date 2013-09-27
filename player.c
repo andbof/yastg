@@ -198,10 +198,7 @@ static void player_showplanet(struct player *player, struct planet *planet)
 static int cmd_help(void *ptr, char *param)
 {
 	struct player *player = ptr;
-	/* FIXME: This should use conn_send instead of writing directly to the fd */
-	FILE *f = fdopen(dup(player->conn->peerfd), "w");
-	cli_print_help(f, &player->cli);
-	fclose(f);
+	cli_print_help(&player->cli, conn_send, player->conn);
 	return 0;
 }
 static char cmd_help_help[] = "Short help on available commands";

@@ -1,6 +1,7 @@
 #include <dlfcn.h>
 #include <malloc.h>
 #include <pthread.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,10 +54,19 @@ static int cmd_ports(void *_console, char *param)
 	return 0;
 }
 
+__attribute__((format(printf, 2, 3)))
+static void print_to_stdout(void *junk, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	vprintf(fmt, ap);
+	va_end(ap);
+}
+
 static int cmd_help(void *_console, char *param)
 {
 	struct console *console = _console;
-	cli_print_help(stdout, &console->cli);
+	cli_print_help(&console->cli, print_to_stdout, NULL);
 
 	return 0;
 }

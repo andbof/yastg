@@ -128,7 +128,8 @@ int cli_run_cmd(struct list_head * const root, const char * const string)
 	return r;
 }
 
-static void __cli_print_help(FILE *f, struct list_head *root, char *buf, size_t idx, const size_t len)
+static void __cli_print_help(struct list_head *root, char *buf, size_t idx,
+		const size_t len, void (*print)(void*, const char*, ...), void *hints)
 {
 	struct st_node *st;
 	struct cli_data *cli;
@@ -144,24 +145,25 @@ static void __cli_print_help(FILE *f, struct list_head *root, char *buf, size_t 
 			cli = st->data;
 			if (cli->func) {
 				if (cli->help)
-					fprintf(f, "%-10s %s\n", buf, cli->help);
+					print(hints, "%-10s %s\n", buf, cli->help);
 				else
-					fprintf(f, "%-10s No help text available\n", buf);
+					print(hints, "%-10s No help text available\n", buf);
 			}
 		}
 	}
 
 	list_for_each_entry(st, root, list) {
 		buf[idx] = st->c;
-		__cli_print_help(f, &st->children, buf, idx + 1, len);
+		__cli_print_help(&st->children, buf, idx + 1, len, print, hints);
 	}
 }
 
 #define MAX_CMD_LEN 64
-void cli_print_help(FILE *f, struct list_head *root)
+void cli_print_help(struct list_head *root, void (*print)(void*, const char*, ...),
+		void *hints)
 {
 	char buf[MAX_CMD_LEN];
 	memset(buf, 0, sizeof(buf));
 
-	__cli_print_help(f, root, buf, 0, sizeof(buf));
+	__cli_print_help(root, buf, 0, sizeof(buf), print, hints);
 }
