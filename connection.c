@@ -67,13 +67,14 @@ void connection_free(struct connection *conn)
 		player_free(conn->pl);
 }
 
-void __attribute__((format(printf, 2, 3))) conn_error(struct connection *data, char *format, ...)
+__attribute__((format(printf, 2, 3)))
+void conn_error(struct connection *data, char *fmt, ...)
 {
 	char msg[128];
 	va_list ap;
 
-	va_start(ap, format);
-	vsnprintf(msg, sizeof(msg), format, ap);
+	va_start(ap, fmt);
+	vsnprintf(msg, sizeof(msg), fmt, ap);
 	va_end(ap);
 	msg[sizeof(msg) - 1] = '\0';
 

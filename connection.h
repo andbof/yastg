@@ -47,13 +47,14 @@ int conn_init(struct connection *conn);
 void connection_free(struct connection *conn);
 void* conn_main(void *dataptr);
 void conn_cleanexit(struct connection *data);
-void __attribute__((format(printf, 2, 3))) conn_error(struct connection *data, char *format, ...);
 void* connection_worker(void *_data);
 int conn_fulfixinit(struct connection *data);
 
 void conn_do_work(struct conn_data *data, struct connection *conn);
 void conn_send_buffer(struct connection * const data);
 void conn_send(void *_conn, const char *fmt, ...)
+	__attribute__((format(printf, 2, 3)));
+void conn_error(struct connection *data, char *fmt, ...)
 	__attribute__((format(printf, 2, 3)));
 
 int conndata_init(struct conn_data *data);
