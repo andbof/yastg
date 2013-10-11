@@ -66,7 +66,7 @@ err:
 	return -1;
 }
 
-static struct cargo* new_cargo_to_ship(struct ship * const ship, const struct cargo const * cargo)
+static struct cargo* new_cargo_to_ship(struct ship * const ship, const struct cargo * const cargo)
 {
 	struct cargo *ship_cargo;
 
