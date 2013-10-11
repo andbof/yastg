@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include "asciiart.h"
 
+__attribute__((format(printf, 2, 3)))
 int szprintf(char *out, char *format, ...)
 {
 	va_list ap;
