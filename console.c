@@ -248,7 +248,7 @@ static int cmd_quit(void *_console, char *param)
 	struct console *console = _console;
 	printf("Bye!\n");
 	enter_sleep(console);
-	kill(0, SIGTERM);
+	kill(getpid(), SIGTERM);
 	return 0;
 }
 
