@@ -83,11 +83,6 @@ static int wait_for_exit()
 	sigset_t set;
 	int signal;
 
-	if (sigfillset(&set))
-		goto err;
-	if (pthread_sigmask(SIG_SETMASK, &set, NULL))
-		goto err;
-
 	if (sigemptyset(&set))
 		goto err;
 	if (sigaddset(&set, SIGHUP))
@@ -96,9 +91,9 @@ static int wait_for_exit()
 		goto err;
 	if (sigaddset(&set, SIGTERM))
 		goto err;
-	if (sigaddset(&set, SIGQUIT))
-		goto err;
 
+	if (pthread_sigmask(SIG_BLOCK, &set, NULL))
+		goto err;
 	if (sigwait(&set, &signal))
 		goto err;
 
