@@ -28,14 +28,12 @@ AX_PROG_FLEX([],
 AC_CHECK_LIB([m],[floor],
              [],
              [AC_MSG_ERROR([libm not found])])
-AC_CHECK_LIB([pthread],[pthread_create],
-             [],
-             [AC_MSG_ERROR([libpthread not found])])
 AC_CHECK_LIB([rt],[clock_gettime],
 	     [],
 	     [AC_MSG_ERROR([librt not found])])
 
 AX_LIB_EV
+AX_PTHREAD([], [AC_MSG_ERROR([libpthread not found])])
 
 AC_CHECK_LIB([dl],[dlopen],
 	     [],

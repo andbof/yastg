@@ -4,6 +4,9 @@ AM_CPPFLAGS = -D_GNU_SOURCE ${libev_CFLAGS}
 AM_CFLAGS = -g -O0 -Wall -Werror -Wformat -Wformat-security -Wformat-nonliteral -Wformat=2 -ftrapv -Wno-unused-parameter -Wtype-limits -fstack-protector-all -fno-strict-aliasing -Wno-format-y2k
 AM_YFLAGS = -d
 
+AM_CFLAGS += ${PTHREAD_CFLAGS}
+AM_LDFLAGS = ${PTHREAD_LDFLAGS}
+
 TESTS = \
 	test/cli_test \
 	test/config_test \
