@@ -659,7 +659,7 @@ static int cmd_ports(void *_player, char *param)
 	get_neighbouring_ports(&neigh, origin, dist);
 
 	if (!ptrlist_len(&neigh)) {
-		player_talk(player, "There are no ports within %zu lys\n",
+		player_talk(player, "There are no ports within %ld lys\n",
 				dist / TICK_PER_LY);
 		goto end;
 	}
