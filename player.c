@@ -353,7 +353,8 @@ static int cmd_leave_port(void *ptr, char *param)
 	else if (port->system)
 		player_go(player, SYSTEM, port->system);
 	else
-		bug("%s", "port %s does not have any positional information");
+		bug("port %s does not have any positional information",
+				port->name);
 
 	return 0;
 }
