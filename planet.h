@@ -15,7 +15,6 @@ struct planet {
 	struct ptrlist ports;
 	struct ptrlist stations;
 	struct ptrlist moons;
-	struct ptrlist players;
 	struct system *system;
 	struct list_head list;
 };
