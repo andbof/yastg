@@ -11,7 +11,6 @@
 struct port {
 	char *name;
 	struct port_type *type;
-	int docks;
 	struct planet *planet;
 	struct system *system;
 	struct list_head items;
