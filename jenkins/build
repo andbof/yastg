@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -e
+
+COMPILERS="clang gcc"
+DIST_FORMATS="xz"
+NBUILD=$(expr $(/usr/bin/nproc) \* 2)
+MAKE="make -j $NBUILD"
+
+clean_workspace() {
+	chmod -R u+w .
+	git clean -dfx
+}
+
+do_make_check() {
+	local CC="$1"
+
+	clean_workspace
+	echo "=== Running \"make check\" with CC=$CC ==="
+
+	./bootstrap
+	./configure CC="$CC" CFLAGS="$CFLAGS"
+	$MAKE check
+}
+
+clean_workspace
+
+for compiler in $COMPILERS; do
+	do_make_check $compiler
+done
+
+clean_workspace
+
+echo "=== Checking and building distribution tarballs ==="
+
+./bootstrap
+./configure CFLAGS="$CFLAGS"
+$MAKE distcheck
+
+for format in $DIST_FORMATS; do
+	$MAKE dist-$format
+done
