@@ -67,6 +67,8 @@ yastg_SOURCES = \
 		constellation.h \
 		console.c \
 		console.h \
+		crunch.c \
+		crunch.h \
 		inventory.h \
 		item.c \
 		item.h \
@@ -131,6 +133,8 @@ test_cli_test_SOURCES = \
 			cli.h \
 			common.c \
 			common.h \
+			crunch.c \
+			crunch.h \
 			stringtree.c \
 			stringtree.h
 
@@ -149,7 +153,9 @@ test_stringtree_test_SOURCES = \
 			       test/stringtree_test.c \
 			       stringtree.c \
 			       stringtree.h \
-			       common.c
+			       common.c \
+			       crunch.c \
+			       crunch.h
 
 test_config_test_SOURCES = \
 			   test/config_test.c \

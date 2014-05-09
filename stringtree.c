@@ -3,60 +3,12 @@
 #include <assert.h>
 #include <stringtree.h>
 #include "common.h"
-
-/* upper case letter to corresponding lower case
- * letter, all invalid letters underscores */
-static const char capital_to_lower[256] = {
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 32,  33,  34,  35,  36,  37,  38,  39,
-	 40,  41,  42,  43,  44,  45,  46,  47,
-	 48,  49,  50,  51,  52,  53,  54,  55,
-	 56,  57,  58,  59,  60,  61,  62,  63,
-	 64,  97,  98,  99, 100, 101, 102, 103,
-	104, 105, 106, 107, 108, 109, 110, 111,
-	112, 113, 114, 115, 116, 117, 118, 119,
-	120, 121, 122,  91,  92,  93,  94,  95,
-	 96,  97,  98,  99, 100, 101, 102, 103,
-	104, 105, 106, 107, 108, 109, 110, 111,
-	112, 113, 114, 115, 116, 117, 118, 119,
-	120, 121, 122, 123, 124, 125, 126,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95,
-	 95,  95,  95,  95,  95,  95,  95,  95
-};
+#include "crunch.h"
 
 struct char_list {
 	char c;
 	struct list_head list;
 };
-
-/*
- * Transform a given string to just lowercase letters,
- * with invalid letters replaced by underscores
- */
-static void downcase_valid(char *c)
-{
-	unsigned char *s = (unsigned char*)c;
-	unsigned int i;
-	for (i = 0; s[i] != '\0'; i++)
-		s[i] = capital_to_lower[s[i]];
-}
 
 void st_init(struct st_node * const node)
 {
@@ -84,15 +36,17 @@ void st_destroy(struct list_head * const root, const enum st_free_data do_free_d
 	}
 }
 
-static int _st_add_string(struct list_head * const root, char *string, void *data)
+static int _st_add_string(struct list_head * const root, const char *string,
+		void *data)
 {
 	struct st_node *new_node, *prev_node;
+	char c = crunch(string[0]);
 
 	new_node = NULL;
 	list_for_each_entry(prev_node, root, list) {
-		if (prev_node->c == string[0])
+		if (prev_node->c == c)
 			new_node = prev_node;
-		if (prev_node->c >= string[0])
+		if (prev_node->c >= c)
 			break;
 	}
 
@@ -102,7 +56,7 @@ static int _st_add_string(struct list_head * const root, char *string, void *dat
 			return -1;
 
 		st_init(new_node);
-		new_node->c = string[0];
+		new_node->c = c;
 
 		list_add_tail(&new_node->list, &prev_node->list);
 	}
@@ -115,23 +69,15 @@ static int _st_add_string(struct list_head * const root, char *string, void *dat
 	}
 }
 
-int st_add_string(struct list_head * const root, const char *_string, void *data)
+int st_add_string(struct list_head * const root, const char *string, void *data)
 {
-	char *string;
 	int r;
 
-	if (!root || !_string || _string[0] == '\0')
+	if (!root || !string || string[0] == '\0')
 		return -1;
-
-	string = strdup(_string);
-	if (!string)
-		return -1;
-
-	downcase_valid(string);
 
 	r = _st_add_string(root, string, data);
 
-	free(string);
 	return r;
 }
 
@@ -178,12 +124,13 @@ static void* get_the_only_child(const struct list_head * const root)
 static struct st_node* find_node(const struct list_head * const root, const char * const string, const int exact_match_only)
 {
 	struct st_node *node;
+	char c = crunch(string[0]);
 
 	list_for_each_entry(node, root, list) {
-		if (node->c < string[0])
+		if (node->c < c)
 			continue;
 
-		if (node->c > string[0])
+		if (node->c > c)
 			return NULL;
 
 		if (string[1] != '\0')
@@ -201,23 +148,14 @@ static struct st_node* find_node(const struct list_head * const root, const char
 	return NULL;
 }
 
-void* st_lookup_string(const struct list_head * const root, const char * const _string)
+void* st_lookup_string(const struct list_head * const root, const char * const string)
 {
 	struct st_node *node;
-	char *string;
 
-	if (!root || !_string || _string[0] == '\0')
+	if (!root || !string || string[0] == '\0')
 		return NULL;
-
-	string = strdup(_string);
-	if (!string)
-		return NULL;
-
-	downcase_valid(string);
 
 	node = find_node(root, string, 0);
-
-	free(string);
 	if (!node)
 		return NULL;
 
@@ -225,23 +163,14 @@ void* st_lookup_string(const struct list_head * const root, const char * const _
 }
 
 
-void* st_lookup_exact(const struct list_head * const root, const char * const _string)
+void* st_lookup_exact(const struct list_head * const root, const char * const string)
 {
 	struct st_node *node;
-	char *string;
 
-	if (!root || !_string || _string[0] == '\0')
+	if (!root || !string || string[0] == '\0')
 		return NULL;
-
-	string = strdup(_string);
-	if (!string)
-		return NULL;
-
-	downcase_valid(string);
 
 	node = find_node(root, string, 1);
-
-	free(string);
 	if (!node)
 		return NULL;
 
@@ -254,24 +183,15 @@ void* st_lookup_exact(const struct list_head * const root, const char * const _s
  * This is a feature for trees where it is likely the nodes will be reused
  * later on and we want to keep the calls to malloc() and free() down.
  */
-void* st_rm_string(struct list_head * const root, const char * const _string)
+void* st_rm_string(struct list_head * const root, const char * const string)
 {
 	void *data;
 	struct st_node *node;
-	char *string;
 
-	if (!root || !_string || _string[0] == '\0')
+	if (!root || !string || string[0] == '\0')
 		return NULL;
-
-	string = strdup(_string);
-	if (!string)
-		return NULL;
-
-	downcase_valid(string);
 
 	node = find_node(root, string, 1);
-
-	free(string);
 	if (!node)
 		return NULL;
 
