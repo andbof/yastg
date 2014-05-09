@@ -10,6 +10,7 @@ AM_LDFLAGS = ${PTHREAD_LDFLAGS}
 TESTS = \
 	test/cli_test \
 	test/config_test \
+	test/crunch_test \
 	test/ptrlist_test \
 	test/stringtree_test
 
@@ -23,6 +24,7 @@ check_PROGRAMS = \
 		 test/cli_test \
 		 test/config_test \
 		 test/conntest \
+		 test/crunch_test \
 		 test/ptrlist_test \
 		 test/stringtree_test
 
@@ -131,6 +133,11 @@ test_cli_test_SOURCES = \
 			common.h \
 			stringtree.c \
 			stringtree.h
+
+test_crunch_test_SOURCES = \
+			   test/crunch_test.c \
+			   crunch.c \
+			   crunch.h
 
 test_ptrlist_test_SOURCES = \
 			    test/ptrlist_test.c \

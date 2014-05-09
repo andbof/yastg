@@ -45,6 +45,7 @@ test/*.trs
 test/cli_test
 test/config_test
 test/conntest
+test/crunch_test
 test/ptrlist_test
 test/stringtree_test
 TODO
