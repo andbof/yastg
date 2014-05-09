@@ -60,7 +60,6 @@ enum msg {
 #define MIN(x, y)			\
 	((x < y) ? x : y)
 
-void downcase_valid(char *c);
 void chomp(char *s);
 int limit_long_to_int(const long l);
 unsigned int limit_long_to_uint(const long l);
