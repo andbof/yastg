@@ -6,7 +6,7 @@
 
 struct test_pair {
 	char name[32];
-	void* dest;
+	void *dest;
 };
 
 int do_tests_on_empty_head(struct list_head *root)

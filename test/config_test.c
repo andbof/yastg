@@ -122,7 +122,7 @@ static unsigned int verify_data(const struct list_head * const root)
 	unsigned int tests = 0;
 	struct config *config;
 
-	char* keys[NUM_CONFIG_KEYS] = {
+	char *keys[NUM_CONFIG_KEYS] = {
 		"key",		"key2",		"key3",		"key4",
 		"key5",		"key6",		"key7",		"hex",
 		"dec",		"sci",		"neg",		"negsci",
@@ -130,7 +130,7 @@ static unsigned int verify_data(const struct list_head * const root)
 	};
 
 
-	char* strings[NUM_CONFIG_KEYS] = {
+	char *strings[NUM_CONFIG_KEYS] = {
 		"this is a data string",	"anotherdatastring",
 		"whitespace test",		"tab test",
 		"data string",
@@ -163,7 +163,7 @@ static unsigned int verify_data(const struct list_head * const root)
 	return tests;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	unsigned int tests = 0;
 	struct list_head root;
