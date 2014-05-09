@@ -3,5 +3,6 @@
 
 char *duplicate_and_crunch(const char *in);
 char crunch(const char in);
+char decrunch(const unsigned char in);
 
 #endif

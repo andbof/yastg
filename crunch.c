@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include "crunch.h"
@@ -42,6 +43,21 @@ static const char crunch_char[256] = {
 };
 
 /*
+ * Character map for crunching characters. value+32 is the proper ASCII
+ * representation (i.e. 63 => 63 + 32 = 95 = '_').
+ */
+static const char decrunch_char[64] = {
+	 32,  33,  34,  35,  36,  37,  38,  39,
+	 40,  41,  42,  43,  44,  45,  46,  47,
+	 48,  49,  50,  51,  52,  53,  54,  55,
+	 56,  57,  58,  59,  60,  61,  62,  63,
+	 64,  97,  98,  99, 100, 101, 102, 103,
+	104, 105, 106, 107, 108, 109, 110, 111,
+	112, 113, 114, 115, 116, 117, 118, 119,
+	120, 121, 122,  91,  92,  93,  94,  95
+};
+
+/*
  * Transform a given string to uppercase letters, transposed 32 positions
  * downward in the ASCII character map. Characters are then masked to six
  * bits, i.e. we can only express characters 32 through 95 (' ' through '_').
@@ -67,4 +83,10 @@ char *duplicate_and_crunch(const char *in)
 char crunch(const char in)
 {
 	return crunch_char[(const unsigned char)in];
+}
+
+char decrunch(const unsigned char in)
+{
+	assert(in < sizeof(decrunch_char));
+	return decrunch_char[in];
 }
