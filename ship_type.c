@@ -4,7 +4,7 @@
 #include <limits.h>
 #include "port.h"
 #include "common.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 #include "log.h"
 #include "parseconfig.h"
 #include "ptrlist.h"
@@ -41,7 +41,7 @@ static int set_carry_weight(struct ship_type *type, struct config *conf)
 	return 0;
 }
 
-static int build_command_tree(struct list_head *root)
+static int build_command_tree(struct st_root *root)
 {
 	if (st_add_string(root, "carryweight", set_carry_weight))
 		return -1;
@@ -54,11 +54,13 @@ static int build_command_tree(struct list_head *root)
 int load_ships_from_file(const char * const file, struct universe * const universe)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
-	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
+	struct st_root cmd_root;
 	struct config *conf, *child;
 	struct ship_type *sh_type;
 	int (*func)(struct ship_type*, struct config*);
 	assert(file);
+
+	st_init(&cmd_root);
 
 	if (build_command_tree(&cmd_root))
 		return -1;

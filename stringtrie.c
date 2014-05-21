@@ -9,7 +9,6 @@
  * The array lengths of eight bytes come from the 6-bit crunched representation
  * of characters in the trie: 2**6 = 64 = 8 * 8
  */
-
 struct st_lsb {
 	struct st_root *lsb[8];
 };

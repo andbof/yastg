@@ -50,7 +50,7 @@ char string_is_valid_help[] = "Returns 0 if string is 'valid', else -1";
  * in all lengths from one character up to INVALID_MAX_LENGTH.
  */
 #define INVALID_MAX_LENGTH 3
-static int do_add_invalid_cmds_test(struct list_head *head)
+static int do_add_invalid_cmds_test(struct st_root *head)
 {
 	unsigned int tests = 0;
 	int data = 0;
@@ -72,7 +72,7 @@ static int do_add_invalid_cmds_test(struct list_head *head)
 	return tests;
 }
 
-static int do_add_remove_tests(struct list_head *head)
+static int do_add_remove_tests(struct st_root *head)
 {
 	unsigned int tests = 0;
 	int data = 0;
@@ -100,7 +100,7 @@ static int do_add_remove_tests(struct list_head *head)
 	return tests;
 }
 
-static int do_uniqueness_tests(struct list_head *head)
+static int do_uniqueness_tests(struct st_root *head)
 {
 	unsigned int tests = 0;
 	int data = 0;
@@ -121,7 +121,7 @@ static int do_uniqueness_tests(struct list_head *head)
 	return tests;
 }
 
-static int do_data_tests(struct list_head *head)
+static int do_data_tests(struct st_root *head)
 {
 	unsigned int tests = 0;
 	int data = 0;
@@ -142,7 +142,7 @@ static int do_data_tests(struct list_head *head)
 	return tests;
 }
 
-static int do_param_tests(struct list_head *head)
+static int do_param_tests(struct st_root *head)
 {
 	unsigned int tests = 0;
 
@@ -169,7 +169,7 @@ static int do_param_tests(struct list_head *head)
 	return tests;
 }
 
-static int do_run_invalid_cmds_test(struct list_head *head)
+static int do_run_invalid_cmds_test(struct st_root *head)
 {
 	unsigned int tests = 0;
 
@@ -193,7 +193,8 @@ static int do_run_invalid_cmds_test(struct list_head *head)
 int main(int argc, char *argv[])
 {
 	unsigned int tests = 0;
-	LIST_HEAD(head);
+	struct st_root head;
+	st_init(&head);
 
 	tests += do_add_invalid_cmds_test(&head);
 	tests += do_add_remove_tests(&head);

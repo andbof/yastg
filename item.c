@@ -7,7 +7,7 @@
 #include "log.h"
 #include "list.h"
 #include "parseconfig.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 #include "universe.h"
 
 static void set_base_price(struct item *item, struct config *conf)
@@ -20,7 +20,7 @@ static void set_weight(struct item *item, struct config *conf)
 	item->weight = conf->l;
 }
 
-static void build_command_tree(struct list_head *root)
+static void build_command_tree(struct st_root *root)
 {
 	st_add_string(root, "price", set_base_price);
 	st_add_string(root, "weight", set_weight);
@@ -29,12 +29,13 @@ static void build_command_tree(struct list_head *root)
 int load_items_from_file(const char * const file, struct universe * const universe)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
-	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
+	struct st_root cmd_root;
 	struct config *conf, *child;
 	struct item *item;
 	void (*func)(struct item*, struct config*);
 	assert(file);
 
+	st_init(&cmd_root);
 	build_command_tree(&cmd_root);
 
 	if (parse_config_file(file, &conf_root))

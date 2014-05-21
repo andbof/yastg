@@ -3,6 +3,7 @@
 
 #include "list.h"
 #include "ship.h"
+#include "stringtrie.h"
 
 struct player {
 	char *name;
@@ -11,7 +12,7 @@ struct player {
 	void *pos;
 	struct list_head ships;
 	struct list_head list;
-	struct list_head cli;
+	struct st_root cli;
 	struct connection *conn;
 };
 

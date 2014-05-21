@@ -6,7 +6,7 @@
 #include "port.h"
 #include "cargo.h"
 #include "item.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 #include "log.h"
 #include "parseconfig.h"
 #include "universe.h"
@@ -23,7 +23,7 @@ static void port_type_init(struct port_type *type)
 	memset(type, 0, sizeof(*type));
 	INIT_LIST_HEAD(&type->list);
 	INIT_LIST_HEAD(&type->items);
-	INIT_LIST_HEAD(&type->item_names);
+	st_init(&type->item_names);
 }
 
 void port_type_free(struct port_type *type)
@@ -55,8 +55,10 @@ static int add_zone(struct port_type *type, struct config *conf)
 {
 	struct config *child;
 	int i;
-	struct list_head zone_root = LIST_HEAD_INIT(zone_root);
+	struct st_root zone_root;
 	int zones[PORT_ZONE_NUM];
+
+	st_init(&zone_root);
 
 	for (i = 0; i < PORT_ZONE_NUM; i++)
 		zones[i] = i;
@@ -78,25 +80,25 @@ static int add_zone(struct port_type *type, struct config *conf)
 	return 0;
 }
 
-static int set_item_capacity(struct cargo *cargo, struct list_head *item_names, struct config *conf)
+static int set_item_capacity(struct cargo *cargo, struct st_root *item_names, struct config *conf)
 {
 	cargo->max = conf->l;
 	return 0;
 }
 
-static int set_item_produces(struct cargo *cargo, struct list_head *item_names, struct config *conf)
+static int set_item_produces(struct cargo *cargo, struct st_root *item_names, struct config *conf)
 {
 	cargo->daily_change += conf->l;
 	return 0;
 }
 
-static int set_item_consumes(struct cargo *cargo, struct list_head *item_names, struct config *conf)
+static int set_item_consumes(struct cargo *cargo, struct st_root *item_names, struct config *conf)
 {
 	cargo->daily_change -= conf->l;
 	return 0;
 }
 
-static int set_item_requires(struct cargo *cargo, struct list_head *item_names, struct config *conf)
+static int set_item_requires(struct cargo *cargo, struct st_root *item_names, struct config *conf)
 {
 	struct cargo *req = st_lookup_string(item_names, conf->str);
 
@@ -109,7 +111,7 @@ static int set_item_requires(struct cargo *cargo, struct list_head *item_names, 
 	return 0;
 }
 
-static int build_item_cmdtree(struct list_head *root)
+static int build_item_cmdtree(struct st_root *root)
 {
 	if (st_add_string(root, "capacity", set_item_capacity))
 		return -1;
@@ -125,7 +127,9 @@ static int build_item_cmdtree(struct list_head *root)
 
 static int add_item(struct port_type *type, struct config *conf)
 {
-	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
+	struct st_root cmd_root;
+	st_init(&cmd_root);
+
 	if (build_item_cmdtree(&cmd_root))
 		goto err;
 	if (!conf->str)
@@ -135,7 +139,7 @@ static int add_item(struct port_type *type, struct config *conf)
 	if (!cargo)
 		goto err;
 
-	int (*func)(struct cargo*, struct list_head *item_names, struct config*);
+	int (*func)(struct cargo*, struct st_root *item_names, struct config*);
 	struct config *child;
 	list_for_each_entry(child, &conf->children, list) {
 		func = st_lookup_string(&cmd_root, child->key);
@@ -190,7 +194,7 @@ err:
 	return -1;
 }
 
-static int build_command_tree(struct list_head *root)
+static int build_command_tree(struct st_root *root)
 {
 	if (st_add_string(root, "description", set_description))
 		return -1;
@@ -205,12 +209,15 @@ static int build_command_tree(struct list_head *root)
 int load_ports_from_file(const char * const file, struct universe * const universe)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
-	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
-	struct list_head item_root = LIST_HEAD_INIT(item_root);
+	struct st_root cmd_root;
+	struct st_root item_root;
 	struct config *conf, *child;
 	struct port_type *type;
 	int (*func)(struct port_type*, struct config*);
 	assert(file);
+
+	st_init(&cmd_root);
+	st_init(&item_root);
 
 	if (build_command_tree(&cmd_root))
 		goto err;

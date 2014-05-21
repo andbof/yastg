@@ -6,7 +6,7 @@
 #include "port.h"
 #include "cargo.h"
 #include "common.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 #include "item.h"
 #include "log.h"
 #include "mtrandom.h"
@@ -39,7 +39,7 @@ static void port_init(struct port *port)
 	memset(port, 0, sizeof(*port));
 	INIT_LIST_HEAD(&port->items);
 	pthread_rwlock_init(&port->items_lock, NULL);
-	INIT_LIST_HEAD(&port->item_names);
+	st_init(&port->item_names);
 	ptrlist_init(&port->players);
 }
 

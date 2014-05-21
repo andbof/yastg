@@ -6,14 +6,14 @@
 #include "cargo.h"
 #include "common.h"
 #include "item.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 
 static void ship_init(struct ship *ship)
 {
 	memset(ship, 0, sizeof(*ship));
 	INIT_LIST_HEAD(&ship->list);
 	INIT_LIST_HEAD(&ship->cargo);
-	INIT_LIST_HEAD(&ship->cargo_names);
+	st_init(&ship->cargo_names);
 	pthread_rwlock_init(&ship->cargo_lock, NULL);
 }
 

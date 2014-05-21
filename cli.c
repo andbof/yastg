@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cli.h"
-#include "stringtree.h"
+#include "common.h"
+#include "stringtrie.h"
 
 struct cli_data {
 	int (*func)(void*, char*);
@@ -11,7 +12,7 @@ struct cli_data {
 	void *data;
 };
 
-void cli_tree_destroy(struct list_head *root)
+void cli_tree_destroy(struct st_root *root)
 {
 	st_destroy(root, ST_DO_FREE_DATA);
 }
@@ -45,7 +46,7 @@ static char* trim_and_validate(char *string)
 	return string;
 }
 
-int cli_add_cmd(struct list_head *root, char *cmd, int (*func)(void*, char*), void *ptr, char *help)
+int cli_add_cmd(struct st_root *root, char *cmd, int (*func)(void*, char*), void *ptr, char *help)
 {
 	struct cli_data *node;
 
@@ -69,13 +70,7 @@ int cli_add_cmd(struct list_head *root, char *cmd, int (*func)(void*, char*), vo
 	return 0;
 }
 
-/*
- * cli_rm_cmd removes a command from the command tree. It does not, however,
- * remove any tree nodes: this is a feature to keep the number of malloc()/free()s
- * to a sane level, as the cli trees for logged in users are constantly in a
- * state of flux and the nodes will probably be reused very soon.
- */
-int cli_rm_cmd(struct list_head *root, char *cmd)
+int cli_rm_cmd(struct st_root *root, char *cmd)
 {
 	struct st_node *node;
 
@@ -87,7 +82,7 @@ int cli_rm_cmd(struct list_head *root, char *cmd)
 	return 0;
 }
 
-int cli_run_cmd(struct list_head * const root, const char * const string)
+int cli_run_cmd(struct st_root * const root, const char * const string)
 {
 	int r;
 	unsigned int i, len;
@@ -128,42 +123,33 @@ int cli_run_cmd(struct list_head * const root, const char * const string)
 	return r;
 }
 
-static void __cli_print_help(struct list_head *root, char *buf, size_t idx,
-		const size_t len, void (*print)(void*, const char*, ...), void *hints)
+struct cli_print {
+	void (*print)(void*, const char*, ...);
+	void *hints;
+};
+
+void __cli_print_help(void *st_data, const char *cmd_name, void *hints)
 {
-	struct st_node *st;
+	struct cli_print *data = hints;
 	struct cli_data *cli;
 
-	if (len - idx < 2)
+	cli = st_data;
+	if (!cli->func)
 		return;
 
-	buf[idx + 1] = '\0';
-
-	list_for_each_entry(st, root, list) {
-		buf[idx] = st->c;
-		if (st->data) {
-			cli = st->data;
-			if (cli->func) {
-				if (cli->help)
-					print(hints, "%-10s %s\n", buf, cli->help);
-				else
-					print(hints, "%-10s No help text available\n", buf);
-			}
-		}
-	}
-
-	list_for_each_entry(st, root, list) {
-		buf[idx] = st->c;
-		__cli_print_help(&st->children, buf, idx + 1, len, print, hints);
-	}
+	if (cli->help)
+		data->print(data->hints, "%-10s %s\n", cmd_name, cli->help);
+	else
+		data->print(data->hints, "%-10s No help text available\n",
+				cmd_name);
 }
 
-#define MAX_CMD_LEN 64
-void cli_print_help(struct list_head *root, void (*print)(void*, const char*, ...),
+void cli_print_help(struct st_root *root, void (*print)(void*, const char*, ...),
 		void *hints)
 {
-	char buf[MAX_CMD_LEN];
-	memset(buf, 0, sizeof(buf));
+	struct cli_print data;
+	data.print = print;
+	data.hints = hints;
 
-	__cli_print_help(root, buf, 0, sizeof(buf), print, hints);
+	st_foreach_data(root, __cli_print_help, &data);
 }

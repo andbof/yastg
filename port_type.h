@@ -19,7 +19,7 @@ struct port_type {
 	char *desc;
 	struct list_head list;
 	struct list_head items;
-	struct list_head item_names;
+	struct st_root item_names;
 	int zones[PORT_ZONE_NUM];
 };
 

@@ -122,8 +122,8 @@ yastg_SOURCES = \
 		ship_type.h \
 		star.c \
 		star.h \
-		stringtree.c \
-		stringtree.h \
+		stringtrie.c \
+		stringtrie.h \
 		universe.c \
 		universe.h
 
@@ -137,8 +137,8 @@ test_cli_test_SOURCES = \
 			common.h \
 			crunch.c \
 			crunch.h \
-			stringtree.c \
-			stringtree.h
+			stringtrie.c \
+			stringtrie.h
 
 test_crunch_test_SOURCES = \
 			   test/crunch_test.c \

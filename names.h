@@ -3,13 +3,14 @@
 
 #include "list.h"
 #include "ptrarray.h"
+#include "stringtrie.h"
 
 struct name_list {
 	struct ptrarray *prefix;
 	struct ptrarray *first;
 	struct ptrarray *second;
 	struct ptrarray *suffix;
-	struct list_head taken;
+	struct st_root taken;
 };
 
 void names_init(struct name_list *l);

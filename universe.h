@@ -5,6 +5,7 @@
 #include "names.h"
 #include "ptrlist.h"
 #include "rbtree.h"
+#include "stringtrie.h"
 #include "system.h"
 
 struct universe {
@@ -18,16 +19,16 @@ struct universe {
 	struct list_head ports;
 	pthread_rwlock_t ports_lock;
 	struct list_head port_types;
-	struct list_head port_type_names;
+	struct st_root port_type_names;
 	struct list_head planet_types;
 	struct list_head ship_types;
-	struct list_head ship_type_names;
-	struct list_head item_names;
-	struct list_head systemnames;
+	struct st_root ship_type_names;
+	struct st_root item_names;
+	struct st_root systemnames;
 	pthread_rwlock_t systemnames_lock;
-	struct list_head planetnames;
+	struct st_root planetnames;
 	pthread_rwlock_t planetnames_lock;
-	struct list_head portnames;
+	struct st_root portnames;
 	pthread_rwlock_t portnames_lock;
 	struct list_head civs;
 	struct list_head list;

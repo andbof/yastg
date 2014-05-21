@@ -7,11 +7,11 @@
 #include "names.h"
 #include "ptrarray.h"
 #include "mtrandom.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 
 void names_init(struct name_list *l)
 {
-	INIT_LIST_HEAD(&l->taken);
+	st_init(&l->taken);
 	l->prefix = ptrarray_create();
 	l->first  = ptrarray_create();
 	l->second = ptrarray_create();

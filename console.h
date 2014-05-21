@@ -5,10 +5,11 @@
 #include <pthread.h>
 #include "list.h"
 #include "server.h"
+#include "stringtrie.h"
 
 struct console {
 	struct server *server;
-	struct list_head cli;
+	struct st_root cli;
 	struct ev_loop *loop;
 	int sleep;
 	ev_async kill_watcher;

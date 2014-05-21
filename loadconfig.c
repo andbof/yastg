@@ -14,7 +14,7 @@
 #include "port_type.h"
 #include "ship_type.h"
 #include "star.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 
 struct file_list {
 	char *name;
@@ -59,7 +59,9 @@ mem_err:
 
 static int build_list_of_file_names(struct config_type configs[], const size_t len, const struct list_head *conf_root)
 {
-	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
+	struct st_root cmd_root;
+	st_init(&cmd_root);
+
 	for (size_t i = 0; i < len; i++) {
 		if (st_add_string(&cmd_root, configs[i].key, &configs[i].head))
 			goto err;
@@ -130,7 +132,7 @@ static int do_load_from_files(const struct config_type configs[], const size_t l
  */
 static int load_names_from_files(const struct config_type configs[], const size_t len)
 {
-	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
+	struct st_root cmd_root;
 	const char *constellations = NULL;
 	const char *first = NULL;
 	const char *sur = NULL;
@@ -150,6 +152,8 @@ static int load_names_from_files(const struct config_type configs[], const size_
 		{ .key = "placeprefix",		.val = &prefix },
 		{ .key = "placesuffix", 	.val = &suffix },
 	};
+
+	st_init(&cmd_root);
 
 	for (size_t i = 0; i < ARRAY_SIZE(key_vals); i++) {
 		if (st_add_string(&cmd_root, key_vals[i].key, key_vals[i].val))
@@ -249,14 +253,14 @@ static int is_config_sane(struct universe * const universe)
 		log_printfn(LOG_CONFIG, "error: no items loaded");
 		r = 0;
 	} else {
-		assert(!list_empty(&universe->item_names));
+		assert(!st_is_empty(&universe->item_names));
 	}
 
 	if (list_empty(&universe->port_types)) {
 		log_printfn(LOG_CONFIG, "error: no ports loaded");
 		r = 0;
 	} else {
-		assert(!list_empty(&universe->port_type_names));
+		assert(!st_is_empty(&universe->port_type_names));
 	}
 
 	if (list_empty(&universe->planet_types)) {
@@ -268,7 +272,7 @@ static int is_config_sane(struct universe * const universe)
 		log_printfn(LOG_CONFIG, "error: no ship types loaded");
 		r = 0;
 	} else {
-		assert(!list_empty(&universe->ship_type_names));
+		assert(!st_is_empty(&universe->ship_type_names));
 	}
 
 	if (list_empty(&universe->civs)) {

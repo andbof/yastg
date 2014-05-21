@@ -20,7 +20,7 @@
 #include "civ.h"
 #include "star.h"
 #include "constellation.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 #include "mtrandom.h"
 
 /*
@@ -302,16 +302,16 @@ void universe_init(struct universe *u)
 	INIT_LIST_HEAD(&u->ports);
 	pthread_rwlock_init(&u->ports_lock, NULL);
 	INIT_LIST_HEAD(&u->port_types);
-	INIT_LIST_HEAD(&u->port_type_names);
+	st_init(&u->port_type_names);
 	INIT_LIST_HEAD(&u->planet_types);
 	INIT_LIST_HEAD(&u->ship_types);
-	INIT_LIST_HEAD(&u->ship_type_names);
-	INIT_LIST_HEAD(&u->item_names);
-	INIT_LIST_HEAD(&u->systemnames);
+	st_init(&u->ship_type_names);
+	st_init(&u->item_names);
+	st_init(&u->systemnames);
 	pthread_rwlock_init(&u->systemnames_lock, NULL);
-	INIT_LIST_HEAD(&u->planetnames);
+	st_init(&u->planetnames);
 	pthread_rwlock_init(&u->planetnames_lock, NULL);
-	INIT_LIST_HEAD(&u->portnames);
+	st_init(&u->portnames);
 	pthread_rwlock_init(&u->portnames_lock, NULL);
 	INIT_LIST_HEAD(&u->civs);
 }

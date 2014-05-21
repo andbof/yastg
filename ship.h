@@ -22,7 +22,7 @@ struct ship {
 	void *pos;
 	pthread_rwlock_t cargo_lock;
 	struct list_head cargo;
-	struct list_head cargo_names;
+	struct st_root cargo_names;
 	struct list_head list;
 };
 

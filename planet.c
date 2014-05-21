@@ -13,7 +13,7 @@
 #include "parseconfig.h"
 #include "planet_type.h"
 #include "ptrlist.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 #include "system.h"
 
 static void planet_init(struct planet *p)

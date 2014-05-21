@@ -329,7 +329,7 @@ static void console_kill_cb(struct ev_loop * const loop, struct ev_async *w, int
 static void* console_main(void *console)
 {
 	struct console *c = console;
-	INIT_LIST_HEAD(&c->cli);
+	st_init(&c->cli);
 
 	c->loop = ev_loop_new(EVFLAG_AUTO | EVFLAG_NOSIGMASK);
 	if (!c->loop)

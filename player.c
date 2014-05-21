@@ -24,7 +24,7 @@
 #include "server.h"
 #include "ship.h"
 #include "star.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 #include "system.h"
 
 #define player_talk(PLAYER, ...)	\
@@ -745,7 +745,7 @@ int player_init(struct player *player)
 		return -1;
 
 	INIT_LIST_HEAD(&player->list);
-	INIT_LIST_HEAD(&player->cli);
+	st_init(&player->cli);
 	INIT_LIST_HEAD(&player->ships);
 
 	cli_add_cmd(&player->cli, "help", cmd_help, player, cmd_help_help);

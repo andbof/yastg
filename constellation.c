@@ -12,7 +12,7 @@
 #include "system.h"
 #include "star.h"
 #include "ptrlist.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 
 static int addconstellation(const char * const cname)
 {

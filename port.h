@@ -15,7 +15,7 @@ struct port {
 	struct system *system;
 	struct list_head items;
 	pthread_rwlock_t items_lock;
-	struct list_head item_names;
+	struct st_root item_names;
 	struct ptrlist players;
 	struct list_head list;
 };

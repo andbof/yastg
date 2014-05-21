@@ -9,7 +9,7 @@
 #include "port.h"
 #include "parseconfig.h"
 #include "ptrlist.h"
-#include "stringtree.h"
+#include "stringtrie.h"
 
 const char planet_life_desc[PLANET_LIFE_NUM][PLANET_LIFE_DESC_LEN] = {
 	"Toxic to life",
@@ -102,8 +102,10 @@ static int set_description(struct planet_type *type, struct config *conf)
 static int set_life(enum planet_life *life, char *value)
 {
 	int i;
-	struct list_head life_root = LIST_HEAD_INIT(life_root);
+	struct st_root life_root;
 	int lifes[PLANET_LIFE_NUM];
+
+	st_init(&life_root);
 
 	if (!value)
 		return -1;
@@ -176,8 +178,10 @@ static int set_zones(struct planet_type *type, struct config *conf)
 {
 	struct config *child;
 	unsigned int i;
-	struct list_head zone_root = LIST_HEAD_INIT(zone_root);
+	struct st_root zone_root;
 	int zones[PLANET_ZONE_NUM];
+
+	st_init(&zone_root);
 
 	for (i = 0; i < ARRAY_SIZE(zones); i++)
 		zones[i] = i;
@@ -199,7 +203,7 @@ static int set_zones(struct planet_type *type, struct config *conf)
 	return 0;
 }
 
-static int build_command_tree(struct list_head *root)
+static int build_command_tree(struct st_root *root)
 {
 	if (st_add_string(root, "atmosphere", set_atmosphere))
 		return -1;
@@ -228,11 +232,13 @@ static int build_command_tree(struct list_head *root)
 int load_planets_from_file(const char * const file, struct universe * const universe)
 {
 	struct list_head conf_root = LIST_HEAD_INIT(conf_root);
-	struct list_head cmd_root = LIST_HEAD_INIT(cmd_root);
+	struct st_root cmd_root;
 	struct config *conf, *child;
 	struct planet_type *pl_type;
 	int (*func)(struct planet_type*, struct config*);
 	assert(file);
+
+	st_init(&cmd_root);
 
 	if (build_command_tree(&cmd_root))
 		return -1;

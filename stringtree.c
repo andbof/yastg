@@ -4,6 +4,7 @@
 #include <stringtree.h>
 #include "common.h"
 #include "crunch.h"
+#include "list.h"
 
 struct char_list {
 	char c;
