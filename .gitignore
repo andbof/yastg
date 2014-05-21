@@ -47,6 +47,5 @@ test/config_test
 test/conntest
 test/crunch_test
 test/ptrlist_test
-test/stringtree_test
 test/stringtrie_test
 TODO

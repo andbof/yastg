@@ -12,7 +12,6 @@ TESTS = \
 	test/config_test \
 	test/crunch_test \
 	test/ptrlist_test \
-	test/stringtree_test \
 	test/stringtrie_test
 
 BUILT_SOURCES = parseconfig-yacc.c parseconfig-lex.c
@@ -27,7 +26,6 @@ check_PROGRAMS = \
 		 test/conntest \
 		 test/crunch_test \
 		 test/ptrlist_test \
-		 test/stringtree_test \
 		 test/stringtrie_test
 
 check_LTLIBRARIES = test_module.la
@@ -150,14 +148,6 @@ test_ptrlist_test_SOURCES = \
 			    mt19937ar-cok.c \
 			    mtrandom.c \
 			    ptrlist.c
-
-test_stringtree_test_SOURCES = \
-			       test/stringtree_test.c \
-			       stringtree.c \
-			       stringtree.h \
-			       common.c \
-			       crunch.c \
-			       crunch.h
 
 test_stringtrie_test_SOURCES = \
 			       test/stringtrie_test.c \
