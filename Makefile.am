@@ -141,6 +141,7 @@ test_ptrlist_test_SOURCES = \
 test_stringtree_test_SOURCES = \
 			       test/stringtree_test.c \
 			       stringtree.c \
+			       stringtree.h \
 			       common.c
 
 test_config_test_SOURCES = \
