@@ -46,7 +46,8 @@ static char* trim_and_validate(char *string)
 	return string;
 }
 
-int cli_add_cmd(struct st_root *root, char *cmd, int (*func)(void*, char*), void *ptr, char *help)
+int cli_add_cmd(struct st_root *root, char *cmd,
+		int (*func)(void*, char*), void *ptr, char *help)
 {
 	struct cli_data *node;
 
