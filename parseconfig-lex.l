@@ -105,6 +105,13 @@ int parse(char *begin, size_t size, struct list_head * const root)
 		goto err_destroy;
 	yy_switch_to_buffer(yybs, scanner);
 
+	/*
+	 * Some flex builds do not seem to initialize yylineno correctly.
+	 * It is unknown why, but it is trivial to always initialize it
+	 * ourselves.
+	 */
+	yybs->yy_bs_lineno = 0;
+
 	if (yyparse(scanner))
 		goto err_delete;
 
