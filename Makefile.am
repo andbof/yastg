@@ -10,7 +10,6 @@ AM_LDFLAGS = ${PTHREAD_LDFLAGS}
 TESTS = \
 	test/cli_test \
 	test/config_test \
-	test/crunch_test \
 	test/ptrlist_test \
 	test/stringtrie_test
 
@@ -24,7 +23,6 @@ check_PROGRAMS = \
 		 test/cli_test \
 		 test/config_test \
 		 test/conntest \
-		 test/crunch_test \
 		 test/ptrlist_test \
 		 test/stringtrie_test
 
@@ -67,8 +65,6 @@ yastg_SOURCES = \
 		constellation.h \
 		console.c \
 		console.h \
-		crunch.c \
-		crunch.h \
 		inventory.h \
 		item.c \
 		item.h \
@@ -133,15 +129,8 @@ test_cli_test_SOURCES = \
 			cli.h \
 			common.c \
 			common.h \
-			crunch.c \
-			crunch.h \
 			stringtrie.c \
 			stringtrie.h
-
-test_crunch_test_SOURCES = \
-			   test/crunch_test.c \
-			   crunch.c \
-			   crunch.h
 
 test_ptrlist_test_SOURCES = \
 			    test/ptrlist_test.c \
@@ -153,9 +142,7 @@ test_stringtrie_test_SOURCES = \
 			       test/stringtrie_test.c \
 			       stringtrie.c \
 			       stringtrie.h \
-			       common.c \
-			       crunch.c \
-			       crunch.h
+			       common.c
 
 test_config_test_SOURCES = \
 			   test/config_test.c \

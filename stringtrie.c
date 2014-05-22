@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <stringtrie.h>
 #include "common.h"
-#include "crunch.h"
 
 /*
  * The array lengths of eight bytes come from the 6-bit crunched representation
@@ -12,6 +11,72 @@
 struct st_lsb {
 	struct st_root *lsb[8];
 };
+
+/*
+ * Character map for crunching characters. value+32 is the proper ASCII
+ * representation (i.e. 63 => 63 + 32 = 95 = '_').
+ */
+static const char crunch_char[256] = {
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	  0,   1,   2,   3,   4,   5,   6,   7,
+	  8,   9,  10,  11,  12,  13,  14,  15,
+	 16,  17,  18,  19,  20,  21,  22,  23,
+	 24,  25,  26,  27,  28,  29,  30,  31,
+	 32,  33,  34,  35,  36,  37,  38,  39,
+	 40,  41,  42,  43,  44,  45,  46,  47,
+	 48,  49,  50,  51,  52,  53,  54,  55,
+	 56,  57,  58,  59,  60,  61,  62,  63,
+	 63,  33,  34,  35,  36,  37,  38,  39,
+	 40,  41,  42,  43,  44,  45,  46,  47,
+	 48,  49,  50,  51,  52,  53,  54,  55,
+	 56,  57,  58,  59,  60,  61,  62,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63,
+	 63,  63,  63,  63,  63,  63,  63,  63
+};
+
+/*
+ * Character map for decrunching characters. value+32 is the proper ASCII
+ * representation, but we'll also make uppercase into lowercase characters
+ * to make them nicer to look at.
+ */
+static const char decrunch_char[64] = {
+	 32,  33,  34,  35,  36,  37,  38,  39,
+	 40,  41,  42,  43,  44,  45,  46,  47,
+	 48,  49,  50,  51,  52,  53,  54,  55,
+	 56,  57,  58,  59,  60,  61,  62,  63,
+	 64,  97,  98,  99, 100, 101, 102, 103,
+	104, 105, 106, 107, 108, 109, 110, 111,
+	112, 113, 114, 115, 116, 117, 118, 119,
+	120, 121, 122,  91,  92,  93,  94,  95
+};
+
+static char crunch(const char in)
+{
+	return crunch_char[(const unsigned char)in];
+}
+
+static char decrunch(const unsigned char in)
+{
+	assert(in < sizeof(decrunch_char));
+	return decrunch_char[in];
+}
 
 void st_init(struct st_root * const root)
 {
